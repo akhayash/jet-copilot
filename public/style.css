@@ -37,6 +37,14 @@ header {
 
 header h1 { font-size: 1.1rem; flex: 1; }
 
+.back-link {
+  text-decoration: none;
+  color: var(--accent);
+  font-size: 1.2rem;
+  padding: 4px 8px;
+  margin-right: 4px;
+}
+
 .status-dot {
   width: 10px; height: 10px;
   border-radius: 50%;
