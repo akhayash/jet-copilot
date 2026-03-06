@@ -1,12 +1,16 @@
 {
   "name": "jet-copilot",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Remotely operate GitHub Copilot CLI from any browser via xterm.js + Dev Tunnels",
+  "main": "server/index.js",
+  "bin": {
+    "jet-copilot": "./bin/jet-copilot.js"
+  },
   "scripts": {
+    "start": "node server/index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": [],
+  "keywords": ["copilot", "cli", "terminal", "remote", "xterm", "devtunnel"],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
