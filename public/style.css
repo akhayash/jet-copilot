@@ -257,6 +257,54 @@ header h1 { font-size: 1.1rem; flex: 1; }
   gap: 8px;
 }
 
+/* Preview */
+.preview-input-group {
+  display: flex;
+  gap: 0;
+  margin-bottom: 12px;
+}
+
+.preview-port-input {
+  flex: 1;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px 0 0 8px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 16px;
+  outline: none;
+  -moz-appearance: textfield;
+}
+
+.preview-port-input::-webkit-inner-spin-button { display: none; }
+.preview-port-input:focus { border-color: var(--accent); }
+
+.preview-open-btn {
+  padding: 10px 16px;
+  border: 1px solid var(--accent);
+  border-left: none;
+  border-radius: 0 8px 8px 0;
+  background: var(--accent);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.preview-open-btn:active { opacity: 0.8; }
+
+.preview-url {
+  display: block;
+  font-size: 12px;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  color: var(--accent);
+  margin-bottom: 8px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-decoration: none;
+}
+
 .end-btn {
   padding: 8px 16px;
   border: 1px solid var(--danger);

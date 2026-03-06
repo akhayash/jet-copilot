@@ -178,4 +178,68 @@ function formatTime(iso) {
 // Load on start and refresh periodically
 loadStatus();
 loadSessions();
-setInterval(() => { loadStatus(); loadSessions(); }, 5000);
+loadPreviews();
+setInterval(() => { loadStatus(); loadSessions(); loadPreviews(); }, 5000);
+
+// Preview management
+async function loadPreviews() {
+  try {
+    const res = await fetch('/api/preview');
+    const list = await res.json();
+    const container = document.getElementById('preview-list');
+
+    if (list.length === 0) {
+      container.innerHTML = '';
+      return;
+    }
+
+    container.innerHTML = list.map((p) => {
+      const urlLink = p.url
+        ? `<a href="${p.url}" target="_blank" class="preview-url">${p.url}</a>`
+        : '<span class="preview-url">Starting...</span>';
+      return `
+        <div class="session-card">
+          <div class="session-info">
+            <span class="session-id">🌐 Port ${p.port}</span>
+          </div>
+          ${urlLink}
+          <div class="session-actions">
+            ${p.url ? `<a href="${p.url}" target="_blank" class="connect-btn">Open ↗</a>` : ''}
+            <button class="end-btn" onclick="stopPreview(${p.port})">Stop</button>
+          </div>
+        </div>
+      `;
+    }).join('');
+  } catch {
+    // Ignore
+  }
+}
+
+async function startPreview() {
+  const input = document.getElementById('preview-port');
+  const port = parseInt(input.value, 10);
+  if (!port) return;
+
+  input.disabled = true;
+  try {
+    await fetch('/api/preview', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ port }),
+    });
+    input.value = '';
+    loadPreviews();
+  } catch (err) {
+    alert('Failed to start preview: ' + err.message);
+  }
+  input.disabled = false;
+}
+
+async function stopPreview(port) {
+  try {
+    await fetch(`/api/preview/${port}`, { method: 'DELETE' });
+    loadPreviews();
+  } catch (err) {
+    alert('Failed to stop preview: ' + err.message);
+  }
+}

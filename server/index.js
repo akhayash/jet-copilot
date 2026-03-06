@@ -6,10 +6,12 @@ const { WebSocketServer } = require('ws');
 const path = require('path');
 const { CopilotRunner } = require('./copilot-runner');
 const { SessionManager } = require('./session-manager');
+const { PreviewManager } = require('./preview-manager');
 const { startTunnel } = require('./tunnel');
 
 const PORT = process.env.PORT || 3000;
 const sessions = new SessionManager();
+const previews = new PreviewManager();
 
 const app = express();
 const server = http.createServer(app);
@@ -75,6 +77,32 @@ app.delete('/api/sessions/:id', (req, res) => {
 
 // Health check
 app.get('/health', (_req, res) => res.json({ status: 'ok' }));
+
+// API: list active previews
+app.get('/api/preview', (_req, res) => {
+  res.json(previews.list());
+});
+
+// API: start preview tunnel
+app.post('/api/preview', async (req, res) => {
+  const port = parseInt(req.body.port, 10);
+  if (!port || port < 1 || port > 65535) {
+    return res.status(400).json({ error: 'Invalid port number' });
+  }
+  try {
+    const preview = await previews.start(port);
+    res.json({ port: preview.port, url: preview.url });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// API: stop preview tunnel
+app.delete('/api/preview/:port', (req, res) => {
+  const port = parseInt(req.params.port, 10);
+  previews.stop(port);
+  res.json({ ok: true });
+});
 
 // WebSocket connection
 wss.on('connection', (ws, req) => {
