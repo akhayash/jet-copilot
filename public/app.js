@@ -54,6 +54,39 @@ function connect() {
       fitAddon.fit();
       sendResize();
 
+      // Workaround: xterm.js v6.0.0 touch scroll regression (xtermjs/xterm.js#5489)
+      const screen = document.querySelector('.xterm-screen');
+      if (screen) {
+        let touchStartY = null;
+        let accumulatedDelta = 0;
+        const LINE_HEIGHT = 20;
+
+        screen.addEventListener('touchstart', (e) => {
+          if (e.touches.length === 1) {
+            touchStartY = e.touches[0].clientY;
+            accumulatedDelta = 0;
+          }
+        }, { passive: true });
+
+        screen.addEventListener('touchmove', (e) => {
+          if (touchStartY === null || e.touches.length !== 1) return;
+          const deltaY = touchStartY - e.touches[0].clientY;
+          touchStartY = e.touches[0].clientY;
+          accumulatedDelta += deltaY;
+
+          const lines = Math.trunc(accumulatedDelta / LINE_HEIGHT);
+          if (lines !== 0) {
+            term.scrollLines(lines);
+            accumulatedDelta -= lines * LINE_HEIGHT;
+          }
+        }, { passive: true });
+
+        screen.addEventListener('touchend', () => {
+          touchStartY = null;
+          accumulatedDelta = 0;
+        }, { passive: true });
+      }
+
       term.onData((data) => {
         if (ws && ws.readyState === WebSocket.OPEN) {
           ws.send(JSON.stringify({ type: 'input', content: data }));
