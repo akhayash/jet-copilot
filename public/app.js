@@ -115,6 +115,28 @@ function sendKey(key) {
   ws.send(JSON.stringify({ type: 'input', content }));
 }
 
+// Attach shortcut buttons via JS to avoid focus issues
+document.addEventListener('DOMContentLoaded', () => {
+  const container = document.getElementById('shortcuts');
+  if (!container) return;
+
+  container.addEventListener('touchstart', (e) => {
+    const btn = e.target.closest('[data-key]');
+    if (btn) {
+      e.preventDefault();
+      sendKey(btn.dataset.key);
+    }
+  }, { passive: false });
+
+  container.addEventListener('mousedown', (e) => {
+    const btn = e.target.closest('[data-key]');
+    if (btn) {
+      e.preventDefault();
+      sendKey(btn.dataset.key);
+    }
+  });
+});
+
 function toggleVoiceInput() {
   const bar = document.getElementById('voice-bar');
   const btn = document.getElementById('voice-toggle');
