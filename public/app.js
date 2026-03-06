@@ -120,9 +120,13 @@ function toggleVoiceInput() {
 function sendVoiceInput() {
   const input = document.getElementById('voice-input');
   const text = input.value;
-  if (!text || !ws || ws.readyState !== WebSocket.OPEN) return;
+  if (text.length === 0) return;
+  if (!ws || ws.readyState !== WebSocket.OPEN) {
+    alert('Not connected');
+    return;
+  }
 
-  ws.send(JSON.stringify({ type: 'input', content: text + '\r' }));
+  ws.send(JSON.stringify({ type: 'input', content: text + '\n' }));
   input.value = '';
   toggleVoiceInput();
 }
