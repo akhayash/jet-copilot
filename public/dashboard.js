@@ -130,6 +130,7 @@ async function browseTo(dirPath) {
     const currentEl = document.getElementById('folder-current');
     currentEl.textContent = data.current;
 
+    const sep = data.sep || '\\';
     const listEl = document.getElementById('folder-list');
     let html = '';
 
@@ -143,7 +144,7 @@ async function browseTo(dirPath) {
 
     // Subdirectories
     for (const dir of data.directories) {
-      const full = data.current + '\\\\' + dir;
+      const full = data.current + sep + dir;
       html += `<div class="folder-item" onclick="browseTo('${escapeAttr(full)}')">📁 ${dir}</div>`;
     }
 

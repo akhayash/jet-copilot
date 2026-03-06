@@ -60,6 +60,7 @@ app.get('/api/browse', (req, res) => {
     res.json({
       current: resolved,
       parent: path.dirname(resolved),
+      sep: path.sep,
       directories: dirs,
     });
   } catch (err) {

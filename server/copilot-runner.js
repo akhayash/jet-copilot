@@ -7,8 +7,11 @@ class CopilotRunner {
   }
 
   start(cwd) {
-    // node-pty on Windows needs cmd.exe to resolve PATH
-    this._pty = pty.spawn('cmd.exe', ['/c', 'copilot'], {
+    const isWindows = process.platform === 'win32';
+    const file = isWindows ? 'cmd.exe' : 'copilot';
+    const args = isWindows ? ['/c', 'copilot'] : [];
+
+    this._pty = pty.spawn(file, args, {
       name: 'xterm-256color',
       cols: 80,
       rows: 24,

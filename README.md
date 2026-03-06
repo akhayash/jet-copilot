@@ -2,17 +2,17 @@
 
 **English** | [日本語](README.ja.md)
 
-A web app to remotely operate GitHub Copilot CLI from your iPhone browser.
+A web app to remotely operate GitHub Copilot CLI from any mobile or desktop browser.
 
-Launches an interactive `copilot` session on your local PC and streams it to your iPhone via [xterm.js](https://xtermjs.org/) full terminal emulation. Securely exposed to the internet through [Microsoft Dev Tunnels](https://learn.microsoft.com/azure/developer/dev-tunnels/) with instant QR code access.
+Launches an interactive `copilot` session on your local PC and streams it to your device via [xterm.js](https://xtermjs.org/) full terminal emulation. Securely exposed to the internet through [Microsoft Dev Tunnels](https://learn.microsoft.com/azure/developer/dev-tunnels/) with instant QR code access.
 
 ## Architecture
 
 ```
-iPhone (Safari)  ── HTTPS ──  Dev Tunnels (Microsoft Cloud)  ── tunnel ──  Local PC
-                                                                           ├── Node.js (Express + WebSocket)
-                                                                           ├── node-pty (PTY)
-                                                                           └── copilot (interactive session)
+Browser (any device)  ── HTTPS ──  Dev Tunnels (Microsoft Cloud)  ── tunnel ──  Local PC
+                                                                                ├── Node.js (Express + WebSocket)
+                                                                                ├── node-pty (PTY)
+                                                                                └── copilot (interactive session)
 ```
 
 ## Prerequisites
@@ -22,9 +22,11 @@ iPhone (Safari)  ── HTTPS ──  Dev Tunnels (Microsoft Cloud)  ── tunn
   - Install: `npm install -g @github/copilot`
   - Auth: `copilot login`
 - **Microsoft Dev Tunnels CLI** (`devtunnel` command)
-  - Install: `winget install Microsoft.devtunnel`
+  - Windows: `winget install Microsoft.devtunnel`
+  - macOS: `brew install --cask devtunnel`
+  - Linux: `curl -sL https://aka.ms/DevTunnelCliInstall | bash`
   - Auth: `devtunnel user login -g` (GitHub account)
-- **Windows** (node-pty uses Windows PTY)
+- **Windows / macOS / Linux**
 
 ## Setup
 
@@ -54,14 +56,13 @@ node server/index.js
 The terminal will display:
 - 🚀 Server URL (localhost)
 - 🔗 Dev Tunnel public URL
-- 📱 **QR code** (scan with iPhone camera)
+- 📱 **QR code** (scan with your phone camera)
 
-### 2. Connect from iPhone
+### 2. Connect from Your Device
 
-1. Scan the QR code with your iPhone camera
-2. Safari opens the page
-3. Authenticate via Dev Tunnel (GitHub or Microsoft account login)
-4. The **dashboard** is displayed
+1. Scan the QR code with your phone camera, or open the URL in any browser
+2. Authenticate via Dev Tunnel (GitHub or Microsoft account login)
+3. The **dashboard** is displayed
 
 ### 3. Session Management (Dashboard)
 
@@ -73,11 +74,11 @@ The terminal will display:
 
 ### 4. Local Service Preview
 
-Preview web services you're developing with Copilot CLI directly on your iPhone.
+Preview web services you're developing with Copilot CLI directly on your device.
 
 1. Enter a port number in the Dashboard's Preview section (e.g., `3001`)
 2. Tap "▶ Open" → An additional Dev Tunnel starts
-3. Tap the displayed URL → Preview on iPhone
+3. Open the displayed URL → Preview on your device
 
 ## File Structure
 
