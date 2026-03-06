@@ -2,17 +2,17 @@
 
 [English](README.md) | **日本語**
 
-iPhoneのブラウザからGitHub Copilot CLIをリモート操作するWebアプリ。
+モバイルやデスクトップのブラウザからGitHub Copilot CLIをリモート操作するWebアプリ。
 
-ローカルPCで`copilot`の対話セッションを起動し、[xterm.js](https://xtermjs.org/)によるフルターミナルエミュレーションでiPhoneに中継します。[Microsoft Dev Tunnels](https://learn.microsoft.com/azure/developer/dev-tunnels/)で安全にインターネット公開し、QRコードで即アクセス。
+ローカルPCで`copilot`の対話セッションを起動し、[xterm.js](https://xtermjs.org/)によるフルターミナルエミュレーションでブラウザに中継します。[Microsoft Dev Tunnels](https://learn.microsoft.com/azure/developer/dev-tunnels/)で安全にインターネット公開し、QRコードで即アクセス。
 
 ## アーキテクチャ
 
 ```
-iPhone (Safari)  ── HTTPS ──  Dev Tunnels (Microsoft Cloud)  ── tunnel ──  ローカルPC
-                                                                           ├── Node.js (Express + WebSocket)
-                                                                           ├── node-pty (PTY)
-                                                                           └── copilot (対話セッション)
+ブラウザ (任意デバイス)  ── HTTPS ──  Dev Tunnels (Microsoft Cloud)  ── tunnel ──  ローカルPC
+                                                                                   ├── Node.js (Express + WebSocket)
+                                                                                   ├── node-pty (PTY)
+                                                                                   └── copilot (対話セッション)
 ```
 
 ## 前提条件
@@ -22,9 +22,11 @@ iPhone (Safari)  ── HTTPS ──  Dev Tunnels (Microsoft Cloud)  ── tunn
   - インストール: `npm install -g @github/copilot`
   - 認証: `copilot login`
 - **Microsoft Dev Tunnels CLI** (`devtunnel` コマンド)
-  - インストール: `winget install Microsoft.devtunnel`
+  - Windows: `winget install Microsoft.devtunnel`
+  - macOS: `brew install --cask devtunnel`
+  - Linux: `curl -sL https://aka.ms/DevTunnelCliInstall | bash`
   - 認証: `devtunnel user login -g` (GitHubアカウント)
-- **Windows** (node-pty が Windows PTY を使用)
+- **Windows / macOS / Linux**
 
 ## セットアップ
 
@@ -54,14 +56,13 @@ node server/index.js
 ターミナルに以下が表示されます：
 - 🚀 サーバーURL（localhost）
 - 🔗 Dev TunnelのパブリックURL
-- 📱 **QRコード**（iPhoneのカメラで読み取り）
+- 📱 **QRコード**（スマートフォンのカメラで読み取り）
 
-### 2. iPhoneから接続
+### 2. ブラウザから接続
 
-1. QRコードをiPhoneのカメラで読み取る
-2. Safariでページが開く
-3. Dev Tunnelの認証（GitHub or Microsoftアカウントでログイン）
-4. **ダッシュボード**が表示される
+1. QRコードをスマートフォンのカメラで読み取る、またはURLを任意のブラウザで開く
+2. Dev Tunnelの認証（GitHub or Microsoftアカウントでログイン）
+3. **ダッシュボード**が表示される
 
 ### 3. セッション管理（ダッシュボード）
 
@@ -73,11 +74,11 @@ node server/index.js
 
 ### 4. ローカルサービスのプレビュー
 
-Copilot CLIで開発中のWebサービスをiPhoneで確認できます。
+Copilot CLIで開発中のWebサービスをブラウザで確認できます。
 
 1. ダッシュボードのPreviewセクションでポート番号を入力（例: `3001`）
 2. 「▶ Open」をタップ → Dev Tunnelが追加で起動
-3. 表示されるURLをタップ → iPhoneでプレビュー
+3. 表示されるURLを開く → ブラウザでプレビュー
 
 ## ファイル構成
 
