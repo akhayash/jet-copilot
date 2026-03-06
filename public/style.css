@@ -378,6 +378,25 @@ header h1 { font-size: 1.1rem; flex: 1; }
   word-break: break-all;
 }
 
+.folder-filter {
+  width: 100%;
+  padding: 8px 14px;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 14px;
+  outline: none;
+}
+
+.folder-filter:focus {
+  background: rgba(88, 166, 255, 0.05);
+}
+
+.folder-filter::placeholder {
+  color: var(--text-muted);
+}
+
 .folder-actions {
   display: flex;
   gap: 8px;

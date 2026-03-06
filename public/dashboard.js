@@ -105,12 +105,15 @@ async function endSession(id) {
 }
 
 // Folder browser
+let currentBrowseData = null;
+
 async function openBrowser() {
   const browser = document.getElementById('folder-browser');
   const cwdInput = document.getElementById('cwd-input');
   const startPath = cwdInput.value || undefined;
 
   browser.classList.remove('hidden');
+  document.getElementById('folder-filter').value = '';
   await browseTo(startPath);
 }
 
@@ -130,29 +133,9 @@ async function browseTo(dirPath) {
     const currentEl = document.getElementById('folder-current');
     currentEl.textContent = data.current;
 
-    const sep = data.sep || '\\';
-
-    // Action bar
-    const actionsHtml = `<div class="folder-actions">
-      <button class="folder-action-btn" onclick="selectFolder()">Select</button>
-      <button class="folder-action-btn" onclick="createFolder('${escapeAttr(data.current)}', '${escapeAttr(sep)}')">+ New Folder</button>
-    </div>`;
-
-    const listEl = document.getElementById('folder-list');
-    let html = actionsHtml;
-
-    // Parent directory
-    if (data.parent !== data.current) {
-      html += `<div class="folder-item" onclick="browseTo('${escapeAttr(data.parent)}')">📂 ..</div>`;
-    }
-
-    // Subdirectories
-    for (const dir of data.directories) {
-      const full = data.current + sep + dir;
-      html += `<div class="folder-item" onclick="browseTo('${escapeAttr(full)}')">📁 ${dir}</div>`;
-    }
-
-    listEl.innerHTML = html;
+    currentBrowseData = data;
+    document.getElementById('folder-filter').value = '';
+    renderFolderList(data, '');
   } catch (err) {
     alert('Browse error: ' + err.message);
   }
@@ -160,6 +143,39 @@ async function browseTo(dirPath) {
 
 function selectFolder() {
   document.getElementById('folder-browser').classList.add('hidden');
+}
+
+function renderFolderList(data, filter) {
+  const sep = data.sep || '\\';
+  const listEl = document.getElementById('folder-list');
+
+  const actionsHtml = `<div class="folder-actions">
+    <button class="folder-action-btn" onclick="selectFolder()">Select</button>
+    <button class="folder-action-btn" onclick="createFolder('${escapeAttr(data.current)}', '${escapeAttr(sep)}')">+ New Folder</button>
+  </div>`;
+
+  let html = actionsHtml;
+
+  // Parent directory (always visible)
+  if (data.parent !== data.current && !filter) {
+    html += `<div class="folder-item" onclick="browseTo('${escapeAttr(data.parent)}')">📂 ..</div>`;
+  }
+
+  const lowerFilter = filter.toLowerCase();
+  const dirs = filter
+    ? data.directories.filter((d) => d.toLowerCase().includes(lowerFilter))
+    : data.directories;
+
+  for (const dir of dirs) {
+    const full = data.current + sep + dir;
+    html += `<div class="folder-item" onclick="browseTo('${escapeAttr(full)}')">📁 ${dir}</div>`;
+  }
+
+  if (filter && dirs.length === 0) {
+    html += `<div class="folder-item" style="color:var(--text-muted);cursor:default">一致するフォルダがありません</div>`;
+  }
+
+  listEl.innerHTML = html;
 }
 
 async function createFolder(parentPath, sep) {
@@ -208,6 +224,13 @@ loadStatus();
 loadSessions();
 loadPreviews();
 setInterval(() => { loadStatus(); loadSessions(); loadPreviews(); }, 5000);
+
+// Folder filter
+document.getElementById('folder-filter').addEventListener('input', (e) => {
+  if (currentBrowseData) {
+    renderFolderList(currentBrowseData, e.target.value);
+  }
+});
 
 // Preview management
 async function loadPreviews() {
