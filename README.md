@@ -17,7 +17,7 @@ iPhone (Safari)  ── HTTPS ──  Dev Tunnels (Microsoft Cloud)  ── tunn
 
 - **Node.js** v18以上
 - **GitHub Copilot CLI** (`copilot` コマンドが使えること)
-  - インストール: `npm install -g @githubnext/github-copilot-cli`
+  - インストール: `npm install -g @github/copilot`
   - 認証: `copilot login`
 - **Microsoft Dev Tunnels CLI** (`devtunnel` コマンド)
   - インストール: `winget install Microsoft.devtunnel`
@@ -28,22 +28,17 @@ iPhone (Safari)  ── HTTPS ──  Dev Tunnels (Microsoft Cloud)  ── tunn
 
 ```bash
 # 1. クローン
-git clone https://github.com/akhayash/jet-copilot.git
+git clone <your-repo-url>
 cd jet-copilot
 
 # 2. 依存パッケージインストール
 npm install
-
-# 3. 環境変数を設定
-cp .env.example .env   # または .env を直接編集
-# APP_TOKEN に任意のパスワードを設定
 ```
 
-### `.env` の設定
+### `.env` の設定（オプション）
 
 | 変数 | 説明 | デフォルト |
 |------|------|-----------|
-| `APP_TOKEN` | iPhoneからの接続時に入力する認証トークン | `change-me-to-a-secure-token` |
 | `PORT` | サーバーのポート番号 | `3000` |
 
 ## 使い方
@@ -63,7 +58,7 @@ node server/index.js
 
 1. QRコードをiPhoneのカメラで読み取る
 2. Safariでページが開く
-3. トークン（`.env` の `APP_TOKEN`）を入力して **Connect**
+3. Dev Tunnelの認証（GitHub or Microsoftアカウントでログイン）
 4. Copilot CLIのターミナルが表示される
 5. そのまま入力・操作が可能
 
@@ -71,24 +66,23 @@ node server/index.js
 
 ```
 jet-copilot/
-├── .env                    # 認証トークン・ポート設定
+├── .env                    # ポート設定（オプション）
 ├── .gitignore
 ├── package.json
 ├── server/
 │   ├── index.js            # Express + WebSocketサーバー
-│   ├── auth.js             # トークン認証
+│   ├── auth.js             # 認証ユーティリティ
 │   ├── copilot-runner.js   # node-ptyでcopilot起動・I/O中継
 │   └── tunnel.js           # Dev Tunnel自動起動 + QRコード表示
 └── public/
-    ├── index.html          # 認証画面 + ターミナル画面
+    ├── index.html          # ターミナル画面
     ├── style.css           # ダークモードUI
     └── app.js              # xterm.js + WebSocket通信
 ```
 
 ## セキュリティ
 
-- **Dev Tunnels**: HTTPS自動適用、Microsoft/GitHub認証によるアクセス制御
-- **アプリ認証**: Bearer Token（`APP_TOKEN`）による二重認証
+- **Dev Tunnels**: HTTPS自動適用、GitHub/Microsoftアカウント認証によるアクセス制御
 - **`.env`**: `.gitignore` に含まれており、リポジトリにコミットされません
 
 ## ライセンス
