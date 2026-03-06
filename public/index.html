@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Jet Copilot</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@xterm/xterm@5.5.0/css/xterm.min.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="app">
+    <!-- Auth Screen -->
+    <div id="auth-screen" class="screen">
+      <div class="auth-container">
+        <h1>🤖 Jet Copilot</h1>
+        <p>Enter your access token</p>
+        <input type="password" id="token-input" placeholder="Token" autocomplete="off">
+        <button id="connect-btn" onclick="connect()">Connect</button>
+      </div>
+    </div>
+
+    <!-- Terminal Screen -->
+    <div id="terminal-screen" class="screen hidden">
+      <header>
+        <h1>🤖 Jet Copilot</h1>
+        <span id="status-dot" class="status-dot offline"></span>
+      </header>
+      <div id="terminal-container"></div>
+    </div>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/@xterm/xterm@5.5.0/lib/xterm.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@xterm/addon-fit@0.10.0/lib/addon-fit.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@xterm/addon-web-links@0.11.0/lib/addon-web-links.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
