@@ -103,6 +103,7 @@ function sendResize() {
 
 function sendKey(key) {
   if (!ws || ws.readyState !== WebSocket.OPEN) return;
+  if (key === 'reset') return; // handled by long-press logic
   const ESC = '\x1b';
   const keys = {
     'esc': ESC,
@@ -124,16 +125,48 @@ document.addEventListener('DOMContentLoaded', () => {
     const btn = e.target.closest('[data-key]');
     if (btn) {
       e.preventDefault();
-      sendKey(btn.dataset.key);
+      if (btn.dataset.key === 'reset') {
+        startResetHold(btn);
+      } else {
+        sendKey(btn.dataset.key);
+      }
     }
   }, { passive: false });
+
+  container.addEventListener('touchend', (e) => {
+    const btn = e.target.closest('[data-key]');
+    if (btn && btn.dataset.key === 'reset') {
+      e.preventDefault();
+      endResetHold();
+    }
+  }, { passive: false });
+
+  container.addEventListener('touchcancel', (e) => {
+    endResetHold();
+  });
 
   container.addEventListener('mousedown', (e) => {
     const btn = e.target.closest('[data-key]');
     if (btn) {
       e.preventDefault();
-      sendKey(btn.dataset.key);
+      if (btn.dataset.key === 'reset') {
+        startResetHold(btn);
+      } else {
+        sendKey(btn.dataset.key);
+      }
     }
+  });
+
+  container.addEventListener('mouseup', (e) => {
+    const btn = e.target.closest('[data-key]');
+    if (btn && btn.dataset.key === 'reset') {
+      e.preventDefault();
+      endResetHold();
+    }
+  });
+
+  container.addEventListener('mouseleave', () => {
+    endResetHold();
   });
 });
 
@@ -241,6 +274,47 @@ async function openPreview() {
 
 function closePreviewResult() {
   document.getElementById('preview-result').classList.add('hidden');
+}
+
+// Terminal reset (tap = soft, long-press = hard restart)
+let resetTimer = null;
+let resetTriggered = false;
+
+function startResetHold(btn) {
+  resetTriggered = false;
+  resetTimer = setTimeout(() => {
+    resetTriggered = true;
+    hardReset();
+  }, 1000);
+}
+
+function endResetHold() {
+  if (resetTimer) {
+    clearTimeout(resetTimer);
+    resetTimer = null;
+  }
+  if (!resetTriggered) {
+    softReset();
+  }
+}
+
+function softReset() {
+  if (!ws || ws.readyState !== WebSocket.OPEN) return;
+  // Send terminal reset escape sequence (RIS) to restore PTY state
+  ws.send(JSON.stringify({ type: 'input', content: '\x1bc' }));
+  if (term) {
+    term.reset();
+  }
+}
+
+function hardReset() {
+  if (!ws || ws.readyState !== WebSocket.OPEN) return;
+  if (!confirm('Copilot CLIを再起動しますか？')) return;
+  ws.send(JSON.stringify({ type: 'restart' }));
+  if (term) {
+    term.reset();
+    term.write('Restarting Copilot CLI...\r\n');
+  }
 }
 
 window.addEventListener('load', () => connect());

@@ -45,6 +45,14 @@ class CopilotRunner {
     }
   }
 
+  restart(cwd) {
+    if (this._pty) {
+      this._pty.kill();
+      this._pty = null;
+    }
+    this.start(cwd);
+  }
+
   cleanup() {
     if (this._pty) {
       this._pty.kill();
