@@ -19,6 +19,10 @@ function connect() {
     document.getElementById('status-dot').classList.add('online');
     document.getElementById('status-dot').classList.remove('offline');
 
+    // Show session ID in header
+    const label = document.getElementById('session-label');
+    if (label) label.textContent = `#${sessionId}`;
+
     // Initialize xterm.js
     if (!term) {
       term = new Terminal({
