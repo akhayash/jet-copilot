@@ -28,6 +28,7 @@ function connect() {
       term = new Terminal({
         cursorBlink: true,
         fontSize: 14,
+        scrollback: 5000,
         fontFamily: "'SF Mono', 'Fira Code', 'Cascadia Code', 'Menlo', monospace",
         theme: {
           background: '#0d1117',
@@ -50,9 +51,85 @@ function connect() {
       term.loadAddon(fitAddon);
       term.loadAddon(new WebLinksAddon.WebLinksAddon());
 
-      term.open(document.getElementById('terminal-container'));
+      const container = document.getElementById('terminal-container');
+      term.open(container);
       fitAddon.fit();
       sendResize();
+
+      // Custom scroll indicator (iOS Safari ignores CSS scrollbar styling)
+      const scrollTrack = document.createElement('div');
+      scrollTrack.className = 'scroll-track';
+      const scrollThumb = document.createElement('div');
+      scrollThumb.className = 'scroll-thumb';
+      scrollTrack.appendChild(scrollThumb);
+      container.appendChild(scrollTrack);
+
+      function updateScrollIndicator() {
+        try {
+          const buf = term.buffer.active;
+          const totalLines = buf.length;
+          const visibleRows = term.rows;
+          if (totalLines <= visibleRows) {
+            scrollTrack.style.display = 'none';
+            return;
+          }
+          scrollTrack.style.display = 'block';
+          const trackH = container.clientHeight - 8;
+          const thumbH = Math.max(20, (visibleRows / totalLines) * trackH);
+          const maxScroll = totalLines - visibleRows;
+          const scrollPos = buf.viewportY;
+          const thumbTop = maxScroll > 0 ? (scrollPos / maxScroll) * (trackH - thumbH) : 0;
+          scrollThumb.style.height = thumbH + 'px';
+          scrollThumb.style.transform = 'translateY(' + thumbTop + 'px)';
+        } catch (e) { /* ignore */ }
+      }
+
+      term.onScroll(() => updateScrollIndicator());
+      // Poll to catch new output (onRender/onWriteParsed may not fire in CDN build)
+      setInterval(updateScrollIndicator, 500);
+
+      // Workaround: xterm.js v6.0.0 touch scrolling is broken (#5489)
+      // Manually handle touch events on the terminal screen
+      const xtermScreen = container.querySelector('.xterm-screen');
+      if (xtermScreen) {
+        let touchStartY = 0;
+        let touchActive = false;
+        let accumulated = 0;
+
+        xtermScreen.addEventListener('touchstart', (e) => {
+          if (e.touches.length === 1) {
+            touchStartY = e.touches[0].clientY;
+            touchActive = true;
+            accumulated = 0;
+          }
+        }, { passive: true });
+
+        xtermScreen.addEventListener('touchmove', (e) => {
+          if (!touchActive || e.touches.length !== 1) return;
+          e.preventDefault();
+          const currentY = e.touches[0].clientY;
+          const delta = touchStartY - currentY;
+          accumulated += delta;
+          // Scroll by lines based on accumulated pixel movement
+          const lineH = Math.ceil(14 * 1.2);
+          const lines = Math.trunc(accumulated / lineH);
+          if (lines !== 0) {
+            term.scrollLines(lines);
+            accumulated -= lines * lineH;
+          }
+          touchStartY = currentY;
+        }, { passive: false });
+
+        xtermScreen.addEventListener('touchend', () => {
+          touchActive = false;
+        }, { passive: true });
+      }
+
+      // Re-fit after layout settles (fixes initial sizing on mobile)
+      requestAnimationFrame(() => {
+        fitAddon.fit();
+        sendResize();
+      });
 
       term.onData((data) => {
         if (ws && ws.readyState === WebSocket.OPEN) {
@@ -60,14 +137,26 @@ function connect() {
         }
       });
 
-      window.addEventListener('resize', () => {
-        if (fitAddon) { fitAddon.fit(); sendResize(); }
-      });
+      // Debounced fit helper
+      let fitTimer = null;
+      function debouncedFit() {
+        if (fitTimer) clearTimeout(fitTimer);
+        fitTimer = setTimeout(() => {
+          if (fitAddon) { fitAddon.fit(); sendResize(); }
+        }, 100);
+      }
+
+      // ResizeObserver: reliably tracks container size changes
+      const resizeObserver = new ResizeObserver(() => debouncedFit());
+      resizeObserver.observe(container);
+
+      // visualViewport: tracks mobile keyboard show/hide and browser chrome changes
+      if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', () => debouncedFit());
+      }
 
       window.addEventListener('orientationchange', () => {
-        setTimeout(() => {
-          if (fitAddon) { fitAddon.fit(); sendResize(); }
-        }, 200);
+        setTimeout(() => debouncedFit(), 200);
       });
     }
 
@@ -244,3 +333,15 @@ function closePreviewResult() {
 }
 
 window.addEventListener('load', () => connect());
+
+// iOS Safari: prevent page-level scroll while allowing xterm internal scroll
+document.addEventListener('touchmove', (e) => {
+  if (e.target.closest('.xterm-viewport') || e.target.closest('.xterm-screen')) {
+    return;
+  }
+  // Allow scroll in voice/preview bars and dashboard content
+  if (e.target.closest('.voice-bar') || e.target.closest('.dashboard-content') || e.target.closest('.folder-browser')) {
+    return;
+  }
+  e.preventDefault();
+}, { passive: false });
