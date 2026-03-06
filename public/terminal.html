@@ -14,11 +14,13 @@
     <div id="terminal-screen" class="screen">
       <header>
         <a href="/" class="back-link">←</a>
-        <h1>✈️ Jet Copilot</h1>
         <span id="session-label" class="session-label"></span>
         <div class="header-shortcuts">
           <button class="shortcut-btn" onclick="sendKey('\x1b')">ESC</button>
           <button class="shortcut-btn" onclick="sendKey('\x1b[Z')">Mode</button>
+          <button class="shortcut-btn" onclick="sendKey('\x1b[A')">↑</button>
+          <button class="shortcut-btn" onclick="sendKey('\x1b[B')">↓</button>
+          <button class="shortcut-btn" onclick="sendKey('\r')">Enter</button>
         </div>
         <span id="status-dot" class="status-dot offline"></span>
       </header>
