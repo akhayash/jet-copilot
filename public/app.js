@@ -3,8 +3,15 @@ let term = null;
 let fitAddon = null;
 
 function connect() {
+  const params = new URLSearchParams(window.location.search);
+  const sessionId = params.get('session');
+  if (!sessionId) {
+    window.location.href = '/';
+    return;
+  }
+
   const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
-  const url = `${proto}//${location.host}`;
+  const url = `${proto}//${location.host}?session=${encodeURIComponent(sessionId)}`;
 
   ws = new WebSocket(url);
 

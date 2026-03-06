@@ -6,22 +6,36 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>Jet Copilot</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@xterm/xterm@5.5.0/css/xterm.min.css">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <div id="app">
-    <div id="terminal-screen" class="screen">
+    <div class="dashboard">
       <header>
         <h1>✈️ Jet Copilot</h1>
-        <span id="status-dot" class="status-dot offline"></span>
+        <span id="server-status" class="server-status">
+          <span id="status-indicator" class="status-dot offline"></span>
+          <span id="status-text">Connecting...</span>
+        </span>
       </header>
-      <div id="terminal-container"></div>
+
+      <div class="dashboard-content">
+        <button id="new-session-btn" class="new-session-btn" onclick="createSession()">
+          + New Session
+        </button>
+
+        <section id="active-section" class="session-section hidden">
+          <h2>Active Sessions</h2>
+          <div id="active-sessions"></div>
+        </section>
+
+        <section id="past-section" class="session-section hidden">
+          <h2>Past Sessions</h2>
+          <div id="past-sessions"></div>
+        </section>
+      </div>
     </div>
   </div>
-  <script src="https://cdn.jsdelivr.net/npm/@xterm/xterm@5.5.0/lib/xterm.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@xterm/addon-fit@0.10.0/lib/addon-fit.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@xterm/addon-web-links@0.11.0/lib/addon-web-links.min.js"></script>
-  <script src="app.js"></script>
+  <script src="dashboard.js"></script>
 </body>
 </html>
