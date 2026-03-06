@@ -101,6 +101,12 @@ function sendResize() {
   }
 }
 
+function sendKey(key) {
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    ws.send(JSON.stringify({ type: 'input', content: key }));
+  }
+}
+
 function toggleVoiceInput() {
   const bar = document.getElementById('voice-bar');
   const btn = document.getElementById('voice-toggle');
