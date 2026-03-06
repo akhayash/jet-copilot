@@ -68,6 +68,21 @@ app.get('/api/browse', (req, res) => {
   }
 });
 
+// API: create directory
+app.post('/api/mkdir', (req, res) => {
+  const fs = require('fs');
+  const dirPath = req.body.path;
+  if (!dirPath) return res.status(400).json({ error: 'Path is required' });
+
+  const resolved = path.resolve(dirPath);
+  try {
+    fs.mkdirSync(resolved, { recursive: true });
+    res.json({ created: resolved });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
 // API: end session
 app.delete('/api/sessions/:id', (req, res) => {
   const session = sessions.get(req.params.id);

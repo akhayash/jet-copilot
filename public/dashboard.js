@@ -131,16 +131,20 @@ async function browseTo(dirPath) {
     currentEl.textContent = data.current;
 
     const sep = data.sep || '\\';
+
+    // Action bar
+    const actionsHtml = `<div class="folder-actions">
+      <button class="folder-action-btn" onclick="selectFolder()">Select</button>
+      <button class="folder-action-btn" onclick="createFolder('${escapeAttr(data.current)}', '${escapeAttr(sep)}')">+ New Folder</button>
+    </div>`;
+
     const listEl = document.getElementById('folder-list');
-    let html = '';
+    let html = actionsHtml;
 
     // Parent directory
     if (data.parent !== data.current) {
       html += `<div class="folder-item" onclick="browseTo('${escapeAttr(data.parent)}')">📂 ..</div>`;
     }
-
-    // Select current button
-    html += `<div class="folder-item folder-select" onclick="selectFolder()">✅ Select this folder</div>`;
 
     // Subdirectories
     for (const dir of data.directories) {
@@ -156,6 +160,29 @@ async function browseTo(dirPath) {
 
 function selectFolder() {
   document.getElementById('folder-browser').classList.add('hidden');
+}
+
+async function createFolder(parentPath, sep) {
+  const name = prompt('Folder name:');
+  if (!name) return;
+
+  const fullPath = parentPath + sep + name;
+  try {
+    const res = await fetch('/api/mkdir', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ path: fullPath }),
+    });
+    const data = await res.json();
+    if (data.error) {
+      alert(data.error);
+      return;
+    }
+    // Navigate into the new folder and select it
+    await browseTo(data.created);
+  } catch (err) {
+    alert('Failed to create folder: ' + err.message);
+  }
 }
 
 function escapeAttr(str) {
