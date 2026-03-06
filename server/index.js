@@ -152,6 +152,7 @@ wss.on('connection', (ws, req) => {
     try {
       const msg = JSON.parse(data.toString());
       if (msg.type === 'input' && session.runner) {
+        console.log(`[ws] input: ${JSON.stringify(msg.content)}`);
         session.runner.write(msg.content);
       } else if (msg.type === 'resize' && session.runner) {
         session.runner.resize(msg.cols, msg.rows);
