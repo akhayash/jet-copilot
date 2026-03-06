@@ -25,7 +25,19 @@
         <span id="status-dot" class="status-dot offline"></span>
       </header>
       <div id="terminal-container"></div>
-      <button id="voice-toggle" class="voice-toggle" onclick="toggleVoiceInput()">🎙</button>
+      <div class="floating-buttons">
+        <button id="preview-toggle" class="voice-toggle" onclick="togglePreviewInput()">🔗</button>
+        <button id="voice-toggle" class="voice-toggle" onclick="toggleVoiceInput()">🎙</button>
+      </div>
+      <div id="preview-bar" class="voice-bar hidden">
+        <input type="number" id="preview-port-input" class="voice-input" placeholder="Port (e.g. 3001)" min="1" max="65535">
+        <button class="voice-send" onclick="openPreview()">Open</button>
+        <button class="voice-close" onclick="togglePreviewInput()">✕</button>
+      </div>
+      <div id="preview-result" class="voice-bar hidden">
+        <a id="preview-url-link" class="preview-result-url" href="#" target="_blank"></a>
+        <button class="voice-close" onclick="closePreviewResult()">✕</button>
+      </div>
       <div id="voice-bar" class="voice-bar hidden">
         <input type="text" id="voice-input" class="voice-input" placeholder="Voice input...">
         <button class="voice-send" onclick="sendVoiceInput()">Send</button>
