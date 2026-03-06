@@ -74,9 +74,17 @@ The terminal will display:
 - **Connect**: Connect to an existing active session
 - **End**: Terminate a session
 - Folder picker for tap-to-select directory navigation (no manual typing)
+- **New Folder**: Create a new directory directly from the folder picker
 - Run multiple sessions across different repositories simultaneously
 
-### 4. Local Service Preview
+### 4. Terminal Features
+
+- Full interactive terminal via [xterm.js](https://xtermjs.org/) v6
+- **ESC button**: Tap to send Escape key (cancel Copilot operations)
+- **Mode button**: Tap to send Shift+Tab (switch Copilot CLI modes)
+- **🎙 Voice input**: Floating mic button to dictate text via speech-to-text, then send to terminal — avoids mobile IME issues
+
+### 5. Local Service Preview
 
 Preview web services you're developing with Copilot CLI directly on your device.
 
