@@ -130,13 +130,14 @@ async function browseTo(dirPath) {
     const currentEl = document.getElementById('folder-current');
     currentEl.textContent = data.current;
 
+    const sep = data.sep || '\\';
+
     // Action bar
     const actionsHtml = `<div class="folder-actions">
       <button class="folder-action-btn select" onclick="selectFolder()">✅ Select</button>
       <button class="folder-action-btn create" onclick="createFolder('${escapeAttr(data.current)}', '${escapeAttr(sep)}')">➕ New Folder</button>
     </div>`;
 
-    const sep = data.sep || '\\';
     const listEl = document.getElementById('folder-list');
     let html = actionsHtml;
 
