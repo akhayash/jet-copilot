@@ -130,20 +130,20 @@ async function browseTo(dirPath) {
     const currentEl = document.getElementById('folder-current');
     currentEl.textContent = data.current;
 
+    // Action bar
+    const actionsHtml = `<div class="folder-actions">
+      <button class="folder-action-btn select" onclick="selectFolder()">✅ Select</button>
+      <button class="folder-action-btn create" onclick="createFolder('${escapeAttr(data.current)}', '${escapeAttr(sep)}')">➕ New Folder</button>
+    </div>`;
+
     const sep = data.sep || '\\';
     const listEl = document.getElementById('folder-list');
-    let html = '';
+    let html = actionsHtml;
 
     // Parent directory
     if (data.parent !== data.current) {
       html += `<div class="folder-item" onclick="browseTo('${escapeAttr(data.parent)}')">📂 ..</div>`;
     }
-
-    // Select current button
-    html += `<div class="folder-item folder-select" onclick="selectFolder()">✅ Select this folder</div>`;
-
-    // New folder button
-    html += `<div class="folder-item folder-select" onclick="createFolder('${escapeAttr(data.current)}', '${escapeAttr(sep)}')">➕ New Folder</div>`;
 
     // Subdirectories
     for (const dir of data.directories) {

@@ -265,6 +265,35 @@ header h1 { font-size: 1.1rem; flex: 1; }
   word-break: break-all;
 }
 
+.folder-actions {
+  display: flex;
+  gap: 8px;
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+.folder-action-btn {
+  flex: 1;
+  padding: 8px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+}
+
+.folder-action-btn.select {
+  background: var(--accent);
+  color: #fff;
+}
+
+.folder-action-btn.create {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text);
+}
+
+.folder-action-btn:active { opacity: 0.8; }
+
 .folder-item {
   padding: 10px 14px;
   font-size: 14px;
@@ -275,11 +304,6 @@ header h1 { font-size: 1.1rem; flex: 1; }
 .folder-item:active { background: rgba(88, 166, 255, 0.1); }
 
 .folder-item:last-child { border-bottom: none; }
-
-.folder-select {
-  color: var(--accent);
-  font-weight: 600;
-}
 
 /* Session actions */
 .session-actions {
