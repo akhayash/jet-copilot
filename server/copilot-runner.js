@@ -45,6 +45,29 @@ class CopilotRunner {
     }
   }
 
+  // Soft reset: interrupt current process and reset terminal state
+  reset() {
+    if (this._pty) {
+      this._pty.write('\x03');        // Ctrl+C to interrupt
+      setTimeout(() => {
+        if (this._pty) {
+          this._pty.write('\x1bc');   // Reset terminal state
+        }
+      }, 100);
+    }
+  }
+
+  // Hard reset: kill PTY and respawn copilot
+  restart(cwd) {
+    const cols = this._pty ? this._pty.cols : 80;
+    const rows = this._pty ? this._pty.rows : 24;
+    this.cleanup();
+    this.start(cwd);
+    if (this._pty) {
+      this._pty.resize(cols, rows);
+    }
+  }
+
   cleanup() {
     if (this._pty) {
       this._pty.kill();

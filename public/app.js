@@ -115,6 +115,32 @@ function sendKey(key) {
   ws.send(JSON.stringify({ type: 'input', content }));
 }
 
+function resetTerminal() {
+  if (term) term.reset();
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    ws.send(JSON.stringify({ type: 'reset' }));
+  }
+  setTimeout(() => {
+    if (term) term.focus();
+    sendResize();
+  }, 200);
+}
+
+function restartTerminal() {
+  if (!confirm('Copilotを再起動しますか？（セッション状態が失われます）')) return;
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    ws.send(JSON.stringify({ type: 'restart' }));
+  }
+  if (term) {
+    term.reset();
+    term.write('[Restarting Copilot...]\r\n');
+    setTimeout(() => {
+      term.focus();
+      sendResize();
+    }, 500);
+  }
+}
+
 // Attach shortcut buttons via JS to avoid focus issues
 document.addEventListener('DOMContentLoaded', () => {
   const container = document.getElementById('shortcuts');
@@ -135,6 +161,31 @@ document.addEventListener('DOMContentLoaded', () => {
       sendKey(btn.dataset.key);
     }
   });
+
+  // Long-press on Reset button triggers hard restart
+  const resetBtn = container.querySelector('.reset-btn');
+  if (resetBtn) {
+    let longPressTimer = null;
+    const startLongPress = (e) => {
+      longPressTimer = setTimeout(() => {
+        longPressTimer = null;
+        e.preventDefault();
+        restartTerminal();
+      }, 1000);
+    };
+    const cancelLongPress = () => {
+      if (longPressTimer) {
+        clearTimeout(longPressTimer);
+        longPressTimer = null;
+      }
+    };
+    resetBtn.addEventListener('touchstart', startLongPress, { passive: false });
+    resetBtn.addEventListener('touchend', cancelLongPress);
+    resetBtn.addEventListener('touchcancel', cancelLongPress);
+    resetBtn.addEventListener('mousedown', startLongPress);
+    resetBtn.addEventListener('mouseup', cancelLongPress);
+    resetBtn.addEventListener('mouseleave', cancelLongPress);
+  }
 });
 
 function toggleVoiceInput() {

@@ -156,6 +156,12 @@ wss.on('connection', (ws, req) => {
         session.runner.write(msg.content);
       } else if (msg.type === 'resize' && session.runner) {
         session.runner.resize(msg.cols, msg.rows);
+      } else if (msg.type === 'reset' && session.runner) {
+        console.log(`[ws] Terminal reset requested for session ${sessionId}`);
+        session.runner.reset();
+      } else if (msg.type === 'restart' && session.runner) {
+        console.log(`[ws] Terminal restart requested for session ${sessionId}`);
+        session.runner.restart(session.cwd);
       }
     } catch {
       if (session.runner) session.runner.write(data.toString());
