@@ -102,9 +102,17 @@ function sendResize() {
 }
 
 function sendKey(key) {
-  if (ws && ws.readyState === WebSocket.OPEN) {
-    ws.send(JSON.stringify({ type: 'input', content: key }));
-  }
+  if (!ws || ws.readyState !== WebSocket.OPEN) return;
+  const ESC = '\x1b';
+  const keys = {
+    'esc': ESC,
+    'mode': ESC + '[Z',
+    'up': ESC + '[A',
+    'down': ESC + '[B',
+    'enter': '\r',
+  };
+  const content = keys[key] || key;
+  ws.send(JSON.stringify({ type: 'input', content }));
 }
 
 function toggleVoiceInput() {
