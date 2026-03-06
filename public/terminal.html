@@ -19,6 +19,12 @@
         <span id="status-dot" class="status-dot offline"></span>
       </header>
       <div id="terminal-container"></div>
+      <button id="voice-toggle" class="voice-toggle" onclick="toggleVoiceInput()">🎤</button>
+      <div id="voice-bar" class="voice-bar hidden">
+        <input type="text" id="voice-input" class="voice-input" placeholder="Voice input...">
+        <button class="voice-send" onclick="sendVoiceInput()">Send</button>
+        <button class="voice-close" onclick="toggleVoiceInput()">✕</button>
+      </div>
     </div>
   </div>
   <script src="https://cdn.jsdelivr.net/npm/@xterm/xterm@6.0.0/lib/xterm.js"></script>

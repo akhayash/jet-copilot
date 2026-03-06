@@ -101,4 +101,43 @@ function sendResize() {
   }
 }
 
+function toggleVoiceInput() {
+  const bar = document.getElementById('voice-bar');
+  const btn = document.getElementById('voice-toggle');
+  const input = document.getElementById('voice-input');
+
+  if (bar.classList.contains('hidden')) {
+    bar.classList.remove('hidden');
+    btn.classList.add('hidden');
+    input.focus();
+  } else {
+    bar.classList.add('hidden');
+    btn.classList.remove('hidden');
+    if (term) term.focus();
+  }
+}
+
+function sendVoiceInput() {
+  const input = document.getElementById('voice-input');
+  const text = input.value;
+  if (!text || !ws || ws.readyState !== WebSocket.OPEN) return;
+
+  ws.send(JSON.stringify({ type: 'input', content: text + '\r' }));
+  input.value = '';
+  toggleVoiceInput();
+}
+
+// Allow Enter to send from voice input
+document.addEventListener('DOMContentLoaded', () => {
+  const input = document.getElementById('voice-input');
+  if (input) {
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        sendVoiceInput();
+      }
+    });
+  }
+});
+
 window.addEventListener('load', () => connect());
