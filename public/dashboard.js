@@ -5,10 +5,17 @@ async function loadStatus() {
 
     const dot = document.getElementById('status-indicator');
     const text = document.getElementById('status-text');
+    const cwdInput = document.getElementById('cwd-input');
 
     dot.classList.remove('offline');
     dot.classList.add('online');
     text.textContent = `Online · up ${formatUptime(status.uptime)}`;
+
+    // Set default cwd as placeholder
+    if (status.defaultCwd && !cwdInput.dataset.loaded) {
+      cwdInput.placeholder = status.defaultCwd;
+      cwdInput.dataset.loaded = 'true';
+    }
   } catch {
     document.getElementById('status-text').textContent = 'Offline';
   }
@@ -47,6 +54,7 @@ function renderSessions(sectionId, containerId, sessions, showConnect) {
       ? `<button class="connect-btn" onclick="connectSession('${s.id}')">Connect →</button>`
       : '';
     const clients = s.clientCount > 0 ? `<span class="client-badge">${s.clientCount} connected</span>` : '';
+    const cwdLabel = s.cwd ? `<div class="session-cwd">📁 ${s.cwd}</div>` : '';
 
     return `
       <div class="session-card">
@@ -54,6 +62,7 @@ function renderSessions(sectionId, containerId, sessions, showConnect) {
           <span class="session-id">${statusIcon} Session #${s.id}</span>
           ${clients}
         </div>
+        ${cwdLabel}
         <div class="session-time">${time}${endTime}</div>
         ${connectBtn}
       </div>
@@ -63,7 +72,14 @@ function renderSessions(sectionId, containerId, sessions, showConnect) {
 
 async function createSession() {
   try {
-    const res = await fetch('/api/sessions', { method: 'POST' });
+    const cwdInput = document.getElementById('cwd-input');
+    const cwd = cwdInput.value.trim() || undefined;
+    const body = cwd ? JSON.stringify({ cwd }) : '{}';
+    const res = await fetch('/api/sessions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body,
+    });
     const { id } = await res.json();
     window.location.href = `/terminal?session=${id}`;
   } catch (err) {

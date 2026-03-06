@@ -6,11 +6,12 @@ class SessionManager {
     this._startTime = Date.now();
   }
 
-  create() {
+  create(cwd) {
     const id = crypto.randomBytes(2).toString('hex');
     const session = {
       id,
       status: 'active',
+      cwd: cwd || process.cwd(),
       startedAt: new Date().toISOString(),
       endedAt: null,
       clients: new Set(),
@@ -28,6 +29,7 @@ class SessionManager {
     return Array.from(this._sessions.values()).map((s) => ({
       id: s.id,
       status: s.status,
+      cwd: s.cwd,
       startedAt: s.startedAt,
       endedAt: s.endedAt,
       clientCount: s.clients.size,
@@ -67,6 +69,7 @@ class SessionManager {
     return {
       online: true,
       uptime: Date.now() - this._startTime,
+      defaultCwd: process.cwd(),
       activeSessions: sessions.filter((s) => s.status === 'active').length,
       totalSessions: sessions.length,
     };

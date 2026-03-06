@@ -6,13 +6,13 @@ class CopilotRunner {
     this._onData = onData;
   }
 
-  start() {
+  start(cwd) {
     // node-pty on Windows needs cmd.exe to resolve PATH
     this._pty = pty.spawn('cmd.exe', ['/c', 'copilot'], {
       name: 'xterm-256color',
       cols: 80,
       rows: 24,
-      cwd: process.cwd(),
+      cwd: cwd || process.cwd(),
       env: { ...process.env },
     });
 

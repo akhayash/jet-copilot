@@ -20,9 +20,12 @@
       </header>
 
       <div class="dashboard-content">
-        <button id="new-session-btn" class="new-session-btn" onclick="createSession()">
-          + New Session
-        </button>
+        <div class="new-session-group">
+          <input type="text" id="cwd-input" class="cwd-input" placeholder="Working directory (default: server cwd)">
+          <button id="new-session-btn" class="new-session-btn" onclick="createSession()">
+            + New Session
+          </button>
+        </div>
 
         <section id="active-section" class="session-section hidden">
           <h2>Active Sessions</h2>

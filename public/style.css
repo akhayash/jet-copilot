@@ -83,17 +83,37 @@ header h1 { font-size: 1.1rem; flex: 1; }
   -webkit-overflow-scrolling: touch;
 }
 
+.new-session-group {
+  margin-bottom: 24px;
+}
+
+.cwd-input {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px 10px 0 0;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 14px;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  outline: none;
+}
+
+.cwd-input:focus { border-color: var(--accent); }
+
+.cwd-input::placeholder { color: var(--text-muted); font-family: inherit; }
+
 .new-session-btn {
   width: 100%;
   padding: 14px;
   border: 2px dashed var(--border);
-  border-radius: 12px;
+  border-top: none;
+  border-radius: 0 0 12px 12px;
   background: transparent;
   color: var(--accent);
   font-size: 16px;
   font-weight: 600;
   cursor: pointer;
-  margin-bottom: 24px;
   transition: all 0.2s;
 }
 
@@ -146,6 +166,16 @@ header h1 { font-size: 1.1rem; flex: 1; }
   font-size: 13px;
   color: var(--text-muted);
   margin-bottom: 8px;
+}
+
+.session-cwd {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  margin-bottom: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .connect-btn {

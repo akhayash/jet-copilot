@@ -36,8 +36,9 @@ app.get('/api/sessions', (_req, res) => {
 });
 
 // API: create new session
-app.post('/api/sessions', (_req, res) => {
-  const session = sessions.create();
+app.post('/api/sessions', (req, res) => {
+  const cwd = req.body.cwd || undefined;
+  const session = sessions.create(cwd);
   res.json({ id: session.id });
 });
 
@@ -69,7 +70,7 @@ wss.on('connection', (ws, req) => {
         }
       }
     });
-    session.runner.start();
+    session.runner.start(session.cwd);
   }
 
   ws.on('message', (data) => {
