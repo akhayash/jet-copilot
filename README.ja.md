@@ -27,6 +27,10 @@
   - Linux: `curl -sL https://aka.ms/DevTunnelCliInstall | bash`
   - 認証: `devtunnel user login -g` (GitHubアカウント)
 - **Windows / macOS / Linux**
+- **ビルドツール** (node-ptyのネイティブコンパイルに必要、`npm install`時に使用):
+  - Windows: [Visual Studio Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/)（C++ワークロード）
+  - macOS: `xcode-select --install`
+  - Linux: `sudo apt install build-essential`
 
 ## セットアップ
 
@@ -55,6 +59,8 @@ devtunnel user login -g    # GitHubアカウント
 
 ```bash
 node server/index.js
+# または
+npm start
 ```
 
 ターミナルに以下が表示されます：

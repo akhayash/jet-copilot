@@ -27,6 +27,10 @@ Browser (any device)  ── HTTPS ──  Dev Tunnels (Microsoft Cloud)  ──
   - Linux: `curl -sL https://aka.ms/DevTunnelCliInstall | bash`
   - Auth: `devtunnel user login -g` (GitHub account)
 - **Windows / macOS / Linux**
+- **Build tools** (required by node-pty for native compilation during `npm install`):
+  - Windows: [Visual Studio Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/) with C++ workload
+  - macOS: `xcode-select --install`
+  - Linux: `sudo apt install build-essential`
 
 ## Setup
 
@@ -55,6 +59,8 @@ devtunnel user login -g    # GitHub account
 
 ```bash
 node server/index.js
+# or
+npm start
 ```
 
 The terminal will display:
