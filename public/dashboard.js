@@ -142,14 +142,14 @@ async function browseTo(dirPath) {
     // Select current button
     html += `<div class="folder-item folder-select" onclick="selectFolder()">✅ Select this folder</div>`;
 
+    // New folder button
+    html += `<div class="folder-item folder-select" onclick="createFolder('${escapeAttr(data.current)}', '${escapeAttr(sep)}')">➕ New Folder</div>`;
+
     // Subdirectories
     for (const dir of data.directories) {
       const full = data.current + sep + dir;
       html += `<div class="folder-item" onclick="browseTo('${escapeAttr(full)}')">📁 ${dir}</div>`;
     }
-
-    // New folder button
-    html += `<div class="folder-item folder-select" onclick="createFolder('${escapeAttr(data.current)}', '${escapeAttr(sep)}')">➕ New Folder</div>`;
 
     listEl.innerHTML = html;
   } catch (err) {
