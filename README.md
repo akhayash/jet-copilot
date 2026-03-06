@@ -1,4 +1,4 @@
-# 🤖 Jet Copilot
+# ✈️ Jet Copilot
 
 iPhoneのブラウザからGitHub Copilot CLIをリモート操作するWebアプリ。
 
