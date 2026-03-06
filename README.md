@@ -80,8 +80,11 @@ The terminal will display:
 ### 4. Terminal Features
 
 - Full interactive terminal via [xterm.js](https://xtermjs.org/) v6
-- **ESC button**: Tap to send Escape key (cancel Copilot operations)
-- **Mode button**: Tap to send Shift+Tab (switch Copilot CLI modes)
+- **Shortcut buttons** in the header (always accessible):
+  - **ESC**: Cancel Copilot operations
+  - **Mode**: Switch Copilot CLI modes (Shift+Tab)
+  - **↑ ↓**: Navigate menus and selection lists
+  - **Enter**: Confirm selection
 - **🎙 Voice input**: Floating mic button to dictate text via speech-to-text, then send to terminal — avoids mobile IME issues
 
 ### 5. Local Service Preview
