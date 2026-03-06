@@ -51,7 +51,10 @@ function renderSessions(sectionId, containerId, sessions, showConnect) {
     const endTime = s.endedAt ? ` – ${formatTime(s.endedAt)}` : '';
     const statusIcon = s.status === 'active' ? '🟢' : '⚫';
     const connectBtn = showConnect
-      ? `<button class="connect-btn" onclick="connectSession('${s.id}')">Connect →</button>`
+      ? `<div class="session-actions">
+           <button class="connect-btn" onclick="connectSession('${s.id}')">Connect →</button>
+           <button class="end-btn" onclick="endSession('${s.id}')">End</button>
+         </div>`
       : '';
     const clients = s.clientCount > 0 ? `<span class="client-badge">${s.clientCount} connected</span>` : '';
     const cwdLabel = s.cwd ? `<div class="session-cwd">📁 ${s.cwd}</div>` : '';
@@ -89,6 +92,73 @@ async function createSession() {
 
 function connectSession(id) {
   window.location.href = `/terminal?session=${id}`;
+}
+
+async function endSession(id) {
+  if (!confirm(`Session #${id} を終了しますか？`)) return;
+  try {
+    await fetch(`/api/sessions/${id}`, { method: 'DELETE' });
+    loadSessions();
+  } catch (err) {
+    alert('Failed to end session: ' + err.message);
+  }
+}
+
+// Folder browser
+async function openBrowser() {
+  const browser = document.getElementById('folder-browser');
+  const cwdInput = document.getElementById('cwd-input');
+  const startPath = cwdInput.value || undefined;
+
+  browser.classList.remove('hidden');
+  await browseTo(startPath);
+}
+
+async function browseTo(dirPath) {
+  try {
+    const query = dirPath ? `?path=${encodeURIComponent(dirPath)}` : '';
+    const res = await fetch(`/api/browse${query}`);
+    const data = await res.json();
+
+    if (data.error) {
+      alert(data.error);
+      return;
+    }
+
+    document.getElementById('cwd-input').value = data.current;
+
+    const currentEl = document.getElementById('folder-current');
+    currentEl.textContent = data.current;
+
+    const listEl = document.getElementById('folder-list');
+    let html = '';
+
+    // Parent directory
+    if (data.parent !== data.current) {
+      html += `<div class="folder-item" onclick="browseTo('${escapeAttr(data.parent)}')">📂 ..</div>`;
+    }
+
+    // Select current button
+    html += `<div class="folder-item folder-select" onclick="selectFolder()">✅ Select this folder</div>`;
+
+    // Subdirectories
+    for (const dir of data.directories) {
+      const full = data.current + '\\\\' + dir;
+      html += `<div class="folder-item" onclick="browseTo('${escapeAttr(full)}')">📁 ${dir}</div>`;
+    }
+
+    listEl.innerHTML = html;
+  } catch (err) {
+    alert('Browse error: ' + err.message);
+  }
+}
+
+function selectFolder() {
+  document.getElementById('folder-browser').classList.add('hidden');
+}
+
+function escapeAttr(str) {
+  return str.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
 }
 
 function formatUptime(ms) {

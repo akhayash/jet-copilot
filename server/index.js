@@ -42,6 +42,37 @@ app.post('/api/sessions', (req, res) => {
   res.json({ id: session.id });
 });
 
+// API: browse directories
+app.get('/api/browse', (req, res) => {
+  const fs = require('fs');
+  const target = req.query.path || process.cwd();
+  const resolved = path.resolve(target);
+
+  try {
+    const entries = fs.readdirSync(resolved, { withFileTypes: true });
+    const dirs = entries
+      .filter((e) => e.isDirectory() && !e.name.startsWith('.') && e.name !== 'node_modules')
+      .map((e) => e.name)
+      .sort();
+
+    res.json({
+      current: resolved,
+      parent: path.dirname(resolved),
+      directories: dirs,
+    });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// API: end session
+app.delete('/api/sessions/:id', (req, res) => {
+  const session = sessions.get(req.params.id);
+  if (!session) return res.status(404).json({ error: 'Session not found' });
+  sessions.end(req.params.id);
+  res.json({ ok: true });
+});
+
 // Health check
 app.get('/health', (_req, res) => res.json({ status: 'ok' }));
 

@@ -21,7 +21,14 @@
 
       <div class="dashboard-content">
         <div class="new-session-group">
-          <input type="text" id="cwd-input" class="cwd-input" placeholder="Working directory (default: server cwd)">
+          <div class="cwd-picker">
+            <input type="text" id="cwd-input" class="cwd-input" placeholder="Working directory" readonly onclick="openBrowser()">
+            <button class="browse-btn" onclick="openBrowser()">📁</button>
+          </div>
+          <div id="folder-browser" class="folder-browser hidden">
+            <div id="folder-current" class="folder-current"></div>
+            <div id="folder-list" class="folder-list"></div>
+          </div>
           <button id="new-session-btn" class="new-session-btn" onclick="createSession()">
             + New Session
           </button>

@@ -87,16 +87,32 @@ header h1 { font-size: 1.1rem; flex: 1; }
   margin-bottom: 24px;
 }
 
+.cwd-picker {
+  display: flex;
+  gap: 0;
+}
+
 .cwd-input {
-  width: 100%;
+  flex: 1;
   padding: 10px 14px;
   border: 1px solid var(--border);
-  border-radius: 10px 10px 0 0;
+  border-radius: 10px 0 0 0;
   background: var(--surface);
   color: var(--text);
   font-size: 14px;
   font-family: 'SF Mono', 'Fira Code', monospace;
   outline: none;
+  cursor: pointer;
+}
+
+.browse-btn {
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-left: none;
+  border-radius: 0 10px 0 0;
+  background: var(--surface);
+  font-size: 16px;
+  cursor: pointer;
 }
 
 .cwd-input:focus { border-color: var(--accent); }
@@ -179,7 +195,7 @@ header h1 { font-size: 1.1rem; flex: 1; }
 }
 
 .connect-btn {
-  width: 100%;
+  flex: 1;
   padding: 8px;
   border: 1px solid var(--accent);
   border-radius: 8px;
@@ -197,3 +213,62 @@ header h1 { font-size: 1.1rem; flex: 1; }
 }
 
 .hidden { display: none !important; }
+
+/* Folder browser */
+.folder-browser {
+  border: 1px solid var(--border);
+  border-top: none;
+  border-radius: 0 0 10px 10px;
+  background: var(--surface);
+  max-height: 250px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  margin-bottom: -1px;
+}
+
+.folder-current {
+  padding: 8px 14px;
+  font-size: 12px;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border);
+  word-break: break-all;
+}
+
+.folder-item {
+  padding: 10px 14px;
+  font-size: 14px;
+  cursor: pointer;
+  border-bottom: 1px solid rgba(48, 54, 61, 0.5);
+}
+
+.folder-item:active { background: rgba(88, 166, 255, 0.1); }
+
+.folder-item:last-child { border-bottom: none; }
+
+.folder-select {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+/* Session actions */
+.session-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.end-btn {
+  padding: 8px 16px;
+  border: 1px solid var(--danger);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--danger);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.end-btn:active {
+  background: var(--danger);
+  color: #fff;
+}
