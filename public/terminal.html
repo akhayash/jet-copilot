@@ -16,11 +16,11 @@
         <a href="/" class="back-link">←</a>
         <span id="session-label" class="session-label"></span>
         <div class="header-shortcuts">
-          <button class="shortcut-btn" onclick="sendKey('esc')">ESC</button>
-          <button class="shortcut-btn" onclick="sendKey('mode')">Mode</button>
-          <button class="shortcut-btn" onclick="sendKey('up')">↑</button>
-          <button class="shortcut-btn" onclick="sendKey('down')">↓</button>
-          <button class="shortcut-btn" onclick="sendKey('enter')">Enter</button>
+          <button class="shortcut-btn" onmousedown="event.preventDefault()" ontouchstart="event.preventDefault()" onclick="sendKey('esc')">ESC</button>
+          <button class="shortcut-btn" onmousedown="event.preventDefault()" ontouchstart="event.preventDefault()" onclick="sendKey('mode')">Mode</button>
+          <button class="shortcut-btn" onmousedown="event.preventDefault()" ontouchstart="event.preventDefault()" onclick="sendKey('up')">↑</button>
+          <button class="shortcut-btn" onmousedown="event.preventDefault()" ontouchstart="event.preventDefault()" onclick="sendKey('down')">↓</button>
+          <button class="shortcut-btn" onmousedown="event.preventDefault()" ontouchstart="event.preventDefault()" onclick="sendKey('enter')">Enter</button>
         </div>
         <span id="status-dot" class="status-dot offline"></span>
       </header>
