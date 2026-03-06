@@ -134,8 +134,8 @@ async function browseTo(dirPath) {
 
     // Action bar
     const actionsHtml = `<div class="folder-actions">
-      <button class="folder-action-btn select" onclick="selectFolder()">✅ Select</button>
-      <button class="folder-action-btn create" onclick="createFolder('${escapeAttr(data.current)}', '${escapeAttr(sep)}')">➕ New Folder</button>
+      <button class="folder-action-btn" onclick="selectFolder()">Select</button>
+      <button class="folder-action-btn" onclick="createFolder('${escapeAttr(data.current)}', '${escapeAttr(sep)}')">+ New Folder</button>
     </div>`;
 
     const listEl = document.getElementById('folder-list');
