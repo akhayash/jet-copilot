@@ -24,46 +24,6 @@ html, body {
 }
 
 .screen { display: flex; flex-direction: column; height: 100%; }
-.hidden { display: none !important; }
-
-/* Auth */
-.auth-container {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 2rem;
-  gap: 1rem;
-}
-
-.auth-container h1 { font-size: 2rem; }
-.auth-container p { color: var(--text-muted); }
-
-.auth-container input {
-  width: 100%;
-  max-width: 300px;
-  padding: 12px 16px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--surface);
-  color: var(--text);
-  font-size: 16px;
-  outline: none;
-}
-
-.auth-container input:focus { border-color: var(--accent); }
-
-.auth-container button {
-  padding: 12px 32px;
-  border: none;
-  border-radius: 8px;
-  background: var(--accent);
-  color: #fff;
-  font-size: 16px;
-  font-weight: 600;
-  cursor: pointer;
-}
 
 /* Header */
 header {

@@ -4,7 +4,6 @@ const express = require('express');
 const http = require('http');
 const { WebSocketServer } = require('ws');
 const path = require('path');
-const { authenticate } = require('./auth');
 const { CopilotRunner } = require('./copilot-runner');
 const { startTunnel } = require('./tunnel');
 
@@ -22,16 +21,6 @@ app.get('/health', (_req, res) => res.json({ status: 'ok' }));
 
 // WebSocket connection
 wss.on('connection', (ws, req) => {
-  // Authenticate
-  const url = new URL(req.url, `http://localhost:${PORT}`);
-  const token = url.searchParams.get('token');
-
-  if (!authenticate(token)) {
-    ws.send(JSON.stringify({ type: 'error', content: 'Unauthorized' }));
-    ws.close(4001, 'Unauthorized');
-    return;
-  }
-
   console.log('[ws] Client connected');
 
   // Stream PTY output to WebSocket
