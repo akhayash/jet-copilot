@@ -182,6 +182,65 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   }
+
+  const portInput = document.getElementById('preview-port-input');
+  if (portInput) {
+    portInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        openPreview();
+      }
+    });
+  }
 });
+
+// Preview from terminal
+function togglePreviewInput() {
+  const bar = document.getElementById('preview-bar');
+  const btn = document.getElementById('preview-toggle');
+  const input = document.getElementById('preview-port-input');
+
+  if (bar.classList.contains('hidden')) {
+    bar.classList.remove('hidden');
+    btn.classList.add('hidden');
+    input.focus();
+  } else {
+    bar.classList.add('hidden');
+    btn.classList.remove('hidden');
+    if (term) term.focus();
+  }
+}
+
+async function openPreview() {
+  const input = document.getElementById('preview-port-input');
+  const port = parseInt(input.value, 10);
+  if (!port) return;
+
+  input.disabled = true;
+  try {
+    const res = await fetch('/api/preview', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ port }),
+    });
+    const data = await res.json();
+    input.value = '';
+    togglePreviewInput();
+
+    if (data.url) {
+      const link = document.getElementById('preview-url-link');
+      link.href = data.url;
+      link.textContent = data.url;
+      document.getElementById('preview-result').classList.remove('hidden');
+    }
+  } catch (err) {
+    alert('Preview failed: ' + err.message);
+  }
+  input.disabled = false;
+}
+
+function closePreviewResult() {
+  document.getElementById('preview-result').classList.add('hidden');
+}
 
 window.addEventListener('load', () => connect());
