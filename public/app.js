@@ -126,7 +126,11 @@ function sendVoiceInput() {
     return;
   }
 
-  ws.send(JSON.stringify({ type: 'input', content: text + '\n' }));
+  // Send text, then Enter as separate write to ensure PTY processes it
+  ws.send(JSON.stringify({ type: 'input', content: text }));
+  setTimeout(() => {
+    ws.send(JSON.stringify({ type: 'input', content: '\r' }));
+  }, 50);
   input.value = '';
   toggleVoiceInput();
 }
