@@ -37,6 +37,10 @@ cd jet-copilot
 
 # 2. 依存パッケージインストール
 npm install
+
+# 3. Dev Tunnelsにログイン（初回のみ）
+devtunnel user login -g    # GitHubアカウント
+# または: devtunnel user login -m  (Microsoftアカウント)
 ```
 
 ### `.env` の設定（オプション）
