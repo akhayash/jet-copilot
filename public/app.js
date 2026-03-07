@@ -299,12 +299,17 @@ function endResetHold() {
 }
 
 function softReset() {
-  if (!ws || ws.readyState !== WebSocket.OPEN) return;
-  // Send terminal reset escape sequence (RIS) to restore PTY state
-  ws.send(JSON.stringify({ type: 'input', content: '\x1bc' }));
-  if (term) {
-    term.reset();
-  }
+  if (!ws || ws.readyState !== WebSocket.OPEN || !term) return;
+  term.reset();
+  fitAddon.fit();
+  term.focus();
+  // Force TUI redraw by triggering a resize (SIGWINCH)
+  const cols = term.cols;
+  const rows = term.rows;
+  ws.send(JSON.stringify({ type: 'resize', cols, rows: rows - 1 }));
+  setTimeout(() => {
+    ws.send(JSON.stringify({ type: 'resize', cols, rows }));
+  }, 50);
 }
 
 function hardReset() {
@@ -314,6 +319,7 @@ function hardReset() {
   if (term) {
     term.reset();
     term.write('Restarting Copilot CLI...\r\n');
+    term.focus();
   }
 }
 
