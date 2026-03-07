@@ -121,7 +121,6 @@ app.post('/api/upload', (req, res) => {
       const filePath = path.join(uploadDir, filename);
 
       fs.writeFileSync(filePath, req.file.buffer);
-      console.log(`[upload] saved: ${filePath}`);
       res.json({ path: filePath });
     } catch (e) {
       console.error('[upload] file write error:', e.message);
@@ -171,7 +170,6 @@ wss.on('connection', (ws, req) => {
     return;
   }
 
-  console.log(`[ws] Client connected to session ${sessionId}`);
   sessions.addClient(sessionId, ws);
 
   // Create runner if this session doesn't have one yet
@@ -191,7 +189,6 @@ wss.on('connection', (ws, req) => {
     try {
       const msg = JSON.parse(data.toString());
       if (msg.type === 'input' && session.runner) {
-        console.log(`[ws] input: ${JSON.stringify(msg.content)}`);
         session.runner.write(msg.content);
       } else if (msg.type === 'resize' && session.runner) {
         session.runner.resize(msg.cols, msg.rows);
@@ -205,7 +202,6 @@ wss.on('connection', (ws, req) => {
   });
 
   ws.on('close', () => {
-    console.log(`[ws] Client disconnected from session ${sessionId}`);
     sessions.removeClient(sessionId, ws);
   });
 });

@@ -78,21 +78,18 @@ function connect() {
     const msg = JSON.parse(event.data);
     if (msg.type === 'output' && term) {
       term.write(msg.content);
-    } else if (msg.type === 'error' && term) {
-      term.write('\r\n⚠️ ' + msg.content + '\r\n');
+    } else if (msg.type === 'error') {
+      console.warn('[server]', msg.content);
     }
   };
 
   ws.onclose = () => {
     document.getElementById('status-dot').classList.remove('online');
     document.getElementById('status-dot').classList.add('offline');
-    if (term) term.write('\r\n[Disconnected. Reconnecting...]\r\n');
     setTimeout(() => connect(), 3000);
   };
 
-  ws.onerror = () => {
-    if (term) term.write('\r\n[Connection error]\r\n');
-  };
+  ws.onerror = () => {};
 }
 
 function sendResize() {
