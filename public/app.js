@@ -276,6 +276,84 @@ function closePreviewResult() {
   document.getElementById('preview-result').classList.add('hidden');
 }
 
+// Image upload
+function toggleImageUpload() {
+  const bar = document.getElementById('image-bar');
+  const btn = document.getElementById('image-toggle');
+
+  if (bar.classList.contains('hidden')) {
+    bar.classList.remove('hidden');
+    btn.classList.add('hidden');
+  } else {
+    bar.classList.add('hidden');
+    btn.classList.remove('hidden');
+    if (term) term.focus();
+  }
+}
+
+async function uploadImage(file) {
+  if (!file) {
+    const input = document.getElementById('image-file-input');
+    file = input.files[0];
+  }
+  if (!file) return;
+  if (!ws || ws.readyState !== WebSocket.OPEN) {
+    alert('Not connected');
+    return;
+  }
+
+  const params = new URLSearchParams(window.location.search);
+  const sessionId = params.get('session');
+
+  const formData = new FormData();
+  formData.append('image', file);
+  formData.append('session', sessionId);
+
+  try {
+    const res = await fetch('/api/upload', { method: 'POST', body: formData });
+    const data = await res.json();
+    if (!res.ok) {
+      alert('Upload failed: ' + (data.error || 'Unknown error'));
+      return;
+    }
+    // Send @filepath to Copilot CLI
+    ws.send(JSON.stringify({ type: 'input', content: `@${data.path} ` }));
+
+    // Reset UI
+    const input = document.getElementById('image-file-input');
+    input.value = '';
+    document.getElementById('image-file-name').textContent = '画像を選択';
+    const bar = document.getElementById('image-bar');
+    if (!bar.classList.contains('hidden')) toggleImageUpload();
+  } catch (err) {
+    alert('Upload failed: ' + err.message);
+  }
+}
+
+// File input change handler & clipboard paste
+document.addEventListener('DOMContentLoaded', () => {
+  const fileInput = document.getElementById('image-file-input');
+  if (fileInput) {
+    fileInput.addEventListener('change', () => {
+      const name = fileInput.files[0]?.name || '画像を選択';
+      document.getElementById('image-file-name').textContent = name;
+    });
+  }
+
+  // Clipboard paste: upload image if pasted on terminal screen
+  document.addEventListener('paste', (e) => {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+    for (const item of items) {
+      if (item.type.startsWith('image/')) {
+        e.preventDefault();
+        uploadImage(item.getAsFile());
+        return;
+      }
+    }
+  });
+});
+
 // Terminal reset (tap = soft, long-press = hard restart)
 let resetTimer = null;
 let resetTriggered = false;
