@@ -2,8 +2,10 @@ require('dotenv').config({ path: require('path').join(__dirname, '..', '.env') }
 
 const express = require('express');
 const http = require('http');
+const fs = require('fs');
 const { WebSocketServer } = require('ws');
 const path = require('path');
+const multer = require('multer');
 const { CopilotRunner } = require('./copilot-runner');
 const { SessionManager } = require('./session-manager');
 const { PreviewManager } = require('./preview-manager');
@@ -89,6 +91,45 @@ app.delete('/api/sessions/:id', (req, res) => {
   if (!session) return res.status(404).json({ error: 'Session not found' });
   sessions.end(req.params.id);
   res.json({ ok: true });
+});
+
+// API: upload image for Copilot CLI
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 },
+});
+app.post('/api/upload', (req, res) => {
+  upload.single('image')(req, res, (err) => {
+    if (err) {
+      console.error('[upload] multer error:', err.message, err.code);
+      return res.status(400).json({ error: err.message });
+    }
+
+    const sessionId = req.body.session;
+    const session = sessions.get(sessionId);
+    if (!session || session.status !== 'active') {
+      return res.status(404).json({ error: 'Invalid or ended session' });
+    }
+    if (!req.file) {
+      return res.status(400).json({ error: 'No image file provided' });
+    }
+
+    try {
+      const uploadDir = path.join(session.cwd || process.cwd(), '.copilot-uploads');
+      fs.mkdirSync(uploadDir, { recursive: true });
+
+      const ext = path.extname(req.file.originalname) || '.png';
+      const filename = `${Date.now()}${ext}`;
+      const filePath = path.join(uploadDir, filename);
+
+      fs.writeFileSync(filePath, req.file.buffer);
+      console.log(`[upload] saved: ${filePath}`);
+      res.json({ path: filePath });
+    } catch (e) {
+      console.error('[upload] file write error:', e.message);
+      res.status(500).json({ error: e.message });
+    }
+  });
 });
 
 // Health check

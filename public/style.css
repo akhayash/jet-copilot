@@ -498,3 +498,20 @@ header h1 { font-size: 1.1rem; flex: 1; }
   background: var(--danger);
   color: #fff;
 }
+
+/* Image upload */
+.image-file-label {
+  flex: 1;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--text-muted);
+  font-size: 14px;
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.image-file-label:active { border-color: var(--accent); }
