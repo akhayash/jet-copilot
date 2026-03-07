@@ -94,26 +94,42 @@ app.delete('/api/sessions/:id', (req, res) => {
 });
 
 // API: upload image for Copilot CLI
-const upload = multer({ limits: { fileSize: 10 * 1024 * 1024 } });
-app.post('/api/upload', upload.single('image'), (req, res) => {
-  const sessionId = req.body.session;
-  const session = sessions.get(sessionId);
-  if (!session || session.status !== 'active') {
-    return res.status(404).json({ error: 'Invalid or ended session' });
-  }
-  if (!req.file) {
-    return res.status(400).json({ error: 'No image file provided' });
-  }
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 },
+});
+app.post('/api/upload', (req, res) => {
+  upload.single('image')(req, res, (err) => {
+    if (err) {
+      console.error('[upload] multer error:', err.message, err.code);
+      return res.status(400).json({ error: err.message });
+    }
 
-  const uploadDir = path.join(session.cwd || process.cwd(), '.copilot-uploads');
-  fs.mkdirSync(uploadDir, { recursive: true });
+    const sessionId = req.body.session;
+    const session = sessions.get(sessionId);
+    if (!session || session.status !== 'active') {
+      return res.status(404).json({ error: 'Invalid or ended session' });
+    }
+    if (!req.file) {
+      return res.status(400).json({ error: 'No image file provided' });
+    }
 
-  const ext = path.extname(req.file.originalname) || '.png';
-  const filename = `${Date.now()}${ext}`;
-  const filePath = path.join(uploadDir, filename);
+    try {
+      const uploadDir = path.join(session.cwd || process.cwd(), '.copilot-uploads');
+      fs.mkdirSync(uploadDir, { recursive: true });
 
-  fs.writeFileSync(filePath, req.file.buffer);
-  res.json({ path: filePath });
+      const ext = path.extname(req.file.originalname) || '.png';
+      const filename = `${Date.now()}${ext}`;
+      const filePath = path.join(uploadDir, filename);
+
+      fs.writeFileSync(filePath, req.file.buffer);
+      console.log(`[upload] saved: ${filePath}`);
+      res.json({ path: filePath });
+    } catch (e) {
+      console.error('[upload] file write error:', e.message);
+      res.status(500).json({ error: e.message });
+    }
+  });
 });
 
 // Health check

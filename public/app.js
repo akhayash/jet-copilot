@@ -311,13 +311,20 @@ async function uploadImage(file) {
 
   try {
     const res = await fetch('/api/upload', { method: 'POST', body: formData });
-    const data = await res.json();
+    let data;
+    try {
+      data = await res.json();
+    } catch {
+      alert('Upload failed: サーバーエラー (status ' + res.status + ')');
+      return;
+    }
     if (!res.ok) {
       alert('Upload failed: ' + (data.error || 'Unknown error'));
       return;
     }
-    // Send @filepath to Copilot CLI
-    ws.send(JSON.stringify({ type: 'input', content: `@${data.path} ` }));
+    // Send @filepath to Copilot CLI (use forward slashes for compatibility)
+    const fpath = data.path.replace(/\\/g, '/');
+    ws.send(JSON.stringify({ type: 'input', content: `@${fpath} ` }));
 
     // Reset UI
     const input = document.getElementById('image-file-input');
