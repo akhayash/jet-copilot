@@ -1,9 +1,10 @@
 const pty = require('node-pty');
 
 class CopilotRunner {
-  constructor(onData) {
+  constructor(onData, ptyModule = pty) {
     this._pty = null;
     this._onData = onData;
+    this._ptyModule = ptyModule;
   }
 
   start(cwd) {
@@ -11,7 +12,7 @@ class CopilotRunner {
     const file = isWindows ? 'cmd.exe' : 'copilot';
     const args = isWindows ? ['/c', 'copilot'] : [];
 
-    this._pty = pty.spawn(file, args, {
+    this._pty = this._ptyModule.spawn(file, args, {
       name: 'xterm-256color',
       cols: 80,
       rows: 24,

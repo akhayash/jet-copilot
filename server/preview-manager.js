@@ -1,8 +1,19 @@
 const { spawn } = require('child_process');
 
 class PreviewManager {
-  constructor() {
+  constructor({
+    spawnFn = spawn,
+    setIntervalFn = setInterval,
+    clearIntervalFn = clearInterval,
+    setTimeoutFn = setTimeout,
+    clearTimeoutFn = clearTimeout,
+  } = {}) {
     this._previews = new Map(); // port -> { proc, url, port }
+    this._spawn = spawnFn;
+    this._setInterval = setIntervalFn;
+    this._clearInterval = clearIntervalFn;
+    this._setTimeout = setTimeoutFn;
+    this._clearTimeout = clearTimeoutFn;
   }
 
   start(port) {
@@ -12,7 +23,7 @@ class PreviewManager {
         return resolve(existing);
       }
 
-      const proc = spawn('devtunnel', [
+      const proc = this._spawn('devtunnel', [
         'host',
         '--port-numbers', String(port),
         '--allow-anonymous',
@@ -47,16 +58,16 @@ class PreviewManager {
       });
 
       // Wait for URL to be ready
-      const check = setInterval(() => {
+      const check = this._setInterval(() => {
         if (url) {
-          clearInterval(check);
-          clearTimeout(timeout);
+          this._clearInterval(check);
+          this._clearTimeout(timeout);
           resolve(preview);
         }
       }, 500);
 
-      const timeout = setTimeout(() => {
-        clearInterval(check);
+      const timeout = this._setTimeout(() => {
+        this._clearInterval(check);
         if (!url) {
           resolve(preview); // Return anyway, URL may appear later
         }
