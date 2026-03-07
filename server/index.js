@@ -1,5 +1,3 @@
-require('dotenv').config({ path: require('path').join(__dirname, '..', '.env') });
-
 const express = require('express');
 const http = require('http');
 const fs = require('fs');
@@ -7,9 +5,12 @@ const { WebSocketServer } = require('ws');
 const path = require('path');
 const multer = require('multer');
 const { CopilotRunner } = require('./copilot-runner');
+const { loadEnv } = require('./load-env');
 const { SessionManager } = require('./session-manager');
 const { PreviewManager } = require('./preview-manager');
 const { startTunnel } = require('./tunnel');
+
+loadEnv();
 
 const PORT = process.env.PORT || 3000;
 
@@ -225,11 +226,17 @@ async function startServer({
   return { app, server, wss, sessions, previews };
 }
 
-if (require.main === module) {
-  startServer().catch((err) => {
+async function runCli() {
+  try {
+    await startServer();
+  } catch (err) {
     console.error(err);
     process.exitCode = 1;
-  });
+  }
 }
 
-module.exports = { createApp, attachWebSocketServer, startServer };
+if (require.main === module) {
+  runCli();
+}
+
+module.exports = { createApp, attachWebSocketServer, startServer, runCli };
