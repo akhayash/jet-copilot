@@ -48,7 +48,6 @@ app.post('/api/sessions', (req, res) => {
 
 // API: browse directories
 app.get('/api/browse', (req, res) => {
-  const fs = require('fs');
   const target = req.query.path || process.cwd();
   const resolved = path.resolve(target);
 
@@ -72,7 +71,6 @@ app.get('/api/browse', (req, res) => {
 
 // API: create directory
 app.post('/api/mkdir', (req, res) => {
-  const fs = require('fs');
   const dirPath = req.body.path;
   if (!dirPath) return res.status(400).json({ error: 'Path is required' });
 
