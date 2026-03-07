@@ -147,15 +147,7 @@ function sendResize() {
 function sendKey(key) {
   if (!ws || ws.readyState !== WebSocket.OPEN) return;
   if (key === 'reset') return; // handled by long-press logic
-  const ESC = '\x1b';
-  const keys = {
-    'esc': ESC,
-    'mode': ESC + '[Z',
-    'up': ESC + '[A',
-    'down': ESC + '[B',
-    'enter': '\r',
-  };
-  const content = keys[key] || key;
+  const content = window.AppUtils.getShortcutContent(key);
   ws.send(JSON.stringify({ type: 'input', content }));
 }
 
