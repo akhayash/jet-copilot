@@ -1,6 +1,46 @@
 let ws = null;
 let term = null;
 let fitAddon = null;
+let fitTimer = null;
+let activeSessionHeaderId = null;
+
+function scheduleFit(delay = 0) {
+  if (fitTimer) clearTimeout(fitTimer);
+  fitTimer = setTimeout(() => {
+    if (!fitAddon || !term) return;
+    requestAnimationFrame(() => {
+      fitAddon.fit();
+      sendResize();
+    });
+  }, delay);
+}
+
+function updateSessionHeader(_sessionId, session) {
+  const context = document.getElementById('session-context');
+  const label = document.getElementById('session-label');
+  if (!context || !label) return;
+
+  context.textContent = session?.displayName || '';
+  label.textContent = session?.cwd || '';
+}
+
+async function loadSessionHeader(sessionId) {
+  activeSessionHeaderId = sessionId;
+  try {
+    const res = await fetch(`/api/sessions/${encodeURIComponent(sessionId)}`);
+    if (!res.ok || activeSessionHeaderId !== sessionId) {
+      updateSessionHeader(sessionId);
+      return;
+    }
+
+    const session = await res.json();
+    if (activeSessionHeaderId !== sessionId) return;
+    updateSessionHeader(sessionId, session);
+  } catch {
+    if (activeSessionHeaderId !== sessionId) return;
+    updateSessionHeader(sessionId);
+  }
+}
 
 function connect() {
   const params = new URLSearchParams(window.location.search);
@@ -19,9 +59,7 @@ function connect() {
     document.getElementById('status-dot').classList.add('online');
     document.getElementById('status-dot').classList.remove('offline');
 
-    // Show session ID in header
-    const label = document.getElementById('session-label');
-    if (label) label.textContent = `#${sessionId}`;
+    loadSessionHeader(sessionId);
 
     // Initialize xterm.js
     if (!term) {
@@ -52,8 +90,11 @@ function connect() {
 
       const container = document.getElementById('terminal-container');
       term.open(container);
-      fitAddon.fit();
-      sendResize();
+      scheduleFit();
+      scheduleFit(150);
+      if (document.fonts?.ready) {
+        document.fonts.ready.then(() => scheduleFit(50)).catch(() => {});
+      }
 
       // Workaround: xterm.js v6.0.0 touch scrolling is broken (#5489)
       const xtermScreen = container.querySelector('.xterm-screen');
@@ -96,25 +137,19 @@ function connect() {
         }
       });
 
-      // Debounced fit helper
-      let fitTimer = null;
-      function debouncedFit() {
-        if (fitTimer) clearTimeout(fitTimer);
-        fitTimer = setTimeout(() => {
-          if (fitAddon) { fitAddon.fit(); sendResize(); }
-        }, 100);
-      }
-
-      const resizeObserver = new ResizeObserver(() => debouncedFit());
+      const resizeObserver = new ResizeObserver(() => scheduleFit(50));
       resizeObserver.observe(container);
 
       if (window.visualViewport) {
-        window.visualViewport.addEventListener('resize', () => debouncedFit());
+        window.visualViewport.addEventListener('resize', () => scheduleFit(50));
+        window.visualViewport.addEventListener('scroll', () => scheduleFit(50));
       }
 
       window.addEventListener('orientationchange', () => {
-        setTimeout(() => debouncedFit(), 200);
+        scheduleFit(300);
       });
+
+      window.addEventListener('resize', () => scheduleFit(50));
     }
 
     term.focus();
@@ -403,7 +438,7 @@ function endResetHold() {
 function softReset() {
   if (!ws || ws.readyState !== WebSocket.OPEN || !term) return;
   term.reset();
-  fitAddon.fit();
+  scheduleFit();
   term.focus();
   // Force TUI redraw by triggering a resize (SIGWINCH)
   const cols = term.cols;

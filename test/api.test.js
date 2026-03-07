@@ -31,6 +31,13 @@ test('session APIs create, list, and end sessions', async () => {
   assert.equal(listResponse.body.length, 1);
   assert.equal(listResponse.body[0].cwd, 'C:\\repo');
   assert.equal(listResponse.body[0].status, 'active');
+  assert.equal(listResponse.body[0].displayName, 'repo');
+
+  const getResponse = await request(app)
+    .get(`/api/sessions/${createResponse.body.id}`)
+    .expect(200);
+  assert.equal(getResponse.body.id, createResponse.body.id);
+  assert.equal(getResponse.body.displayName, 'repo');
 
   await request(app).delete(`/api/sessions/${createResponse.body.id}`).expect(200);
 
