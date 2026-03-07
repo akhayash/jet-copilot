@@ -43,6 +43,12 @@ function createApp({
     res.json(sessions.list());
   });
 
+  app.get('/api/sessions/:id', (req, res) => {
+    const session = sessions.get(req.params.id);
+    if (!session) return res.status(404).json({ error: 'Session not found' });
+    res.json(sessions.serialize(session));
+  });
+
   app.post('/api/sessions', (req, res) => {
     const cwd = req.body.cwd || undefined;
     const session = sessions.create(cwd);

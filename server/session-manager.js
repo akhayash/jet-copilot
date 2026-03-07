@@ -1,4 +1,5 @@
 const crypto = require('crypto');
+const { getSessionContext } = require('./session-context');
 
 class SessionManager {
   constructor() {
@@ -7,11 +8,17 @@ class SessionManager {
   }
 
   create(cwd) {
+    const context = getSessionContext(cwd || process.cwd());
     const id = crypto.randomBytes(2).toString('hex');
     const session = {
       id,
       status: 'active',
-      cwd: cwd || process.cwd(),
+      cwd: context.cwd,
+      folderName: context.folderName,
+      repoName: context.repoName,
+      repoRoot: context.repoRoot,
+      inRepo: context.inRepo,
+      displayName: context.displayName,
       startedAt: new Date().toISOString(),
       endedAt: null,
       clients: new Set(),
@@ -25,15 +32,24 @@ class SessionManager {
     return this._sessions.get(id);
   }
 
+  serialize(session) {
+    return {
+      id: session.id,
+      status: session.status,
+      cwd: session.cwd,
+      folderName: session.folderName,
+      repoName: session.repoName,
+      repoRoot: session.repoRoot,
+      inRepo: session.inRepo,
+      displayName: session.displayName,
+      startedAt: session.startedAt,
+      endedAt: session.endedAt,
+      clientCount: session.clients.size,
+    };
+  }
+
   list() {
-    return Array.from(this._sessions.values()).map((s) => ({
-      id: s.id,
-      status: s.status,
-      cwd: s.cwd,
-      startedAt: s.startedAt,
-      endedAt: s.endedAt,
-      clientCount: s.clients.size,
-    }));
+    return Array.from(this._sessions.values()).map((s) => this.serialize(s));
   }
 
   end(id) {

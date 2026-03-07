@@ -14,14 +14,25 @@
   --danger: #f85149;
 }
 
-html, body {
+html, body, #app {
   height: 100%;
+  min-height: 100%;
+}
+
+body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   background: var(--bg);
   color: var(--text);
+  overflow: hidden;
 }
 
-.screen { display: flex; flex-direction: column; height: 100%; }
+.screen {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  height: 100dvh;
+  min-height: 0;
+}
 
 /* Header */
 header {
@@ -61,15 +72,30 @@ header h1 { font-size: 1.1rem; flex: 1; }
 }
 .status-dot.online { background: #3fb950; }
 
-.session-label {
+.session-meta {
   flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.session-context {
+  font-size: 13px;
+  color: var(--text);
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.session-label {
   font-size: 12px;
   color: var(--text-muted);
   font-family: 'SF Mono', 'Fira Code', monospace;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  max-width: 40%;
 }
 
 .header-shortcuts {
@@ -106,13 +132,20 @@ header h1 { font-size: 1.1rem; flex: 1; }
 
 /* Messages - terminal style */
 #terminal-container {
-  flex: 1;
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
   padding: 4px;
 }
 
 #terminal-container .xterm {
-  height: 100%;
+  flex: 1 1 auto;
+}
+
+#terminal-container .xterm-viewport {
+  width: 100% !important;
 }
 
 /* No extra input bar needed - xterm.js handles input */
