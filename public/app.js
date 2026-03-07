@@ -170,20 +170,24 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
-function toggleVoiceInput() {
-  const bar = document.getElementById('voice-bar');
-  const btn = document.getElementById('voice-toggle');
-  const input = document.getElementById('voice-input');
+function toggleBar(barId, btnId, focusId) {
+  const bar = document.getElementById(barId);
+  const btn = document.getElementById(btnId);
 
   if (bar.classList.contains('hidden')) {
     bar.classList.remove('hidden');
     btn.classList.add('hidden');
-    input.focus();
+    const focusEl = focusId && document.getElementById(focusId);
+    if (focusEl) focusEl.focus();
   } else {
     bar.classList.add('hidden');
     btn.classList.remove('hidden');
     if (term) term.focus();
   }
+}
+
+function toggleVoiceInput() {
+  toggleBar('voice-bar', 'voice-toggle', 'voice-input');
 }
 
 function sendVoiceInput() {
@@ -229,19 +233,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Preview from terminal
 function togglePreviewInput() {
-  const bar = document.getElementById('preview-bar');
-  const btn = document.getElementById('preview-toggle');
-  const input = document.getElementById('preview-port-input');
-
-  if (bar.classList.contains('hidden')) {
-    bar.classList.remove('hidden');
-    btn.classList.add('hidden');
-    input.focus();
-  } else {
-    bar.classList.add('hidden');
-    btn.classList.remove('hidden');
-    if (term) term.focus();
-  }
+  toggleBar('preview-bar', 'preview-toggle', 'preview-port-input');
 }
 
 async function openPreview() {
@@ -278,17 +270,7 @@ function closePreviewResult() {
 
 // Image upload
 function toggleImageUpload() {
-  const bar = document.getElementById('image-bar');
-  const btn = document.getElementById('image-toggle');
-
-  if (bar.classList.contains('hidden')) {
-    bar.classList.remove('hidden');
-    btn.classList.add('hidden');
-  } else {
-    bar.classList.add('hidden');
-    btn.classList.remove('hidden');
-    if (term) term.focus();
-  }
+  toggleBar('image-bar', 'image-toggle');
 }
 
 async function uploadImage(file) {

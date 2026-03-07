@@ -57,10 +57,6 @@ class SessionManager {
     const session = this._sessions.get(id);
     if (session) {
       session.clients.delete(ws);
-      // End session if no clients and runner has exited
-      if (session.clients.size === 0 && session.status === 'active') {
-        // Keep session alive for reconnection
-      }
     }
   }
 
