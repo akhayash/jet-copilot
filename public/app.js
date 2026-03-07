@@ -50,9 +50,45 @@ function connect() {
       term.loadAddon(fitAddon);
       term.loadAddon(new WebLinksAddon.WebLinksAddon());
 
-      term.open(document.getElementById('terminal-container'));
+      const container = document.getElementById('terminal-container');
+      term.open(container);
       fitAddon.fit();
       sendResize();
+
+      // Workaround: xterm.js v6.0.0 touch scrolling is broken (#5489)
+      const xtermScreen = container.querySelector('.xterm-screen');
+      if (xtermScreen) {
+        let touchStartY = 0;
+        let touchActive = false;
+        let accumulated = 0;
+
+        xtermScreen.addEventListener('touchstart', (e) => {
+          if (e.touches.length === 1) {
+            touchStartY = e.touches[0].clientY;
+            touchActive = true;
+            accumulated = 0;
+          }
+        }, { passive: true });
+
+        xtermScreen.addEventListener('touchmove', (e) => {
+          if (!touchActive || e.touches.length !== 1) return;
+          e.preventDefault();
+          const currentY = e.touches[0].clientY;
+          const delta = touchStartY - currentY;
+          accumulated += delta;
+          const lineH = Math.ceil(14 * 1.2);
+          const lines = Math.trunc(accumulated / lineH);
+          if (lines !== 0) {
+            term.scrollLines(lines);
+            accumulated -= lines * lineH;
+          }
+          touchStartY = currentY;
+        }, { passive: false });
+
+        xtermScreen.addEventListener('touchend', () => {
+          touchActive = false;
+        }, { passive: true });
+      }
 
       term.onData((data) => {
         if (ws && ws.readyState === WebSocket.OPEN) {
@@ -60,14 +96,24 @@ function connect() {
         }
       });
 
-      window.addEventListener('resize', () => {
-        if (fitAddon) { fitAddon.fit(); sendResize(); }
-      });
+      // Debounced fit helper
+      let fitTimer = null;
+      function debouncedFit() {
+        if (fitTimer) clearTimeout(fitTimer);
+        fitTimer = setTimeout(() => {
+          if (fitAddon) { fitAddon.fit(); sendResize(); }
+        }, 100);
+      }
+
+      const resizeObserver = new ResizeObserver(() => debouncedFit());
+      resizeObserver.observe(container);
+
+      if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', () => debouncedFit());
+      }
 
       window.addEventListener('orientationchange', () => {
-        setTimeout(() => {
-          if (fitAddon) { fitAddon.fit(); sendResize(); }
-        }, 200);
+        setTimeout(() => debouncedFit(), 200);
       });
     }
 
