@@ -131,7 +131,18 @@ function connect() {
         }, { passive: true });
       }
 
+      // Debounce duplicate composition events (iOS dictation fires compositionend + input)
+      let lastInputData = '';
+      let lastInputTime = 0;
+
       term.onData((data) => {
+        const now = Date.now();
+        if (data.length > 1 && data === lastInputData && now - lastInputTime < 100) {
+          return;
+        }
+        lastInputData = data;
+        lastInputTime = now;
+
         if (ws && ws.readyState === WebSocket.OPEN) {
           ws.send(JSON.stringify({ type: 'input', content: data }));
         }
