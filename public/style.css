@@ -348,6 +348,13 @@ header h1 { font-size: 1.1rem; flex: 1; }
 
 .voice-toggle:active { opacity: 1; }
 
+.voice-toggle.active {
+  opacity: 1;
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
 .voice-bar {
   display: flex;
   gap: 8px;
