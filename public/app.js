@@ -3,7 +3,6 @@ let term = null;
 let fitAddon = null;
 let fitTimer = null;
 let activeSessionHeaderId = null;
-let previewPanelVisible = false;
 
 function scheduleFit(delay = 0) {
   if (fitTimer) clearTimeout(fitTimer);
@@ -290,6 +289,7 @@ function closeAllPanels() {
   const ids = [
     { bar: 'voice-bar', btn: 'voice-toggle' },
     { bar: 'image-bar', btn: 'image-toggle' },
+    { bar: 'preview-panel', btn: 'preview-toggle' },
   ];
   ids.forEach(({ bar, btn }) => {
     const barEl = document.getElementById(bar);
@@ -297,13 +297,6 @@ function closeAllPanels() {
     if (barEl) barEl.classList.add('hidden');
     if (btnEl) btnEl.classList.remove('active');
   });
-  if (previewPanelVisible) {
-    previewPanelVisible = false;
-    const panel = document.getElementById('preview-panel');
-    const btn = document.getElementById('preview-toggle');
-    if (panel) panel.classList.add('hidden');
-    if (btn) btn.classList.remove('active');
-  }
 }
 
 function toggleBar(barId, btnId, focusId) {
@@ -413,24 +406,9 @@ async function pasteFromClipboard() {
 
 // Preview from terminal
 function togglePreviewInput() {
-  const panel = document.getElementById('preview-panel');
-  const button = document.getElementById('preview-toggle');
-  if (!panel || !button) return;
-
-  const opening = !previewPanelVisible;
-
-  closeAllPanels();
-
-  if (opening) {
-    previewPanelVisible = true;
-    panel.classList.remove('hidden');
-    button.classList.add('active');
-    loadSessionPreviews();
-    const input = document.getElementById('preview-port-input');
-    if (input) input.focus();
-  } else if (term) {
-    term.focus();
-  }
+  const wasHidden = document.getElementById('preview-panel')?.classList.contains('hidden');
+  toggleBar('preview-panel', 'preview-toggle', 'preview-port-input');
+  if (wasHidden) loadSessionPreviews();
 }
 
 async function openPreview() {
@@ -596,7 +574,8 @@ function hardReset() {
 
 window.addEventListener('load', () => connect());
 window.setInterval(() => {
-  if (previewPanelVisible) {
+  const panel = document.getElementById('preview-panel');
+  if (panel && !panel.classList.contains('hidden')) {
     loadSessionPreviews();
   }
 }, 5000);
