@@ -286,19 +286,40 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
+function closeAllPanels() {
+  const ids = [
+    { bar: 'voice-bar', btn: 'voice-toggle' },
+    { bar: 'image-bar', btn: 'image-toggle' },
+  ];
+  ids.forEach(({ bar, btn }) => {
+    const barEl = document.getElementById(bar);
+    const btnEl = document.getElementById(btn);
+    if (barEl) barEl.classList.add('hidden');
+    if (btnEl) btnEl.classList.remove('active');
+  });
+  if (previewPanelVisible) {
+    previewPanelVisible = false;
+    const panel = document.getElementById('preview-panel');
+    const btn = document.getElementById('preview-toggle');
+    if (panel) panel.classList.add('hidden');
+    if (btn) btn.classList.remove('active');
+  }
+}
+
 function toggleBar(barId, btnId, focusId) {
   const bar = document.getElementById(barId);
   const btn = document.getElementById(btnId);
+  const opening = bar.classList.contains('hidden');
 
-  if (bar.classList.contains('hidden')) {
+  closeAllPanels();
+
+  if (opening) {
     bar.classList.remove('hidden');
-    btn.classList.add('hidden');
+    btn.classList.add('active');
     const focusEl = focusId && document.getElementById(focusId);
     if (focusEl) focusEl.focus();
-  } else {
-    bar.classList.add('hidden');
-    btn.classList.remove('hidden');
-    if (term) term.focus();
+  } else if (term) {
+    term.focus();
   }
 }
 
@@ -390,11 +411,14 @@ function togglePreviewInput() {
   const button = document.getElementById('preview-toggle');
   if (!panel || !button) return;
 
-  previewPanelVisible = !previewPanelVisible;
-  panel.classList.toggle('hidden', !previewPanelVisible);
-  button.classList.toggle('hidden', previewPanelVisible);
+  const opening = !previewPanelVisible;
 
-  if (previewPanelVisible) {
+  closeAllPanels();
+
+  if (opening) {
+    previewPanelVisible = true;
+    panel.classList.remove('hidden');
+    button.classList.add('active');
     loadSessionPreviews();
     const input = document.getElementById('preview-port-input');
     if (input) input.focus();
@@ -495,6 +519,12 @@ document.addEventListener('DOMContentLoaded', () => {
       const name = fileInput.files[0]?.name || '画像を選択';
       document.getElementById('image-file-name').textContent = name;
     });
+  }
+
+  // Tap outside panels to dismiss
+  const container = document.getElementById('terminal-container');
+  if (container) {
+    container.addEventListener('pointerdown', () => closeAllPanels());
   }
 
   // Clipboard paste: upload image if pasted on terminal screen
