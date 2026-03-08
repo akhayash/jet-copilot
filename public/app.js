@@ -3,6 +3,7 @@ let term = null;
 let fitAddon = null;
 let fitTimer = null;
 let activeSessionHeaderId = null;
+let previewPanelVisible = false;
 
 function scheduleFit(delay = 0) {
   if (fitTimer) clearTimeout(fitTimer);
@@ -42,6 +43,51 @@ async function loadSessionHeader(sessionId) {
   }
 }
 
+function renderSessionPreviewList(list) {
+  const container = document.getElementById('session-preview-list');
+  const summary = document.getElementById('session-preview-summary');
+  if (!container || !summary) return;
+
+  if (list.length === 0) {
+    summary.classList.add('hidden');
+    container.innerHTML = '<div class="preview-empty">No previews for this session yet. Open a local port to view it on your device.</div>';
+    return;
+  }
+
+  summary.classList.remove('hidden');
+  summary.textContent = `${list.length} preview${list.length === 1 ? '' : 's'} active`;
+  container.innerHTML = list.map((preview) => {
+    const url = preview.url
+      ? `<a href="${preview.url}" target="_blank" class="preview-url">${preview.url}</a>`
+      : '<span class="preview-url">Starting...</span>';
+    const open = preview.url
+      ? `<a href="${preview.url}" target="_blank" class="preview-action-btn">Open ↗</a>`
+      : '';
+    return `
+      <div class="preview-item">
+        <div class="preview-meta">
+          <span class="preview-port-badge">Port ${preview.port}</span>
+          ${url}
+        </div>
+        <div class="preview-actions">
+          ${open}
+          <button class="preview-stop-btn" onclick="stopPreview(${preview.port})">Stop</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+async function loadSessionPreviews() {
+  try {
+    const res = await fetch('/api/preview');
+    const list = await res.json();
+    renderSessionPreviewList(list);
+  } catch {
+    renderSessionPreviewList([]);
+  }
+}
+
 function connect() {
   const params = new URLSearchParams(window.location.search);
   const sessionId = params.get('session');
@@ -60,6 +106,7 @@ function connect() {
     document.getElementById('status-dot').classList.remove('offline');
 
     loadSessionHeader(sessionId);
+    loadSessionPreviews();
 
     // Initialize xterm.js
     if (!term) {
@@ -131,7 +178,18 @@ function connect() {
         }, { passive: true });
       }
 
+      // Debounce duplicate composition events (iOS dictation fires compositionend + input)
+      let lastInputData = '';
+      let lastInputTime = 0;
+
       term.onData((data) => {
+        const now = Date.now();
+        if (data.length > 1 && data === lastInputData && now - lastInputTime < 100) {
+          return;
+        }
+        lastInputData = data;
+        lastInputTime = now;
+
         if (ws && ws.readyState === WebSocket.OPEN) {
           ws.send(JSON.stringify({ type: 'input', content: data }));
         }
@@ -301,9 +359,60 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
+// Clipboard paste button (for mobile where context menu paste is unavailable)
+async function pasteFromClipboard() {
+  if (!ws || ws.readyState !== WebSocket.OPEN) {
+    alert('Not connected');
+    return;
+  }
+
+  try {
+    if (navigator.clipboard?.read) {
+      const items = await navigator.clipboard.read();
+      for (const item of items) {
+        const imageType = item.types.find(t => t.startsWith('image/'));
+        if (imageType) {
+          const blob = await item.getType(imageType);
+          uploadImage(new File([blob], 'clipboard.png', { type: imageType }));
+          return;
+        }
+      }
+    }
+
+    if (navigator.clipboard?.readText) {
+      const text = await navigator.clipboard.readText();
+      if (text.length > 0) {
+        ws.send(JSON.stringify({ type: 'input', content: text }));
+        if (term) term.focus();
+        return;
+      }
+    }
+
+    // Fallback: open voice input bar for manual paste
+    toggleVoiceInput();
+  } catch {
+    // Permission denied or API unavailable — fall back to text input bar
+    toggleVoiceInput();
+  }
+}
+
 // Preview from terminal
 function togglePreviewInput() {
-  toggleBar('preview-bar', 'preview-toggle', 'preview-port-input');
+  const panel = document.getElementById('preview-panel');
+  const button = document.getElementById('preview-toggle');
+  if (!panel || !button) return;
+
+  previewPanelVisible = !previewPanelVisible;
+  panel.classList.toggle('hidden', !previewPanelVisible);
+  button.classList.toggle('hidden', previewPanelVisible);
+
+  if (previewPanelVisible) {
+    loadSessionPreviews();
+    const input = document.getElementById('preview-port-input');
+    if (input) input.focus();
+  } else if (term) {
+    term.focus();
+  }
 }
 
 async function openPreview() {
@@ -320,13 +429,9 @@ async function openPreview() {
     });
     const data = await res.json();
     input.value = '';
-    togglePreviewInput();
-
-    if (data.url) {
-      const link = document.getElementById('preview-url-link');
-      link.href = data.url;
-      link.textContent = data.url;
-      document.getElementById('preview-result').classList.remove('hidden');
+    loadSessionPreviews();
+    if (data.url && term) {
+      term.writeln(`\r\n[Preview ready] ${data.url}\r\n`);
     }
   } catch (err) {
     alert('Preview failed: ' + err.message);
@@ -334,8 +439,13 @@ async function openPreview() {
   input.disabled = false;
 }
 
-function closePreviewResult() {
-  document.getElementById('preview-result').classList.add('hidden');
+async function stopPreview(port) {
+  try {
+    await fetch(`/api/preview/${port}`, { method: 'DELETE' });
+    loadSessionPreviews();
+  } catch (err) {
+    alert('Failed to stop preview: ' + err.message);
+  }
 }
 
 // Image upload
@@ -461,3 +571,8 @@ function hardReset() {
 }
 
 window.addEventListener('load', () => connect());
+window.setInterval(() => {
+  if (previewPanelVisible) {
+    loadSessionPreviews();
+  }
+}, 5000);
