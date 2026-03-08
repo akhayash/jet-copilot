@@ -110,16 +110,18 @@ jet-copilot/
 ├── package.json
 ├── server/
 │   ├── index.js              # Express + WebSocket + APIサーバー
-│   ├── auth.js               # 認証ユーティリティ
 │   ├── copilot-runner.js     # node-ptyでcopilot起動・I/O中継
 │   ├── session-manager.js    # セッション管理
+│   ├── session-context.js    # リポジトリルート検出（セッションコンテキスト）
 │   ├── preview-manager.js    # プレビュートンネル管理
-│   └── tunnel.js             # Dev Tunnel自動起動 + QRコード表示
+│   ├── tunnel.js             # Dev Tunnel自動起動 + QRコード表示
+│   └── load-env.js           # .envローダー（cwd優先）
 └── public/
     ├── index.html            # ダッシュボード
     ├── terminal.html         # ターミナル画面
     ├── dashboard.js          # ダッシュボードロジック
     ├── app.js                # xterm.js + WebSocket通信
+    ├── app-utils.js          # 共有ユーティリティ（browser/CommonJS両対応）
     └── style.css             # ダークモードUI
 ```
 
