@@ -336,24 +336,30 @@ function sendVoiceInput() {
     return;
   }
 
-  // Send text, then Enter as separate write to ensure PTY processes it
+  // Send full text (may contain newlines), then Enter to execute
   ws.send(JSON.stringify({ type: 'input', content: text }));
   setTimeout(() => {
     ws.send(JSON.stringify({ type: 'input', content: '\r' }));
   }, 50);
   input.value = '';
+  input.style.height = '';
   toggleVoiceInput();
 }
 
-// Allow Enter to send from voice input
+// Ctrl+Enter to send from voice input; Enter inserts newline
 document.addEventListener('DOMContentLoaded', () => {
   const input = document.getElementById('voice-input');
   if (input) {
     input.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
+      if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
         e.preventDefault();
         sendVoiceInput();
       }
+    });
+    // Auto-expand textarea height up to max
+    input.addEventListener('input', () => {
+      input.style.height = '';
+      input.style.height = input.scrollHeight + 'px';
     });
   }
 
