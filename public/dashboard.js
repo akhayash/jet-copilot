@@ -238,9 +238,19 @@ async function loadPreviews() {
     const res = await fetch('/api/preview');
     const list = await res.json();
     const container = document.getElementById('preview-list');
+    const summary = document.getElementById('preview-summary');
+
+    if (summary) {
+      if (list.length === 0) {
+        summary.classList.add('hidden');
+      } else {
+        summary.classList.remove('hidden');
+        summary.textContent = `${list.length} preview${list.length === 1 ? '' : 's'} active`;
+      }
+    }
 
     if (list.length === 0) {
-      container.innerHTML = '';
+      container.innerHTML = '<div class="preview-empty">No active previews yet. Open one from here, or manage them from a session.</div>';
       return;
     }
 
@@ -249,14 +259,14 @@ async function loadPreviews() {
         ? `<a href="${p.url}" target="_blank" class="preview-url">${p.url}</a>`
         : '<span class="preview-url">Starting...</span>';
       return `
-        <div class="session-card">
-          <div class="session-info">
-            <span class="session-id">🌐 Port ${p.port}</span>
+        <div class="preview-item preview-item-compact">
+          <div class="preview-meta">
+            <span class="preview-port-badge">Port ${p.port}</span>
+            ${urlLink}
           </div>
-          ${urlLink}
-          <div class="session-actions">
-            ${p.url ? `<a href="${p.url}" target="_blank" class="connect-btn">Open ↗</a>` : ''}
-            <button class="end-btn" onclick="stopPreview(${p.port})">Stop</button>
+          <div class="preview-actions">
+            ${p.url ? `<a href="${p.url}" target="_blank" class="preview-action-btn">Open ↗</a>` : ''}
+            <button class="preview-stop-btn" onclick="stopPreview(${p.port})">Stop</button>
           </div>
         </div>
       `;
@@ -284,6 +294,16 @@ async function startPreview() {
     alert('Failed to start preview: ' + err.message);
   }
   input.disabled = false;
+}
+
+const previewInput = document.getElementById('preview-port');
+if (previewInput) {
+  previewInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      startPreview();
+    }
+  });
 }
 
 async function stopPreview(port) {
