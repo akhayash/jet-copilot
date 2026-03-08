@@ -45,12 +45,16 @@
           <div id="past-sessions"></div>
         </section>
 
-        <section class="session-section">
-          <h2>Preview</h2>
+        <section class="session-section preview-section preview-section-dashboard">
+          <div class="section-heading">
+            <h2>Quick Preview</h2>
+            <p class="section-copy">Launch a preview quickly here. Rich preview management stays inside each session.</p>
+          </div>
           <div class="preview-input-group">
             <input type="number" id="preview-port" class="preview-port-input" placeholder="Port (e.g. 3001)" min="1" max="65535">
             <button class="preview-open-btn" onclick="startPreview()">▶ Open</button>
           </div>
+          <div id="preview-summary" class="preview-summary hidden"></div>
           <div id="preview-list"></div>
         </section>
       </div>

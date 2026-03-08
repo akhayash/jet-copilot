@@ -97,9 +97,9 @@ The terminal will display:
 
 Preview web services you're developing with Copilot CLI directly on your device.
 
-1. Enter a port number in the Dashboard's Preview section (e.g., `3001`)
-2. Tap "▶ Open" → An additional Dev Tunnel starts
-3. Open the displayed URL → Preview on your device
+1. Enter a port number in the Dashboard's Quick Preview section or from inside a session
+2. Tap "Open" / "▶ Open" → An additional Dev Tunnel starts
+3. Open the displayed URL on your device
 
 ## File Structure
 
