@@ -178,21 +178,62 @@ function connect() {
         }, { passive: true });
       }
 
-      // Debounce duplicate composition events (iOS dictation fires compositionend + input)
+      // Composition-aware buffering for voice dictation
+      // iOS voice dictation fires rapid compositionend→compositionstart cycles,
+      // each with progressively longer recognized text. We buffer multi-char
+      // onData results and only send once no new compositionstart arrives
+      // within 300ms — i.e., recognition is truly complete.
+      const textarea = term.textarea;
+      let compBuffer = null;
+      let compFlushTimer = null;
       let lastInputData = '';
       let lastInputTime = 0;
 
+      function flushCompBuffer() {
+        if (compBuffer !== null && ws && ws.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify({ type: 'input', content: compBuffer }));
+        }
+        compBuffer = null;
+        compFlushTimer = null;
+      }
+
+      if (textarea) {
+        textarea.addEventListener('compositionstart', () => {
+          if (compFlushTimer) {
+            clearTimeout(compFlushTimer);
+            compFlushTimer = null;
+          }
+        });
+      }
+
       term.onData((data) => {
         const now = Date.now();
+        // Exact duplicate debounce (iOS compositionend + input fires same data twice)
         if (data.length > 1 && data === lastInputData && now - lastInputTime < 100) {
           return;
         }
         lastInputData = data;
         lastInputTime = now;
 
-        if (ws && ws.readyState === WebSocket.OPEN) {
+        if (!ws || ws.readyState !== WebSocket.OPEN) return;
+
+        // Single-char keystrokes: send immediately (normal typing)
+        if (data.length === 1) {
+          if (compFlushTimer) {
+            clearTimeout(compFlushTimer);
+            flushCompBuffer();
+          }
           ws.send(JSON.stringify({ type: 'input', content: data }));
+          return;
         }
+
+        // Multi-char data (IME / voice dictation result):
+        // Buffer and wait 300ms. If compositionstart fires before timeout,
+        // the timer is cancelled (recognition still going).
+        // Only the final result after recognition completes gets sent.
+        compBuffer = data;
+        if (compFlushTimer) clearTimeout(compFlushTimer);
+        compFlushTimer = setTimeout(flushCompBuffer, 300);
       });
 
       const resizeObserver = new ResizeObserver(() => scheduleFit(50));
