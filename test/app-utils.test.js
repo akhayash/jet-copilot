@@ -1,7 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
-const { getShortcutContent } = require('../public/app-utils');
+const { getShortcutContent, escapeHtml } = require('../public/app-utils');
 
 test('getShortcutContent maps special shortcut keys', () => {
   assert.equal(getShortcutContent('esc'), '\x1b');
@@ -13,4 +13,10 @@ test('getShortcutContent maps special shortcut keys', () => {
 
 test('getShortcutContent returns plain text keys unchanged', () => {
   assert.equal(getShortcutContent('hello'), 'hello');
+});
+
+test('escapeHtml escapes dangerous characters', () => {
+  assert.equal(escapeHtml('<script>alert("xss")</script>'), '&lt;script&gt;alert(&quot;xss&quot;)&lt;/script&gt;');
+  assert.equal(escapeHtml('a&b'), 'a&amp;b');
+  assert.equal(escapeHtml('normal text'), 'normal text');
 });

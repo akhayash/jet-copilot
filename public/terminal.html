@@ -34,6 +34,7 @@
         <button id="image-toggle" class="voice-toggle" onclick="toggleImageUpload()">📎</button>
         <button id="paste-toggle" class="voice-toggle" onclick="pasteFromClipboard()">📋</button>
         <button id="voice-toggle" class="voice-toggle" onclick="toggleVoiceInput()">⌨️</button>
+        <button id="capture-toggle" class="voice-toggle" onclick="toggleCapturePanel()">📸</button>
       </div>
       <div id="preview-panel" class="preview-panel hidden">
         <div class="preview-panel-header">
@@ -62,6 +63,34 @@
         </label>
         <button class="voice-send" onclick="uploadImage()">Send</button>
         <button class="voice-close" onclick="toggleImageUpload()">✕</button>
+      </div>
+      <div id="capture-panel" class="capture-panel hidden">
+        <div class="capture-panel-header">
+          <div>
+            <div class="preview-panel-title">📸 Window Capture</div>
+            <div class="preview-panel-copy">Capture a window on the server for visual confirmation.</div>
+          </div>
+          <button class="voice-close" onclick="toggleCapturePanel()">✕</button>
+        </div>
+        <div class="capture-input-group">
+          <button class="capture-refresh-btn" onclick="loadCaptureWindows()">🔄</button>
+          <select id="capture-window-select" class="capture-window-select">
+            <option value="">Loading...</option>
+          </select>
+          <button class="preview-open-btn" onclick="captureWindow()">📸 Capture</button>
+        </div>
+      </div>
+      <div id="capture-modal" class="capture-modal hidden" onclick="closeCaptureModal(event)">
+        <div class="capture-modal-content" onclick="event.stopPropagation()">
+          <img id="capture-modal-img" class="capture-modal-img" src="" alt="Captured window">
+          <div class="capture-modal-info" id="capture-modal-info"></div>
+          <div class="capture-modal-actions">
+            <button class="preview-action-btn" onclick="recaptureWindow()">🔄 Re-capture</button>
+            <button class="preview-action-btn" onclick="copyCapturedPath()">📋 Copy Path</button>
+            <button class="preview-action-btn" onclick="sendCapturedPath()">📨 Send to CLI</button>
+            <button class="preview-stop-btn" onclick="closeCaptureModal()">✕ Close</button>
+          </div>
+        </div>
       </div>
     </div>
   </div>

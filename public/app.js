@@ -290,6 +290,7 @@ function closeAllPanels() {
     { bar: 'voice-bar', btn: 'voice-toggle' },
     { bar: 'image-bar', btn: 'image-toggle' },
     { bar: 'preview-panel', btn: 'preview-toggle' },
+    { bar: 'capture-panel', btn: 'capture-toggle' },
   ];
   ids.forEach(({ bar, btn }) => {
     const barEl = document.getElementById(bar);
@@ -571,6 +572,119 @@ function hardReset() {
     term.focus();
   }
 }
+
+// Window capture
+let lastCaptureResult = null;
+let lastCaptureWindowId = null;
+
+function toggleCapturePanel() {
+  const wasHidden = document.getElementById('capture-panel')?.classList.contains('hidden');
+  toggleBar('capture-panel', 'capture-toggle');
+  if (wasHidden) loadCaptureWindows();
+}
+
+async function loadCaptureWindows() {
+  const select = document.getElementById('capture-window-select');
+  if (!select) return;
+  select.innerHTML = '<option value="">Loading...</option>';
+
+  try {
+    const res = await fetch('/api/windows');
+    const windows = await res.json();
+    if (windows.length === 0) {
+      select.innerHTML = '<option value="">No windows found</option>';
+      return;
+    }
+    select.innerHTML = windows.map((w) => {
+      const raw = w.title ? `${w.appName} – ${w.title}` : w.appName;
+      const truncated = raw.length > 60 ? raw.substring(0, 57) + '...' : raw;
+      return `<option value="${w.id}">${window.AppUtils.escapeHtml(truncated)}</option>`;
+    }).join('');
+  } catch {
+    select.innerHTML = '<option value="">Failed to load windows</option>';
+  }
+}
+
+async function captureWindow() {
+  const select = document.getElementById('capture-window-select');
+  const windowId = parseInt(select?.value, 10);
+  if (!windowId) return;
+
+  lastCaptureWindowId = windowId;
+
+  try {
+    const res = await fetch('/api/capture', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ windowId }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      alert('Capture failed: ' + (data.error || 'Unknown error'));
+      return;
+    }
+    lastCaptureResult = data;
+    showCaptureModal(data);
+  } catch (err) {
+    alert('Capture failed: ' + err.message);
+  }
+}
+
+function showCaptureModal(data) {
+  const modal = document.getElementById('capture-modal');
+  const img = document.getElementById('capture-modal-img');
+  const info = document.getElementById('capture-modal-info');
+  if (!modal || !img) return;
+
+  img.src = data.url + '?t=' + Date.now();
+  info.textContent = `${data.width}×${data.height}`;
+  modal.classList.remove('hidden');
+}
+
+function closeCaptureModal(event) {
+  if (event && event.target !== document.getElementById('capture-modal')) return;
+  document.getElementById('capture-modal')?.classList.add('hidden');
+  if (term) term.focus();
+}
+
+async function recaptureWindow() {
+  if (lastCaptureWindowId) {
+    const select = document.getElementById('capture-window-select');
+    if (select) select.value = String(lastCaptureWindowId);
+    await captureWindow();
+  }
+}
+
+function copyCapturedPath() {
+  if (!lastCaptureResult?.path) return;
+  const fpath = lastCaptureResult.path.replace(/\\/g, '/');
+  navigator.clipboard?.writeText(fpath).then(() => {
+    const info = document.getElementById('capture-modal-info');
+    if (info) {
+      const orig = info.textContent;
+      info.textContent = 'Copied!';
+      setTimeout(() => { info.textContent = orig; }, 1500);
+    }
+  });
+}
+
+function sendCapturedPath() {
+  if (!lastCaptureResult?.path || !ws || ws.readyState !== WebSocket.OPEN) return;
+  const fpath = lastCaptureResult.path.replace(/\\/g, '/');
+  ws.send(JSON.stringify({ type: 'input', content: `@${fpath} ` }));
+  closeCaptureModal();
+}
+
+// ESC closes capture modal
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    const modal = document.getElementById('capture-modal');
+    if (modal && !modal.classList.contains('hidden')) {
+      e.preventDefault();
+      closeCaptureModal();
+    }
+  }
+});
 
 window.addEventListener('load', () => connect());
 window.setInterval(() => {

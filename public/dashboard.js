@@ -314,3 +314,56 @@ async function stopPreview(port) {
     alert('Failed to stop preview: ' + err.message);
   }
 }
+
+// Window capture
+async function loadDashboardWindows() {
+  const select = document.getElementById('dashboard-capture-select');
+  if (!select) return;
+  select.innerHTML = '<option value="">Loading...</option>';
+
+  try {
+    const res = await fetch('/api/windows');
+    const windows = await res.json();
+    if (windows.length === 0) {
+      select.innerHTML = '<option value="">No windows found</option>';
+      return;
+    }
+    select.innerHTML = windows.map((w) => {
+      const raw = w.title ? `${w.appName} – ${w.title}` : w.appName;
+      const truncated = raw.length > 60 ? raw.substring(0, 57) + '...' : raw;
+      return `<option value="${w.id}">${AppUtils.escapeHtml(truncated)}</option>`;
+    }).join('');
+  } catch {
+    select.innerHTML = '<option value="">Failed to load windows</option>';
+  }
+}
+
+async function dashboardCapture() {
+  const select = document.getElementById('dashboard-capture-select');
+  const windowId = parseInt(select?.value, 10);
+  if (!windowId) return;
+
+  const area = document.getElementById('dashboard-capture-area');
+  if (area) area.innerHTML = '<div class="capture-preview-meta">Capturing...</div>';
+
+  try {
+    const res = await fetch('/api/capture', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ windowId }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      if (area) area.innerHTML = `<div class="capture-preview-meta" style="color:var(--danger)">Error: ${AppUtils.escapeHtml(data.error)}</div>`;
+      return;
+    }
+    if (area) {
+      area.innerHTML = `
+        <img class="capture-preview-img" src="${data.url}?t=${Date.now()}" alt="Captured window">
+        <div class="capture-preview-meta">${data.width}×${data.height} · ${AppUtils.escapeHtml(data.filename)}</div>
+      `;
+    }
+  } catch (err) {
+    if (area) area.innerHTML = `<div class="capture-preview-meta" style="color:var(--danger)">Capture failed: ${AppUtils.escapeHtml(err.message)}</div>`;
+  }
+}

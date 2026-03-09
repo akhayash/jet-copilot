@@ -687,3 +687,134 @@ header h1 { font-size: 1.1rem; flex: 1; }
 }
 
 .image-file-label:active { border-color: var(--accent); }
+
+/* Window capture panel */
+.capture-panel {
+  position: fixed;
+  left: 12px;
+  right: 12px;
+  bottom: 12px;
+  z-index: 11;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: rgba(22, 27, 34, 0.96);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+}
+
+.capture-panel-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.capture-input-group {
+  display: flex;
+  gap: 0;
+}
+
+.capture-refresh-btn {
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px 0 0 8px;
+  background: var(--surface);
+  font-size: 14px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.capture-refresh-btn:active { opacity: 0.7; }
+
+.capture-window-select {
+  flex: 1;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-left: none;
+  border-right: none;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 14px;
+  outline: none;
+  min-width: 0;
+}
+
+.capture-window-select:focus { border-color: var(--accent); }
+
+.capture-input-group .preview-open-btn {
+  border-radius: 0 8px 8px 0;
+  white-space: nowrap;
+}
+
+/* Capture modal overlay */
+.capture-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.75);
+  padding: 16px;
+}
+
+.capture-modal-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 95vw;
+  max-height: 90vh;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 12px;
+  overflow: hidden;
+}
+
+.capture-modal-img {
+  max-width: 100%;
+  max-height: 70vh;
+  object-fit: contain;
+  border-radius: 8px;
+  background: #000;
+}
+
+.capture-modal-info {
+  font-size: 12px;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.capture-modal-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+/* Dashboard capture section */
+.capture-section {
+  margin-bottom: 24px;
+}
+
+.capture-preview-area {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.capture-preview-img {
+  max-width: 100%;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: #000;
+}
+
+.capture-preview-meta {
+  font-size: 12px;
+  color: var(--text-muted);
+}
