@@ -42,7 +42,7 @@ test('loadEnv reads .env from the launch directory before the package root', () 
 
 test('bin entrypoint launches the CLI runner', async () => {
   const { EventEmitter } = require('node:events');
-  const { run, EXIT_RESTART } = require('../bin/jet-copilot.js');
+  const { run } = require('../bin/jet-copilot.js');
 
   let forkCount = 0;
   const fakeChild = new EventEmitter();
