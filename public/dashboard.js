@@ -1,7 +1,11 @@
 async function loadStatus() {
   try {
-    const res = await fetch('/api/status');
-    const status = await res.json();
+    const [statusRes, versionRes] = await Promise.all([
+      fetch('/api/status'),
+      fetch('/api/version'),
+    ]);
+    const status = await statusRes.json();
+    const version = await versionRes.json();
 
     const dot = document.getElementById('status-indicator');
     const text = document.getElementById('status-text');
@@ -11,10 +15,18 @@ async function loadStatus() {
     dot.classList.add('online');
     text.textContent = `Online · up ${formatUptime(status.uptime)}`;
 
-    // Set default cwd as placeholder
     if (status.defaultCwd && !cwdInput.dataset.loaded) {
       cwdInput.placeholder = status.defaultCwd;
       cwdInput.dataset.loaded = 'true';
+    }
+
+    // Show version in footer
+    const versionText = document.getElementById('version-text');
+    if (versionText) versionText.textContent = `v${version.version}`;
+
+    const updateBtn = document.getElementById('update-btn');
+    if (updateBtn) {
+      updateBtn.style.display = version.updatable ? '' : 'none';
     }
   } catch {
     document.getElementById('status-text').textContent = 'Offline';
@@ -224,6 +236,26 @@ loadStatus();
 loadSessions();
 loadPreviews();
 setInterval(() => { loadStatus(); loadSessions(); loadPreviews(); }, 5000);
+
+// Update
+async function updateServer() {
+  if (!confirm('jet-copilot を更新して再起動しますか？\nアクティブなセッションは終了されます。')) return;
+  const btn = document.getElementById('update-btn');
+  if (btn) { btn.disabled = true; btn.textContent = '🔄 Updating...'; }
+  try {
+    const res = await fetch('/api/update', { method: 'POST' });
+    const data = await res.json();
+    if (!res.ok) {
+      alert('Update failed: ' + (data.error || 'Unknown error'));
+      if (btn) { btn.disabled = false; btn.textContent = '🔄 Update'; }
+      return;
+    }
+    if (btn) btn.textContent = '✅ Restarting...';
+  } catch {
+    // Server may have already restarted — wait for reconnect
+    if (btn) btn.textContent = '⏳ Reconnecting...';
+  }
+}
 
 // Folder filter
 document.getElementById('folder-filter').addEventListener('input', (e) => {

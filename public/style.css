@@ -46,6 +46,44 @@ header {
 
 header h1 { font-size: 1.1rem; flex: 1; }
 
+.update-btn {
+  padding: 4px 12px;
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.update-btn:active {
+  background: var(--accent);
+  color: #fff;
+}
+
+.update-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* Dashboard footer */
+.dashboard-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 0;
+  margin-top: 8px;
+  border-top: 1px solid var(--border);
+}
+
+.version-text {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-family: 'SF Mono', 'Fira Code', monospace;
+}
+
 .back-link {
   display: flex;
   align-items: center;

@@ -1,6 +1,7 @@
 const express = require('express');
 const http = require('http');
 const fs = require('fs');
+const { execSync } = require('child_process');
 const { WebSocketServer } = require('ws');
 const path = require('path');
 const multer = require('multer');
@@ -14,6 +15,8 @@ const { startTunnel } = require('./tunnel');
 loadEnv();
 
 const PORT = process.env.PORT || 3000;
+const EXIT_RESTART = 100;
+const PKG_ROOT = path.resolve(__dirname, '..');
 
 function createApp({
   sessions = new SessionManager(),
@@ -22,6 +25,8 @@ function createApp({
   fsModule = fs,
   pathModule = path,
   multerModule = multer,
+  execSyncFn = execSync,
+  pkgRoot = PKG_ROOT,
 } = {}) {
   const app = express();
   const upload = multerModule({
@@ -197,6 +202,39 @@ function createApp({
       return res.status(404).json({ error: 'Capture not found' });
     }
     res.type('image/png').sendFile(filePath);
+  });
+
+  // Version & update
+  app.get('/api/version', (_req, res) => {
+    try {
+      const pkg = JSON.parse(fsModule.readFileSync(pathModule.join(pkgRoot, 'package.json'), 'utf-8'));
+      const hasGit = fsModule.existsSync(pathModule.join(pkgRoot, '.git'));
+      res.json({ version: pkg.version, updatable: hasGit });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.post('/api/update', (req, res) => {
+    const gitDir = pathModule.join(pkgRoot, '.git');
+    if (!fsModule.existsSync(gitDir)) {
+      return res.status(400).json({ error: 'Not a git installation — cannot update' });
+    }
+
+    try {
+      const pullOutput = execSyncFn('git pull origin main 2>&1', { encoding: 'utf-8', shell: true, cwd: pkgRoot });
+      const installOutput = execSyncFn('npm install 2>&1', { encoding: 'utf-8', shell: true, cwd: pkgRoot });
+      res.json({ status: 'updated', pullOutput: pullOutput.trim(), installOutput: installOutput.substring(0, 500) });
+
+      // Broadcast restart notice and exit after response is sent
+      setTimeout(() => {
+        console.log('  🔄 Restarting after update...');
+        process.exit(EXIT_RESTART);
+      }, 500);
+    } catch (err) {
+      console.error('[update] error:', err.message);
+      res.status(500).json({ error: err.message });
+    }
   });
 
   return { app, sessions, previews, capture };
