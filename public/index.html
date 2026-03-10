@@ -57,9 +57,25 @@
           <div id="preview-summary" class="preview-summary hidden"></div>
           <div id="preview-list"></div>
         </section>
+
+        <section class="session-section capture-section">
+          <div class="section-heading">
+            <h2>📸 Window Capture</h2>
+            <p class="section-copy">Capture a window on the server machine for visual confirmation.</p>
+          </div>
+          <div class="capture-input-group">
+            <button class="capture-refresh-btn" onclick="loadDashboardWindows()">🔄</button>
+            <select id="dashboard-capture-select" class="capture-window-select">
+              <option value="">Click 🔄 to load windows</option>
+            </select>
+            <button class="preview-open-btn" onclick="dashboardCapture()">📸 Capture</button>
+          </div>
+          <div id="dashboard-capture-area" class="capture-preview-area"></div>
+        </section>
       </div>
     </div>
   </div>
+  <script src="app-utils.js"></script>
   <script src="dashboard.js"></script>
 </body>
 </html>

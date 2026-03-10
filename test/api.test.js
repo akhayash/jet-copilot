@@ -140,3 +140,81 @@ test('preview API validates port and returns preview URL', async () => {
   assert.deepEqual(previewCalls, [3001]);
   assert.equal(response.body.url, 'https://preview-3001.devtunnels.ms');
 });
+
+test('windows API returns window list from capture module', async () => {
+  const mockWindows = [
+    { id: 1, pid: 100, appName: 'chrome', title: 'Google Chrome', x: 0, y: 0, width: 1920, height: 1080, isMinimized: false, isFocused: true },
+  ];
+  const { app } = createApp({
+    sessions: new SessionManager(),
+    previews: { list: () => [], start: async () => ({}), stop: () => {} },
+    capture: { listWindows: () => mockWindows, capture: async () => ({}), getCaptureDir: () => '' },
+  });
+
+  const response = await request(app).get('/api/windows').expect(200);
+  assert.equal(response.body.length, 1);
+  assert.equal(response.body[0].title, 'Google Chrome');
+});
+
+test('capture API returns capture result with url and path', async () => {
+  const root = createTempDir();
+  const captureFile = path.join(root, '1234567890.png');
+  fs.writeFileSync(captureFile, 'png-data');
+
+  const { app } = createApp({
+    sessions: new SessionManager(),
+    previews: { list: () => [], start: async () => ({}), stop: () => {} },
+    capture: {
+      listWindows: () => [],
+      async capture(windowId) {
+        return { filename: '1234567890.png', path: captureFile, width: 800, height: 600 };
+      },
+      getCaptureDir: () => root,
+    },
+  });
+
+  try {
+    await request(app).post('/api/capture').send({}).expect(400);
+
+    const response = await request(app)
+      .post('/api/capture')
+      .send({ windowId: 42 })
+      .expect(200);
+
+    assert.equal(response.body.filename, '1234567890.png');
+    assert.equal(response.body.url, '/api/captures/1234567890.png');
+    assert.equal(response.body.width, 800);
+    assert.equal(response.body.height, 600);
+    assert.ok(response.body.path);
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('captures file endpoint serves PNG and rejects invalid filenames', async () => {
+  const root = createTempDir();
+  const pngData = Buffer.from('fake-png');
+  fs.writeFileSync(path.join(root, '9999.png'), pngData);
+
+  const { app } = createApp({
+    sessions: new SessionManager(),
+    previews: { list: () => [], start: async () => ({}), stop: () => {} },
+    capture: {
+      listWindows: () => [],
+      capture: async () => ({}),
+      getCaptureDir: () => root,
+    },
+  });
+
+  try {
+    // Non-numeric filenames are rejected
+    await request(app).get('/api/captures/malicious.png').expect(400);
+    // Numeric but non-existent file returns 404
+    await request(app).get('/api/captures/99999.png').expect(404);
+    // Valid file returns PNG
+    const response = await request(app).get('/api/captures/9999.png').expect(200);
+    assert.equal(response.headers['content-type'], 'image/png');
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});

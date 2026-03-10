@@ -8,6 +8,7 @@ const { CopilotRunner } = require('./copilot-runner');
 const { loadEnv } = require('./load-env');
 const { SessionManager } = require('./session-manager');
 const { PreviewManager } = require('./preview-manager');
+const { WindowCapture } = require('./window-capture');
 const { startTunnel } = require('./tunnel');
 
 loadEnv();
@@ -17,6 +18,7 @@ const PORT = process.env.PORT || 3000;
 function createApp({
   sessions = new SessionManager(),
   previews = new PreviewManager(),
+  capture = new WindowCapture(),
   fsModule = fs,
   pathModule = path,
   multerModule = multer,
@@ -155,7 +157,49 @@ function createApp({
     res.json({ ok: true });
   });
 
-  return { app, sessions, previews };
+  // Window capture
+  app.get('/api/windows', (_req, res) => {
+    try {
+      res.json(capture.listWindows());
+    } catch (err) {
+      console.error('[capture] list error:', err.message);
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.post('/api/capture', async (req, res) => {
+    const windowId = req.body.windowId;
+    if (windowId == null) {
+      return res.status(400).json({ error: 'windowId is required' });
+    }
+    try {
+      const result = await capture.capture(windowId);
+      res.json({
+        filename: result.filename,
+        url: `/api/captures/${result.filename}`,
+        path: result.path,
+        width: result.width,
+        height: result.height,
+      });
+    } catch (err) {
+      console.error('[capture] error:', err.message);
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.get('/api/captures/:filename', (req, res) => {
+    const filename = req.params.filename;
+    if (!/^[0-9]+\.png$/.test(filename)) {
+      return res.status(400).json({ error: 'Invalid filename' });
+    }
+    const filePath = pathModule.join(capture.getCaptureDir(), filename);
+    if (!fsModule.existsSync(filePath)) {
+      return res.status(404).json({ error: 'Capture not found' });
+    }
+    res.type('image/png').sendFile(filePath);
+  });
+
+  return { app, sessions, previews, capture };
 }
 
 function attachWebSocketServer(wss, {
