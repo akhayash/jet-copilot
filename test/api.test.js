@@ -68,6 +68,25 @@ test('browse API filters hidden directories and node_modules', async () => {
   }
 });
 
+test('browse and mkdir reject system-critical paths', async () => {
+  const { app } = createApp({
+    sessions: new SessionManager(),
+    previews: { list: () => [], start: async () => ({}), stop: () => {} },
+  });
+
+  // browse rejects system paths
+  await request(app)
+    .get('/api/browse')
+    .query({ path: 'C:\\Windows\\System32' })
+    .expect(403);
+
+  // mkdir rejects system paths
+  await request(app)
+    .post('/api/mkdir')
+    .send({ path: 'C:\\Windows\\System32\\evil' })
+    .expect(403);
+});
+
 test('mkdir API creates a directory', async () => {
   const root = createTempDir();
   const target = path.join(root, 'nested', 'child');
