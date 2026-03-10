@@ -42,7 +42,7 @@ Browser ── HTTPS ── Dev Tunnels ── Node.js server (Express + WS)
 | `server/session-manager.js` | Session lifecycle (Map-based, 4-char hex IDs) |
 | `server/copilot-runner.js` | PTY spawn + I/O relay |
 | `server/preview-manager.js` | Ephemeral devtunnel per port |
-| `server/tunnel.js` | Persistent tunnel (labeled, detached process) |
+| `server/tunnel.js` | Dev Tunnel auto-start + QR code display |
 | `server/window-capture.js` | Cross-platform window capture (node-screenshots) |
 | `server/load-env.js` | .env loading (cwd priority) |
 | `bin/jet-copilot.js` | Restart wrapper (exit code 100 → re-fork) |
