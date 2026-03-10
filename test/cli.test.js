@@ -41,39 +41,38 @@ test('loadEnv reads .env from the launch directory before the package root', () 
 });
 
 test('bin entrypoint launches the CLI runner', async () => {
-  const serverPath = require.resolve('../server/index.js');
-  const binPath = require.resolve('../bin/jet-copilot.js');
-  const originalServerModule = require.cache[serverPath];
-  const originalBinModule = require.cache[binPath];
-  let launched = false;
+  const { EventEmitter } = require('node:events');
+  const { run, EXIT_RESTART } = require('../bin/jet-copilot.js');
 
-  require.cache[serverPath] = {
-    id: serverPath,
-    filename: serverPath,
-    loaded: true,
-    exports: {
-      runCli: async () => {
-        launched = true;
-      },
-    },
+  let forkCount = 0;
+  const fakeChild = new EventEmitter();
+  const forkFn = () => { forkCount++; return fakeChild; };
+
+  run(forkFn);
+  assert.equal(forkCount, 1);
+
+  // Simulate normal exit — should not restart
+  fakeChild.emit('exit', 0);
+  assert.equal(forkCount, 1);
+});
+
+test('bin restarts on EXIT_RESTART code', async () => {
+  const { EventEmitter } = require('node:events');
+  const { run, EXIT_RESTART } = require('../bin/jet-copilot.js');
+
+  let forkCount = 0;
+  const children = [];
+  const forkFn = () => {
+    forkCount++;
+    const child = new EventEmitter();
+    children.push(child);
+    return child;
   };
 
-  delete require.cache[binPath];
+  run(forkFn);
+  assert.equal(forkCount, 1);
 
-  try {
-    require(binPath);
-    await new Promise((resolve) => setImmediate(resolve));
-    assert.equal(launched, true);
-  } finally {
-    delete require.cache[binPath];
-    if (originalBinModule) {
-      require.cache[binPath] = originalBinModule;
-    }
-
-    if (originalServerModule) {
-      require.cache[serverPath] = originalServerModule;
-    } else {
-      delete require.cache[serverPath];
-    }
-  }
+  // Simulate restart exit code — should fork again
+  children[0].emit('exit', EXIT_RESTART);
+  assert.equal(forkCount, 2);
 });

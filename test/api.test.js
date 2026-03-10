@@ -218,3 +218,45 @@ test('captures file endpoint serves PNG and rejects invalid filenames', async ()
     fs.rmSync(root, { recursive: true, force: true });
   }
 });
+
+test('version API returns version and updatable status', async () => {
+  const root = createTempDir();
+  fs.writeFileSync(path.join(root, 'package.json'), JSON.stringify({ version: '1.2.3' }));
+  fs.mkdirSync(path.join(root, '.git'));
+
+  const { app } = createApp({
+    sessions: new SessionManager(),
+    previews: { list: () => [], start: async () => ({}), stop: () => {} },
+    capture: { listWindows: () => [], capture: async () => ({}), getCaptureDir: () => '' },
+    pkgRoot: root,
+  });
+
+  try {
+    const response = await request(app).get('/api/version').expect(200);
+    assert.equal(response.body.version, '1.2.3');
+    assert.equal(response.body.updatable, true);
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('update API rejects non-git installations', async () => {
+  const root = createTempDir();
+  fs.writeFileSync(path.join(root, 'package.json'), JSON.stringify({ version: '1.0.0' }));
+
+  const { app } = createApp({
+    sessions: new SessionManager(),
+    previews: { list: () => [], start: async () => ({}), stop: () => {} },
+    capture: { listWindows: () => [], capture: async () => ({}), getCaptureDir: () => '' },
+    pkgRoot: root,
+  });
+
+  try {
+    const response = await request(app)
+      .post('/api/update')
+      .expect(400);
+    assert.match(response.body.error, /git/i);
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
