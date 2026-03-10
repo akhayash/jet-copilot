@@ -198,6 +198,8 @@ function connect() {
     }
 
     term.focus();
+    // Re-focus after a short delay for mobile browsers
+    setTimeout(() => { if (term) term.focus(); }, 300);
   };
 
   ws.onmessage = (event) => {
@@ -506,10 +508,32 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Tap outside panels to dismiss
+  // Tap outside panels to dismiss and re-focus terminal
   const container = document.getElementById('terminal-container');
   if (container) {
-    container.addEventListener('pointerdown', () => closeAllPanels());
+    container.addEventListener('pointerdown', () => {
+      closeAllPanels();
+      if (term) term.focus();
+    });
+  }
+
+  // Re-focus terminal when page becomes visible (tab switch, screen unlock)
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden && term) {
+      setTimeout(() => term.focus(), 100);
+    }
+  });
+
+  // Re-focus terminal on any touch in the terminal screen area
+  const screen = document.getElementById('terminal-screen');
+  if (screen) {
+    screen.addEventListener('touchend', (e) => {
+      // Don't steal focus from buttons, panels, or inputs
+      const tag = e.target.tagName;
+      if (tag === 'BUTTON' || tag === 'SELECT' || tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'A') return;
+      if (e.target.closest('.floating-buttons, .voice-bar, .preview-panel, .capture-panel, .capture-modal')) return;
+      if (term) term.focus();
+    }, { passive: true });
   }
 
   // Clipboard paste: upload image if pasted on terminal screen
