@@ -544,7 +544,7 @@ document.addEventListener('DOMContentLoaded', () => {
       // Don't steal focus from buttons, panels, or inputs
       const tag = e.target.tagName;
       if (tag === 'BUTTON' || tag === 'SELECT' || tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'A') return;
-      if (e.target.closest('.floating-buttons, .voice-bar, .preview-panel, .capture-panel, .capture-modal')) return;
+      if (e.target.closest('.toolbar, .voice-bar, .preview-panel, .capture-panel, .capture-modal')) return;
       if (term) term.focus();
     }, { passive: true });
   }
