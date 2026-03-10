@@ -18,6 +18,14 @@ const PORT = process.env.PORT || 3000;
 const EXIT_RESTART = 100;
 const PKG_ROOT = path.resolve(__dirname, '..');
 
+function isPathSafe(resolved) {
+  // Reject paths containing null bytes (injection)
+  if (resolved.includes('\0')) return false;
+  // Reject system-critical directories
+  const blocked = ['/etc', '/proc', '/sys', '/dev', 'C:\\Windows\\System32'];
+  return !blocked.some((b) => resolved.toLowerCase().startsWith(b.toLowerCase()));
+}
+
 function createApp({
   sessions = new SessionManager(),
   previews = new PreviewManager(),
@@ -66,6 +74,10 @@ function createApp({
     const target = req.query.path || process.cwd();
     const resolved = pathModule.resolve(target);
 
+    if (!isPathSafe(resolved)) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
     try {
       const entries = fsModule.readdirSync(resolved, { withFileTypes: true });
       const dirs = entries
@@ -89,6 +101,9 @@ function createApp({
     if (!dirPath) return res.status(400).json({ error: 'Path is required' });
 
     const resolved = pathModule.resolve(dirPath);
+    if (!isPathSafe(resolved)) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
     try {
       fsModule.mkdirSync(resolved, { recursive: true });
       res.json({ created: resolved });
@@ -310,6 +325,24 @@ async function startServer({
 
   console.log(`\n  🚀 jet-copilot server running on http://localhost:${port}\n`);
   await startTunnelFn(port);
+
+  // Graceful shutdown
+  function shutdown() {
+    console.log('\n  🛑 Shutting down...');
+    for (const s of sessions.list()) {
+      if (s.status === 'active') sessions.end(s.id);
+    }
+    wss.close();
+    server.close(() => {
+      console.log('  ✅ Server closed');
+      process.exit(0);
+    });
+    // Force exit after 5s if close hangs
+    setTimeout(() => process.exit(0), 5000).unref();
+  }
+
+  process.on('SIGTERM', shutdown);
+  process.on('SIGINT', shutdown);
 
   return { app, server, wss, sessions, previews };
 }
