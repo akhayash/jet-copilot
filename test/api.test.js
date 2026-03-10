@@ -166,7 +166,7 @@ test('capture API returns capture result with url and path', async () => {
     previews: { list: () => [], start: async () => ({}), stop: () => {} },
     capture: {
       listWindows: () => [],
-      async capture(windowId) {
+      async capture(_windowId) {
         return { filename: '1234567890.png', path: captureFile, width: 800, height: 600 };
       },
       getCaptureDir: () => root,

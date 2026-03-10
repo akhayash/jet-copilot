@@ -5,7 +5,7 @@ const { findOrCreateTunnel, TUNNEL_LABEL } = require('../server/tunnel');
 
 test('findOrCreateTunnel reuses existing tunnel with matching label', () => {
   const commands = [];
-  const execSyncFn = (cmd, opts) => {
+  const execSyncFn = (cmd, _opts) => {
     commands.push(cmd);
     if (cmd.includes('devtunnel list')) {
       return JSON.stringify({ tunnels: [{ tunnelId: 'existing-tunnel.jpe1' }] });
@@ -24,7 +24,7 @@ test('findOrCreateTunnel reuses existing tunnel with matching label', () => {
 
 test('findOrCreateTunnel creates new tunnel when none exists', () => {
   const commands = [];
-  const execSyncFn = (cmd, opts) => {
+  const execSyncFn = (cmd, _opts) => {
     commands.push(cmd);
     if (cmd.includes('devtunnel list')) {
       return JSON.stringify({ warning: 'No tunnels found.' });

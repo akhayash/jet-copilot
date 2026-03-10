@@ -13,103 +13,68 @@
 npm install          # requires native build tools for node-pty
 npm start            # or: node server/index.js
 npm test             # runs all tests via node --test
+npm run lint         # ESLint (flat config)
 node --test test/api.test.js   # run a single test file
 ```
 
+- Run `npm test && npm run lint` before committing
 - Test runner: Node.js built-in `node:test` + `assert/strict`
-- HTTP tests use `supertest` against the Express app (no live server needed)
-- No linter or formatter is configured
+- Linter: ESLint 9 with flat config (`eslint.config.js`)
 
 ## Architecture
 
-Browser-based remote terminal for GitHub Copilot CLI. The server spawns a `copilot` process via node-pty and streams I/O to the browser over WebSocket through xterm.js.
+Browser-based remote terminal for GitHub Copilot CLI via xterm.js + Dev Tunnels.
 
 ```
-Browser ── HTTPS ── Dev Tunnels (cloud) ── tunnel ── Node.js server (Express + WS)
-                                                      ├── node-pty → copilot CLI
-                                                      ├── SessionManager (session lifecycle)
-                                                      ├── PreviewManager (preview tunnels)
-                                                      └── tunnel.js (main tunnel + QR)
+Browser ── HTTPS ── Dev Tunnels ── Node.js server (Express + WS)
+                                    ├── node-pty → copilot CLI
+                                    ├── SessionManager
+                                    ├── PreviewManager
+                                    ├── WindowCapture
+                                    └── tunnel.js (persistent tunnel)
 ```
 
-### Server (`server/`)
+### Key files
 
-- **index.js** — Express app factory (`createApp`), WebSocket handler, REST API routes, CLI entrypoint (`runCli`)
-- **session-manager.js** — `SessionManager` class. Map-based storage, 4-char hex session IDs, tracks WebSocket clients per session, lazy runner instantiation
-- **copilot-runner.js** — `CopilotRunner` class. Spawns PTY (`cmd.exe /c copilot` on Windows, `copilot` elsewhere), relays I/O via callback
-- **preview-manager.js** — `PreviewManager` class. Spawns `devtunnel host` per port with `--allow-anonymous`, extracts URL from stdout via regex
-- **tunnel.js** — `startTunnel` function. Validates devtunnel CLI, starts main tunnel (authenticated, no anonymous), outputs QR code
-- **session-context.js** — `getSessionContext` / `findRepoRoot`. Walks up directories looking for `.git/` to determine repo context
-- **load-env.js** — Loads `.env` with cwd priority over package root
+| File | Role |
+|------|------|
+| `server/index.js` | Express app factory, REST API, WebSocket handler, self-update |
+| `server/session-manager.js` | Session lifecycle (Map-based, 4-char hex IDs) |
+| `server/copilot-runner.js` | PTY spawn + I/O relay |
+| `server/preview-manager.js` | Ephemeral devtunnel per port |
+| `server/tunnel.js` | Persistent tunnel (labeled, detached process) |
+| `server/window-capture.js` | Cross-platform window capture (node-screenshots) |
+| `server/load-env.js` | .env loading (cwd priority) |
+| `bin/jet-copilot.js` | Restart wrapper (exit code 100 → re-fork) |
+| `public/app.js` | Terminal page (xterm.js + WebSocket) |
+| `public/dashboard.js` | Dashboard page (sessions, previews, capture, update) |
+| `public/app-utils.js` | Shared utils (IIFE, browser/CommonJS dual) |
 
-### Frontend (`public/`)
+### REST API
 
-- Two-page vanilla JS app: dashboard (`index.html`) and terminal (`terminal.html?session={id}`)
-- No framework — plain DOM manipulation, fetch API, CSS custom properties for theming
-- Dashboard polls server every 5s for status/sessions/previews
-- Terminal page uses xterm.js v6 + WebSocket for full PTY emulation
-- Mobile-first: touch-friendly buttons, floating action bar, voice input panel, iOS/Android workarounds
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/api/status` | Server status |
+| GET | `/api/version` | Version + updatable flag |
+| POST | `/api/update` | Self-update (git pull → restart) |
+| GET/POST/DELETE | `/api/sessions[/:id]` | Session CRUD |
+| GET | `/api/browse` | File browser |
+| POST | `/api/upload` | Image upload |
+| GET/POST/DELETE | `/api/preview[/:port]` | Preview tunnel management |
+| GET | `/api/windows` | List server windows |
+| POST | `/api/capture` | Capture window screenshot |
+| GET | `/api/captures/:filename` | Serve captured PNG |
 
-### WebSocket protocol
+## Core Conventions
 
-Messages are JSON with a `type` field:
+- **CommonJS** (`require` / `module.exports`)
+- **DI for testability** — all classes accept optional deps (see `server-patterns.instructions.md`)
+- **No class inheritance** — all classes are independent
+- **Early return** for validation/error in route handlers
+- **Error responses** always use `{ error: string }`
+- **Naming**: files `kebab-case.js`, classes `PascalCase`, vars `camelCase`, private `_camelCase`, constants `SCREAMING_SNAKE`
+- **Logging**: `console.log` with emoji, `console.error` with `[tag]` prefix
+- **Comments**: minimal, only explain "why"
+- **Frontend**: vanilla JS, no framework, `innerHTML` with `escapeHtml()` for user data
 
-| Direction | Type | Payload |
-|-----------|------|---------|
-| Client → Server | `input` | `{ content: string }` |
-| Client → Server | `resize` | `{ cols, rows }` |
-| Client → Server | `restart` | _(none)_ |
-| Server → Client | `output` | `{ content: string }` |
-| Server → Client | `error` | `{ content: string }` |
-
-## Conventions
-
-### Module style
-
-- **CommonJS** (`require` / `module.exports`), `"type": "commonjs"` in package.json
-- One class or function group per file, kebab-case filenames
-- Frontend utilities use IIFE for browser/CommonJS dual compatibility
-
-### Dependency injection for testability
-
-All major classes accept optional dependencies so tests can substitute mocks:
-
-```js
-new CopilotRunner(onData, ptyModule);
-new PreviewManager({ spawnFn, setIntervalFn, ... });
-createApp({ sessions, previews, fsModule, ... });
-```
-
-### Testing patterns
-
-- Mock PTY, spawn, and filesystem via dependency injection — no monkey-patching
-- Use `os.tmpdir()` for filesystem tests with real temp directories
-- API tests: create app with mocked managers, exercise routes via `supertest`
-
-### Error handling
-
-- Express routes: try/catch → `console.error('[tag]', err.message)` → HTTP status + JSON error
-- WebSocket: silent on error, auto-reconnect with 3s delay on close
-- PTY exit: send graceful exit message to connected clients, don't crash
-
-### Naming
-
-| Scope | Convention |
-|-------|-----------|
-| Files | `kebab-case.js` |
-| Classes | `PascalCase` |
-| Functions / variables | `camelCase` |
-| Private properties | `_camelCase` |
-| CSS classes | `kebab-case` |
-| CSS variables | `--kebab-case` |
-
-### Logging
-
-- `console.log` with emoji prefixes (✈️🚀🔗✅) for informational messages
-- `console.error` with `[tag]` prefix (e.g., `[upload]`, `[ws]`) for errors
-- No structured logging library
-
-### Comments
-
-- Minimal — only explain "why", not "what"
-- Document browser/platform workarounds (e.g., xterm.js touch scroll bug)
+See `.github/instructions/` for detailed patterns.
