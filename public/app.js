@@ -15,6 +15,15 @@ function scheduleFit(delay = 0) {
   }, delay);
 }
 
+// Adjust screen height to match visual viewport (mobile keyboard workaround)
+function adjustScreenHeight() {
+  const screen = document.getElementById('terminal-screen');
+  if (!screen) return;
+  if (window.visualViewport) {
+    screen.style.height = `${window.visualViewport.height}px`;
+  }
+}
+
 function updateSessionHeader(_sessionId, session) {
   const context = document.getElementById('session-context');
   const label = document.getElementById('session-label');
@@ -186,8 +195,12 @@ function connect() {
       resizeObserver.observe(container);
 
       if (window.visualViewport) {
-        window.visualViewport.addEventListener('resize', () => scheduleFit(50));
+        window.visualViewport.addEventListener('resize', () => {
+          adjustScreenHeight();
+          scheduleFit(50);
+        });
         window.visualViewport.addEventListener('scroll', () => scheduleFit(50));
+        adjustScreenHeight();
       }
 
       window.addEventListener('orientationchange', () => {
