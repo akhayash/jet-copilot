@@ -1,5 +1,12 @@
 # Copilot Instructions — jet-copilot
 
+## Workflow
+
+- **すべての変更は PR 経由** — main への直接プッシュ禁止。必ず feature branch → PR を作成する
+- **マージはユーザーの承認後** — PR を作成したら、ユーザーに承認を求める。勝手にマージしない
+- **プッシュは OK** — feature branch へのプッシュは自由に行ってよい
+- **リリース時は origin と ms 両方にプッシュ** — `git push origin main --tags && git push ms main --tags`
+
 ## Build & Test
 
 ```bash
