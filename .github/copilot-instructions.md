@@ -43,6 +43,8 @@ Browser ── HTTPS ── Dev Tunnels ── Node.js server (Express + WS)
 | `server/copilot-runner.js` | PTY spawn + I/O relay |
 | `server/preview-manager.js` | Ephemeral devtunnel per port |
 | `server/tunnel.js` | Dev Tunnel auto-start + QR code display |
+| `server/copilot-session-scanner.js` | Scan Copilot CLI session history |
+| `server/yaml-lite.js` | Minimal YAML parser for workspace.yaml |
 | `server/window-capture.js` | Cross-platform window capture (node-screenshots) |
 | `server/load-env.js` | .env loading (cwd priority) |
 | `bin/jet-copilot.js` | Restart wrapper (exit code 100 → re-fork) |
@@ -64,6 +66,7 @@ Browser ── HTTPS ── Dev Tunnels ── Node.js server (Express + WS)
 | GET | `/api/windows` | List server windows |
 | POST | `/api/capture` | Capture window screenshot |
 | GET | `/api/captures/:filename` | Serve captured PNG |
+| GET | `/api/copilot-sessions` | List Copilot CLI sessions for cwd |
 
 ## Core Conventions
 

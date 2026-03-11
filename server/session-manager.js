@@ -7,7 +7,7 @@ class SessionManager {
     this._startTime = Date.now();
   }
 
-  create(cwd) {
+  create(cwd, { copilotSessionId } = {}) {
     const context = getSessionContext(cwd || process.cwd());
     const id = crypto.randomBytes(2).toString('hex');
     const session = {
@@ -19,6 +19,7 @@ class SessionManager {
       repoRoot: context.repoRoot,
       inRepo: context.inRepo,
       displayName: context.displayName,
+      copilotSessionId: copilotSessionId || crypto.randomUUID(),
       startedAt: new Date().toISOString(),
       endedAt: null,
       clients: new Set(),
@@ -42,6 +43,7 @@ class SessionManager {
       repoRoot: session.repoRoot,
       inRepo: session.inRepo,
       displayName: session.displayName,
+      copilotSessionId: session.copilotSessionId,
       startedAt: session.startedAt,
       endedAt: session.endedAt,
       clientCount: session.clients.size,
