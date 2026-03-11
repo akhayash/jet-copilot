@@ -69,12 +69,22 @@ function renderSessions(sectionId, containerId, sessions, showConnect) {
          </div>`
       : '';
     const clients = s.clientCount > 0 ? `<span class="client-badge">${s.clientCount} connected</span>` : '';
-    const cwdLabel = s.cwd ? `<div class="session-cwd">📁 ${s.cwd}</div>` : '';
+    const repoLabel = s.repoName
+      ? `<span class="session-display-name">${AppUtils.escapeHtml(s.repoName)}</span>`
+      : '';
+    const folderLabel = s.folderName && s.folderName !== s.repoName
+      ? `<span class="session-folder-name">${AppUtils.escapeHtml(s.folderName)}</span>`
+      : '';
+    const dirLabel = !s.repoName && s.folderName
+      ? `<span class="session-display-name">${AppUtils.escapeHtml(s.folderName)}</span>`
+      : '';
+    const cwdLabel = s.cwd ? `<div class="session-cwd">📁 ${AppUtils.escapeHtml(s.cwd)}</div>` : '';
 
     return `
       <div class="session-card">
         <div class="session-info">
-          <span class="session-id">${statusIcon} Session #${s.id}</span>
+          <span class="session-id">${statusIcon} #${s.id}</span>
+          ${repoLabel}${folderLabel}${dirLabel}
           ${clients}
         </div>
         ${cwdLabel}

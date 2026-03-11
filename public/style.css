@@ -313,6 +313,18 @@ header h1 { font-size: 1.1rem; flex: 1; }
   font-size: 15px;
 }
 
+.session-display-name {
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--accent);
+}
+
+.session-folder-name {
+  font-size: 13px;
+  color: var(--text-muted);
+  font-family: 'SF Mono', 'Fira Code', monospace;
+}
+
 .client-badge {
   font-size: 11px;
   background: rgba(88, 166, 255, 0.15);
