@@ -406,6 +406,10 @@ header h1 { font-size: 1.1rem; flex: 1; }
   color: var(--accent);
 }
 
+#kb-toggle.active {
+  color: var(--danger);
+}
+
 .voice-bar {
   display: flex;
   align-items: flex-end;
