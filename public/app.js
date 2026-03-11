@@ -3,6 +3,18 @@ let term = null;
 let fitAddon = null;
 let fitTimer = null;
 let activeSessionHeaderId = null;
+let keyboardLocked = false;
+let xtermTextarea = null;
+const isTouchDevice = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+
+function shouldShowKeyboard(clientY) {
+  if (!isTouchDevice) return true;
+  if (keyboardLocked) return false;
+  const rect = document.getElementById('terminal-container')?.getBoundingClientRect();
+  if (!rect) return true;
+  // Only show keyboard when touching the bottom 20% of the terminal
+  return (clientY - rect.top) > rect.height * 0.8;
+}
 
 function scheduleFit(delay = 0) {
   if (fitTimer) clearTimeout(fitTimer);
@@ -145,6 +157,7 @@ function connect() {
 
       const container = document.getElementById('terminal-container');
       term.open(container);
+      xtermTextarea = container.querySelector('.xterm-helper-textarea');
       scheduleFit();
       scheduleFit(150);
       if (document.fonts?.ready) {
@@ -158,11 +171,19 @@ function connect() {
         let touchActive = false;
         let accumulated = 0;
 
+        // Keyboard zone: suppress virtual keyboard when touching the upper 80%
         xtermScreen.addEventListener('touchstart', (e) => {
           if (e.touches.length === 1) {
             touchStartY = e.touches[0].clientY;
             touchActive = true;
             accumulated = 0;
+            if (xtermTextarea) {
+              if (shouldShowKeyboard(e.touches[0].clientY)) {
+                xtermTextarea.removeAttribute('inputmode');
+              } else {
+                xtermTextarea.setAttribute('inputmode', 'none');
+              }
+            }
           }
         }, { passive: true });
 
@@ -210,9 +231,10 @@ function connect() {
       window.addEventListener('resize', () => scheduleFit(50));
     }
 
-    term.focus();
-    // Re-focus after a short delay for mobile browsers
-    setTimeout(() => { if (term) term.focus(); }, 300);
+    if (!keyboardLocked) {
+      term.focus();
+      setTimeout(() => { if (term && !keyboardLocked) term.focus(); }, 300);
+    }
   };
 
   ws.onmessage = (event) => {
@@ -334,6 +356,18 @@ function toggleBar(barId, btnId, focusId) {
 
 function toggleVoiceInput() {
   toggleBar('voice-bar', 'voice-toggle', 'voice-input');
+}
+
+function toggleKeyboard() {
+  keyboardLocked = !keyboardLocked;
+  const btn = document.getElementById('kb-toggle');
+  if (btn) btn.classList.toggle('active', keyboardLocked);
+  if (keyboardLocked && xtermTextarea) {
+    xtermTextarea.setAttribute('inputmode', 'none');
+    xtermTextarea.blur();
+  } else if (xtermTextarea) {
+    xtermTextarea.removeAttribute('inputmode');
+  }
 }
 
 function sendVoiceInput() {
@@ -524,15 +558,15 @@ document.addEventListener('DOMContentLoaded', () => {
   // Tap outside panels to dismiss and re-focus terminal
   const container = document.getElementById('terminal-container');
   if (container) {
-    container.addEventListener('pointerdown', () => {
+    container.addEventListener('pointerdown', (e) => {
       closeAllPanels();
-      if (term) term.focus();
+      if (term && shouldShowKeyboard(e.clientY)) term.focus();
     });
   }
 
   // Re-focus terminal when page becomes visible (tab switch, screen unlock)
   document.addEventListener('visibilitychange', () => {
-    if (!document.hidden && term) {
+    if (!document.hidden && term && !keyboardLocked) {
       setTimeout(() => term.focus(), 100);
     }
   });
@@ -545,7 +579,8 @@ document.addEventListener('DOMContentLoaded', () => {
       const tag = e.target.tagName;
       if (tag === 'BUTTON' || tag === 'SELECT' || tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'A') return;
       if (e.target.closest('.toolbar, .voice-bar, .preview-panel, .capture-panel, .capture-modal')) return;
-      if (term) term.focus();
+      const touch = e.changedTouches?.[0];
+      if (term && touch && shouldShowKeyboard(touch.clientY)) term.focus();
     }, { passive: true });
   }
 
