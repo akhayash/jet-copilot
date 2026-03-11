@@ -11,6 +11,7 @@ const { SessionManager } = require('./session-manager');
 const { PreviewManager } = require('./preview-manager');
 const { WindowCapture } = require('./window-capture');
 const { startTunnel } = require('./tunnel');
+const { scanCopilotSessions } = require('./copilot-session-scanner');
 
 loadEnv();
 
@@ -66,8 +67,9 @@ function createApp({
 
   app.post('/api/sessions', (req, res) => {
     const cwd = req.body.cwd || undefined;
-    const session = sessions.create(cwd);
-    res.json({ id: session.id });
+    const copilotSessionId = req.body.copilotSessionId || undefined;
+    const session = sessions.create(cwd, { copilotSessionId });
+    res.json({ id: session.id, copilotSessionId: session.copilotSessionId });
   });
 
   app.get('/api/browse', (req, res) => {
@@ -117,6 +119,16 @@ function createApp({
     if (!session) return res.status(404).json({ error: 'Session not found' });
     sessions.end(req.params.id);
     res.json({ ok: true });
+  });
+
+  app.get('/api/copilot-sessions', (req, res) => {
+    const cwd = req.query.cwd || process.cwd();
+    try {
+      const copilotSessions = scanCopilotSessions(cwd);
+      res.json(copilotSessions);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
   });
 
   app.post('/api/upload', (req, res) => {
@@ -274,6 +286,9 @@ function attachWebSocketServer(wss, {
     sessions.addClient(sessionId, ws);
 
     if (!session.runner) {
+      const resumeArgs = session.copilotSessionId
+        ? ['--resume', session.copilotSessionId]
+        : [];
       session.runner = runnerFactory((data) => {
         for (const client of session.clients) {
           if (client.readyState === 1) {
@@ -281,7 +296,7 @@ function attachWebSocketServer(wss, {
           }
         }
       });
-      session.runner.start(session.cwd);
+      session.runner.start(session.cwd, { args: resumeArgs });
     }
 
     ws.on('message', (data) => {
@@ -293,7 +308,10 @@ function attachWebSocketServer(wss, {
           session.runner.resize(msg.cols, msg.rows);
         } else if (msg.type === 'restart' && session.runner) {
           console.log(`[ws] Restarting Copilot for session ${sessionId}`);
-          session.runner.restart(session.cwd);
+          const resumeArgs = session.copilotSessionId
+            ? ['--resume', session.copilotSessionId]
+            : [];
+          session.runner.restart(session.cwd, { args: resumeArgs });
         }
       } catch {
         if (session.runner) session.runner.write(data.toString());

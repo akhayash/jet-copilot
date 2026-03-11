@@ -57,12 +57,31 @@ test('CopilotRunner.start spawns PTY and forwards output', () => {
   assert.deepEqual(outputs, ['hello']);
 });
 
+test('CopilotRunner.start passes extra args to copilot', () => {
+  const fakePty = createFakePty();
+  const calls = [];
+  const ptyModule = {
+    spawn(file, args, options) {
+      calls.push({ file, args, options });
+      return fakePty;
+    },
+  };
+
+  const runner = new CopilotRunner(() => {}, ptyModule);
+  runner.start('C:\\repo', { args: ['--resume', 'abc-123'] });
+
+  assert.equal(calls.length, 1);
+  assert.deepEqual(calls[0].args, ['/c', 'copilot', '--resume', 'abc-123']);
+});
+
 test('CopilotRunner delegates write, resize, restart, and cleanup', () => {
   const fakePtyA = createFakePty();
   const fakePtyB = createFakePty();
   const spawned = [fakePtyA, fakePtyB];
+  const calls = [];
   const ptyModule = {
-    spawn() {
+    spawn(_file, args) {
+      calls.push(args);
       return spawned.shift();
     },
   };
@@ -71,13 +90,14 @@ test('CopilotRunner delegates write, resize, restart, and cleanup', () => {
   runner.start('C:\\repo');
   runner.write('abc');
   runner.resize(120, 40);
-  runner.restart('C:\\repo2');
+  runner.restart('C:\\repo2', { args: ['--resume', 'xyz'] });
   runner.cleanup();
 
   assert.deepEqual(fakePtyA.writes, ['abc']);
   assert.deepEqual(fakePtyA.resizes, [[120, 40]]);
   assert.equal(fakePtyA.killed, true);
   assert.equal(fakePtyB.killed, true);
+  assert.deepEqual(calls[1], ['/c', 'copilot', '--resume', 'xyz']);
 });
 
 test('CopilotRunner emits exit message and clears PTY on exit', () => {

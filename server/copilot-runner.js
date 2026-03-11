@@ -7,12 +7,12 @@ class CopilotRunner {
     this._ptyModule = ptyModule;
   }
 
-  start(cwd) {
+  start(cwd, { args = [] } = {}) {
     const isWindows = process.platform === 'win32';
     const file = isWindows ? 'cmd.exe' : 'copilot';
-    const args = isWindows ? ['/c', 'copilot'] : [];
+    const baseArgs = isWindows ? ['/c', 'copilot', ...args] : [...args];
 
-    this._pty = this._ptyModule.spawn(file, args, {
+    this._pty = this._ptyModule.spawn(file, baseArgs, {
       name: 'xterm-256color',
       cols: 80,
       rows: 24,
@@ -46,12 +46,12 @@ class CopilotRunner {
     }
   }
 
-  restart(cwd) {
+  restart(cwd, { args = [] } = {}) {
     if (this._pty) {
       this._pty.kill();
       this._pty = null;
     }
-    this.start(cwd);
+    this.start(cwd, { args });
   }
 
   cleanup() {

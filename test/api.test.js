@@ -26,12 +26,14 @@ test('session APIs create, list, and end sessions', async () => {
     .expect(200);
 
   assert.match(createResponse.body.id, /^[0-9a-f]{4}$/);
+  assert.ok(createResponse.body.copilotSessionId);
 
   const listResponse = await request(app).get('/api/sessions').expect(200);
   assert.equal(listResponse.body.length, 1);
   assert.equal(listResponse.body[0].cwd, 'C:\\repo');
   assert.equal(listResponse.body[0].status, 'active');
   assert.equal(listResponse.body[0].displayName, 'repo');
+  assert.ok(listResponse.body[0].copilotSessionId);
 
   const getResponse = await request(app)
     .get(`/api/sessions/${createResponse.body.id}`)
@@ -43,6 +45,23 @@ test('session APIs create, list, and end sessions', async () => {
 
   const ended = sessions.get(createResponse.body.id);
   assert.equal(ended.status, 'ended');
+});
+
+test('session create accepts copilotSessionId for resume', async () => {
+  const sessions = new SessionManager();
+  const { app } = createApp({
+    sessions,
+    previews: { list: () => [], start: async () => ({}), stop: () => {} },
+  });
+
+  const response = await request(app)
+    .post('/api/sessions')
+    .send({ cwd: 'C:\\repo', copilotSessionId: 'my-uuid-123' })
+    .expect(200);
+
+  assert.equal(response.body.copilotSessionId, 'my-uuid-123');
+  const session = sessions.get(response.body.id);
+  assert.equal(session.copilotSessionId, 'my-uuid-123');
 });
 
 test('browse API filters hidden directories and node_modules', async () => {

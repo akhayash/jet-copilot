@@ -69,12 +69,22 @@ function renderSessions(sectionId, containerId, sessions, showConnect) {
          </div>`
       : '';
     const clients = s.clientCount > 0 ? `<span class="client-badge">${s.clientCount} connected</span>` : '';
-    const cwdLabel = s.cwd ? `<div class="session-cwd">📁 ${s.cwd}</div>` : '';
+    const repoLabel = s.repoName
+      ? `<span class="session-display-name">${AppUtils.escapeHtml(s.repoName)}</span>`
+      : '';
+    const folderLabel = s.folderName && s.folderName !== s.repoName
+      ? `<span class="session-folder-name">${AppUtils.escapeHtml(s.folderName)}</span>`
+      : '';
+    const dirLabel = !s.repoName && s.folderName
+      ? `<span class="session-display-name">${AppUtils.escapeHtml(s.folderName)}</span>`
+      : '';
+    const cwdLabel = s.cwd ? `<div class="session-cwd">📁 ${AppUtils.escapeHtml(s.cwd)}</div>` : '';
 
     return `
       <div class="session-card">
         <div class="session-info">
-          <span class="session-id">${statusIcon} Session #${s.id}</span>
+          <span class="session-id">${statusIcon} #${s.id}</span>
+          ${repoLabel}${folderLabel}${dirLabel}
           ${clients}
         </div>
         ${cwdLabel}
@@ -231,10 +241,80 @@ function formatTime(iso) {
   return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
 
+function formatDate(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  const today = new Date();
+  if (d.toDateString() === today.toDateString()) return formatTime(iso);
+  return d.toLocaleDateString([], { month: 'short', day: 'numeric' }) + ' ' + formatTime(iso);
+}
+
+async function loadCopilotSessions() {
+  try {
+    const cwdInput = document.getElementById('cwd-input');
+    const cwd = cwdInput.value.trim() || undefined;
+    const query = cwd ? `?cwd=${encodeURIComponent(cwd)}` : '';
+    const res = await fetch(`/api/copilot-sessions${query}`);
+    const sessions = await res.json();
+
+    const section = document.getElementById('copilot-sessions-section');
+    const container = document.getElementById('copilot-sessions');
+
+    if (!sessions.length) {
+      section.classList.add('hidden');
+      return;
+    }
+
+    section.classList.remove('hidden');
+    container.innerHTML = sessions.slice(0, 20).map((s) => {
+      const time = formatDate(s.updatedAt || s.createdAt);
+      const summary = s.summary
+        ? `<div class="session-summary">${AppUtils.escapeHtml(s.summary)}</div>`
+        : '';
+      const branch = s.branch
+        ? `<span class="branch-badge">${AppUtils.escapeHtml(s.branch)}</span>`
+        : '';
+
+      return `
+        <div class="session-card">
+          <div class="session-info">
+            <span class="session-id">💬 ${AppUtils.escapeHtml(s.copilotSessionId.substring(0, 8))}</span>
+            ${branch}
+          </div>
+          ${summary}
+          <div class="session-time">${time}</div>
+          <div class="session-actions">
+            <button class="connect-btn" onclick="resumeCopilotSession('${AppUtils.escapeHtml(s.copilotSessionId)}', '${escapeAttr(s.cwd || '')}')">Resume →</button>
+          </div>
+        </div>
+      `;
+    }).join('');
+  } catch {
+    // Ignore
+  }
+}
+
+async function resumeCopilotSession(copilotSessionId, cwd) {
+  try {
+    const body = { copilotSessionId };
+    if (cwd) body.cwd = cwd;
+    const res = await fetch('/api/sessions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    const { id } = await res.json();
+    window.location.href = `/terminal?session=${id}`;
+  } catch (err) {
+    alert('Failed to resume session: ' + err.message);
+  }
+}
+
 // Load on start and refresh periodically
 loadStatus();
 loadSessions();
 loadPreviews();
+loadCopilotSessions();
 setInterval(() => { loadStatus(); loadSessions(); loadPreviews(); }, 5000);
 
 // Update

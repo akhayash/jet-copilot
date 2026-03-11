@@ -313,6 +313,18 @@ header h1 { font-size: 1.1rem; flex: 1; }
   font-size: 15px;
 }
 
+.session-display-name {
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--accent);
+}
+
+.session-folder-name {
+  font-size: 13px;
+  color: var(--text-muted);
+  font-family: 'SF Mono', 'Fira Code', monospace;
+}
+
 .client-badge {
   font-size: 11px;
   background: rgba(88, 166, 255, 0.15);
@@ -335,6 +347,24 @@ header h1 { font-size: 1.1rem; flex: 1; }
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.session-summary {
+  font-size: 13px;
+  color: var(--text);
+  margin-bottom: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.branch-badge {
+  font-size: 11px;
+  background: rgba(63, 185, 80, 0.15);
+  color: #3fb950;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-family: 'SF Mono', 'Fira Code', monospace;
 }
 
 .connect-btn {

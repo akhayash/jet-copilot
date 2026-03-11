@@ -21,6 +21,15 @@ test('SessionManager.create sets id, cwd, and active status', () => {
   assert.equal(session.endedAt, null);
   assert.ok(session.startedAt);
   assert.equal(session.displayName, 'repo');
+  assert.ok(session.copilotSessionId);
+  assert.match(session.copilotSessionId, /^[0-9a-f-]{36}$/);
+});
+
+test('SessionManager.create accepts custom copilotSessionId', () => {
+  const manager = new SessionManager();
+  const session = manager.create('C:\\work\\repo', { copilotSessionId: 'custom-uuid' });
+
+  assert.equal(session.copilotSessionId, 'custom-uuid');
 });
 
 test('SessionManager.list includes connected client count', () => {
