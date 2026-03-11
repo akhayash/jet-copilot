@@ -29,12 +29,27 @@
         <span id="status-dot" class="status-dot offline"></span>
       </header>
       <div id="terminal-container"></div>
-      <div class="floating-buttons">
-        <button id="preview-toggle" class="voice-toggle" onclick="togglePreviewInput()">🔗</button>
-        <button id="image-toggle" class="voice-toggle" onclick="toggleImageUpload()">📎</button>
-        <button id="paste-toggle" class="voice-toggle" onclick="pasteFromClipboard()">📋</button>
-        <button id="voice-toggle" class="voice-toggle" onclick="toggleVoiceInput()">⌨️</button>
-        <button id="capture-toggle" class="voice-toggle" onclick="toggleCapturePanel()">📸</button>
+      <div class="toolbar">
+        <button id="preview-toggle" class="toolbar-btn" onclick="togglePreviewInput()">
+          <span class="toolbar-icon">🌐</span>
+          <span class="toolbar-label">Preview</span>
+        </button>
+        <button id="image-toggle" class="toolbar-btn" onclick="toggleImageUpload()">
+          <span class="toolbar-icon">📎</span>
+          <span class="toolbar-label">Upload</span>
+        </button>
+        <button id="paste-toggle" class="toolbar-btn" onclick="pasteFromClipboard()">
+          <span class="toolbar-icon">📋</span>
+          <span class="toolbar-label">Paste</span>
+        </button>
+        <button id="voice-toggle" class="toolbar-btn" onclick="toggleVoiceInput()">
+          <span class="toolbar-icon">⌨️</span>
+          <span class="toolbar-label">Text</span>
+        </button>
+        <button id="capture-toggle" class="toolbar-btn" onclick="toggleCapturePanel()">
+          <span class="toolbar-icon">📸</span>
+          <span class="toolbar-label">Capture</span>
+        </button>
       </div>
       <div id="preview-panel" class="preview-panel hidden">
         <div class="preview-panel-header">
