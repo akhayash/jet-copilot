@@ -24,8 +24,8 @@ SSH 管理 ── Azure Bastion (Developer SKU, 無料)
 # デフォルト: rg=jet-copilot-rg, location=japaneast, vm=jet-copilot-vm
 ./infra/deploy.sh
 
-# カスタム（リージョン変更、private repo は PAT 付き URL）
-./infra/deploy.sh my-rg eastus my-vm "https://<PAT>@github.com/akhayash/jet-copilot.git"
+# カスタム（リージョン変更）
+./infra/deploy.sh my-rg eastus my-vm
 ```
 
 cloud-init による自動セットアップ（2-3分）:
@@ -34,7 +34,7 @@ cloud-init による自動セットアップ（2-3分）:
 
 deploy.sh による追加セットアップ（3-5分）:
 - cloud-init 完了待ち
-- jet-copilot リポジトリ clone（private repo 対応）
+- jet-copilot リポジトリ clone
 - Docker イメージビルド
 
 ## 初回セットアップ
