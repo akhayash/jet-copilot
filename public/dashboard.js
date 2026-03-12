@@ -54,6 +54,24 @@ async function loadSessions() {
   }
 }
 
+function renderSessionNameLabels(session) {
+  const repoLabel = session.repoName
+    ? `<span class="session-display-name">${AppUtils.escapeHtml(session.repoName)}</span>`
+    : '';
+  const folderLabel = session.folderName && session.folderName !== session.repoName
+    ? `<span class="session-folder-name">${AppUtils.escapeHtml(session.folderName)}</span>`
+    : '';
+  const dirLabel = !session.repoName && session.folderName
+    ? `<span class="session-display-name">${AppUtils.escapeHtml(session.folderName)}</span>`
+    : '';
+
+  return `${repoLabel}${folderLabel}${dirLabel}`;
+}
+
+function renderSessionCwd(session) {
+  return session.cwd ? `<div class="session-cwd">📁 ${AppUtils.escapeHtml(session.cwd)}</div>` : '';
+}
+
 function renderSessions(sectionId, containerId, sessions, showConnect) {
   const section = document.getElementById(sectionId);
   const container = document.getElementById(containerId);
@@ -75,22 +93,14 @@ function renderSessions(sectionId, containerId, sessions, showConnect) {
          </div>`
       : '';
     const clients = s.clientCount > 0 ? `<span class="client-badge">${s.clientCount} connected</span>` : '';
-    const repoLabel = s.repoName
-      ? `<span class="session-display-name">${AppUtils.escapeHtml(s.repoName)}</span>`
-      : '';
-    const folderLabel = s.folderName && s.folderName !== s.repoName
-      ? `<span class="session-folder-name">${AppUtils.escapeHtml(s.folderName)}</span>`
-      : '';
-    const dirLabel = !s.repoName && s.folderName
-      ? `<span class="session-display-name">${AppUtils.escapeHtml(s.folderName)}</span>`
-      : '';
-    const cwdLabel = s.cwd ? `<div class="session-cwd">📁 ${AppUtils.escapeHtml(s.cwd)}</div>` : '';
+    const nameLabels = renderSessionNameLabels(s);
+    const cwdLabel = renderSessionCwd(s);
 
     return `
       <div class="session-card">
         <div class="session-info">
           <span class="session-id">${statusIcon} #${s.id}</span>
-          ${repoLabel}${folderLabel}${dirLabel}
+          ${nameLabels}
           ${clients}
         </div>
         ${cwdLabel}
@@ -280,13 +290,17 @@ async function loadCopilotSessions() {
       const branch = s.branch
         ? `<span class="branch-badge">${AppUtils.escapeHtml(s.branch)}</span>`
         : '';
+      const nameLabels = renderSessionNameLabels(s);
+      const cwdLabel = renderSessionCwd(s);
 
       return `
         <div class="session-card">
           <div class="session-info">
             <span class="session-id">💬 ${AppUtils.escapeHtml(s.copilotSessionId.substring(0, 8))}</span>
+            ${nameLabels}
             ${branch}
           </div>
+          ${cwdLabel}
           ${summary}
           <div class="session-time">${time}</div>
           <div class="session-actions">

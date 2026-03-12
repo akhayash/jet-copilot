@@ -45,4 +45,4 @@ function getSessionContext(cwd, {
   };
 }
 
-module.exports = { findRepoRoot, getSessionContext };
+module.exports = { findRepoRoot, getSessionContext, resolveFolderName };
