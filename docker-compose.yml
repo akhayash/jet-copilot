@@ -12,5 +12,5 @@ services:
       - ~/workspace:/workspace
       # Copilot CLI auth + session history (for --resume)
       - ~/.copilot:/home/jetuser/.copilot
-      # Dev Tunnels auth
-      - ~/.devtunnels:/home/jetuser/.devtunnels
+      # Dev Tunnels auth (devtunnel stores data in ~/DevTunnels)
+      - ~/.devtunnels:/home/jetuser/DevTunnels
