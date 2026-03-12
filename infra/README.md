@@ -31,12 +31,12 @@ SSH 管理 ── Azure Bastion (Developer SKU, 無料)
 cloud-init による自動セットアップ（3-5分）:
 - Docker Engine インストール
 - jet-copilot リポジトリ clone
-- Docker イメージビルド + 起動
+- Docker イメージビルド（起動はしない — 認証が先に必要）
 
 ## 初回セットアップ
 
-デプロイ直後、コンテナは自動的に起動しますが、Copilot CLI と Dev Tunnels の認証がまだ済んでいないため、
-ターミナル機能とトンネル接続は使えません。以下の手順で認証を行ってください。
+デプロイ直後、Docker イメージはビルド済みですが、まだ起動していません。
+Copilot CLI と Dev Tunnels の認証を行ってからコンテナを起動します。
 
 > 💡 認証はデバイスコードフロー（URL + コードをブラウザで入力）で行います。
 > VM にブラウザは不要です。表示された URL を手元の PC のブラウザで開いてください。
@@ -60,10 +60,11 @@ az network bastion ssh \
 
 ### 2. Copilot CLI 認証
 
-コンテナ内で Copilot CLI を起動し、GitHub アカウントで認証します。
+一時的なコンテナでCopilot CLI を起動し、GitHub アカウントで認証します。
 
 ```bash
-docker exec -it jet-copilot copilot
+cd ~/jet-copilot
+docker compose run --rm jet-copilot copilot
 ```
 
 画面に以下のような表示が出ます:
@@ -78,21 +79,21 @@ and enter the code XXXX-XXXX to authenticate.
 
 ### 3. Dev Tunnels 認証
 
-コンテナ内で Dev Tunnels の GitHub 認証を行います。
+同様に一時コンテナで Dev Tunnels の GitHub 認証を行います。
 
 ```bash
-docker exec -it jet-copilot devtunnel user login -g
+docker compose run --rm jet-copilot devtunnel user login -g
 ```
 
-同様にブラウザで URL を開き、コードを入力してください。
+ブラウザで URL を開き、コードを入力してください。
 
-### 4. コンテナ再起動
+### 4. コンテナ起動
 
 認証情報はボリュームに保存されています。
-コンテナを再起動すると、Dev Tunnels が認証済みの状態で接続されます。
+コンテナを起動すると、認証済みの状態で Dev Tunnels が接続されます。
 
 ```bash
-cd ~/jet-copilot && docker compose restart
+docker compose up -d
 ```
 
 再起動後、Dev Tunnels の URL がログに表示される:

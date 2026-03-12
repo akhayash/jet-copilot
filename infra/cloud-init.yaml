@@ -28,5 +28,5 @@ runcmd:
   # Clone jet-copilot
   - su - jetuser -c "git clone https://github.com/akhayash/jet-copilot.git /home/jetuser/jet-copilot"
 
-  # Build and start with docker compose
-  - su - jetuser -c "cd /home/jetuser/jet-copilot && docker compose up -d --build"
+  # Build jet-copilot image (don't start yet — auth needed first)
+  - su - jetuser -c "cd /home/jetuser/jet-copilot && docker compose build"
