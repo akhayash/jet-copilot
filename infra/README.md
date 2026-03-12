@@ -160,6 +160,15 @@ az vm start -g jet-copilot-rg -n jet-copilot-vm
 # → docker compose は restart: unless-stopped なので自動再開
 ```
 
+> ⚠️ `az vm run-command` 経由で `docker compose` を実行する場合は、
+> `export HOME=/home/jetuser` を先に実行してください。
+> root の `~` が `/root/` に展開され、ボリュームマウントがずれます。
+>
+> ```bash
+> az vm run-command invoke ... --scripts \
+>   "export HOME=/home/jetuser && cd ~/jet-copilot && docker compose up -d"
+> ```
+
 ## リソース削除
 
 ```bash
