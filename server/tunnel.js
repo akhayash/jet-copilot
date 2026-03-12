@@ -37,7 +37,6 @@ async function startTunnel(port) {
     const proc = spawn('devtunnel', [
       'host',
       '--port-numbers', String(port),
-      '--allow-anonymous',
     ], {
       stdio: ['ignore', 'pipe', 'pipe'],
       shell: true,
