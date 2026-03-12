@@ -1,69 +1,71 @@
 # jet-copilot Azure Deployment
 
-Azure VM + Docker で jet-copilot をデプロイする手順。
+**English** | [日本語](README.ja.md)
 
-## アーキテクチャ
+Deploy jet-copilot on an Azure VM with Docker.
+
+## Architecture
 
 ```
-ブラウザ ── HTTPS ── Dev Tunnels ── Azure VM (Ubuntu 24.04 + Docker)
-                                      └── jet-copilot コンテナ
-                                            ├── copilot CLI
-                                            └── devtunnel CLI
-SSH 管理 ── Azure Bastion (Developer SKU, 無料)
+Browser ── HTTPS ── Dev Tunnels ── Azure VM (Ubuntu 24.04 + Docker)
+                                    └── jet-copilot container
+                                          ├── copilot CLI
+                                          └── devtunnel CLI
+SSH management ── Azure Bastion (Developer SKU, free)
 ```
 
-## 前提条件
+## Prerequisites
 
-- [Azure CLI](https://aka.ms/installazurecli) インストール済み
-- SSH 鍵ペア（`~/.ssh/id_rsa.pub`）
-- Azure サブスクリプション
+- [Azure CLI](https://aka.ms/installazurecli) installed
+- SSH key pair (`~/.ssh/id_rsa.pub`)
+- Azure subscription
 
-## デプロイ
+## Deployment
 
 ```bash
-# デフォルト: rg=jet-copilot-rg, location=japaneast, vm=jet-copilot-vm
+# Default: rg=jet-copilot-rg, location=japaneast, vm=jet-copilot-vm
 ./infra/deploy.sh
 
-# カスタム（リージョン変更）
+# Custom (change region)
 ./infra/deploy.sh my-rg eastus my-vm
 ```
 
-cloud-init による自動セットアップ（2-3分）:
-- Docker Engine インストール
-- ワークスペース・認証ディレクトリ作成
+cloud-init automatic setup (2-3 min):
+- Docker Engine installation
+- Workspace and credential directory creation
 
-deploy.sh による追加セットアップ（3-5分）:
-- cloud-init 完了待ち
-- jet-copilot リポジトリ clone
-- Docker イメージビルド
+deploy.sh additional setup (3-5 min):
+- Wait for cloud-init to finish
+- Clone jet-copilot repository
+- Build Docker image
 
-## 初回セットアップ
+## Initial Setup
 
-デプロイ直後、Docker イメージはビルド済みですが、まだ起動していません。
-認証を設定してからコンテナを起動します。
+After deployment, the Docker image is built but the container is not yet running.
+Configure authentication before starting the container.
 
-> 💡 VM にはブラウザ不要です。デバイスコードフローの URL を手元の PC で開きます。
+> 💡 No browser is needed on the VM. Open the device-code-flow URL on your local PC.
 
-### 1. SSH 接続
+### 1. SSH Connection
 
-Azure Portal → VM → Connect → Bastion（ブラウザ SSH）。
+Azure Portal → VM → Connect → Bastion (browser SSH).
 
-### 2. GitHub PAT の作成と設定
+### 2. Create and Configure a GitHub PAT
 
-Docker コンテナにはキーチェーンがないため、**GitHub Fine-grained PAT** で認証します。
-1つの PAT で **Copilot CLI** と **Git** の両方を認証できます。
+Docker containers don't have a keychain, so use a **GitHub Fine-grained PAT** for authentication.
+A single PAT covers both **Copilot CLI** and **Git**.
 
-#### PAT 作成手順
+#### Creating the PAT
 
-1. https://github.com/settings/personal-access-tokens/new を開く
-2. 名前: `jet-copilot-vm`、有効期限: 任意（最大1年）
-3. **Repository access**: jet-copilot で使うリポジトリ、または All repositories
-4. **Permissions** で以下を追加:
-   - **Copilot Requests** — Copilot CLI の認証に必要
-   - **Contents** (Read and write) — Git clone/push に必要
-5. Generate token → トークンをコピー
+1. Go to https://github.com/settings/personal-access-tokens/new
+2. Name: `jet-copilot-vm`, Expiration: your choice (up to 1 year)
+3. **Repository access**: repositories used with jet-copilot, or All repositories
+4. **Permissions**:
+   - **Copilot Requests** — required for Copilot CLI authentication
+   - **Contents** (Read and write) — required for Git clone/push
+5. Generate token → copy the token
 
-#### VM に設定
+#### Configure on the VM
 
 ```bash
 cd ~/jet-copilot
@@ -71,109 +73,107 @@ echo 'GH_TOKEN=github_pat_XXXX...' > .env
 chmod 600 .env
 ```
 
-> ⚠️ `.env` は `.gitignore` に含まれており、リポジトリにはコミットされません。
+> ⚠️ `.env` is in `.gitignore` and will not be committed to the repository.
 
-この `GH_TOKEN` は `docker-compose.yml` 経由でコンテナに渡され、以下の用途で自動的に使われます:
-- **Copilot CLI**: `GH_TOKEN` 環境変数を自動検出（ブラウザ認証不要）
-- **Git**: credential helper 経由で `git clone` / `git push` に使用
+This `GH_TOKEN` is passed to the container via `docker-compose.yml` and is automatically used for:
+- **Copilot CLI**: auto-detected via `GH_TOKEN` environment variable (no browser auth needed)
+- **Git**: used for `git clone` / `git push` via credential helper
 
-### 3. Dev Tunnels 認証
+### 3. Dev Tunnels Authentication
 
-一時コンテナで Dev Tunnels の認証を行います。
-この認証情報は `~/DevTunnels` にボリュームマウントされ、コンテナ再起動後も保持されます。
+Authenticate Dev Tunnels in a temporary container.
+Credentials are volume-mounted to `~/DevTunnels` and persist across container restarts.
 
-**Microsoft 個人アカウント（推奨）:**
+**Microsoft personal account (recommended):**
 
 ```bash
 docker compose run --rm jet-copilot devtunnel user login -e -d
 ```
 
-**GitHub アカウント:**
+**GitHub account:**
 
 ```bash
 docker compose run --rm jet-copilot devtunnel user login -g -d
 ```
 
-> ⚠️ Dev Tunnels のブラウザアクセスには、トンネル作成時と同じアカウントでログインが必要です。
-> GitHub 認証の場合、サービス側の不具合で 403 になることがあります（[microsoft/dev-tunnels#578](https://github.com/microsoft/dev-tunnels/issues/578)）。
-> Microsoft 個人アカウントでの認証が安定しています。
+> ⚠️ Browser access to Dev Tunnels requires logging in with the same account used to create the tunnel.
+> GitHub auth may return 403 due to a service-side bug ([microsoft/dev-tunnels#578](https://github.com/microsoft/dev-tunnels/issues/578)).
+> Microsoft personal account auth is more reliable.
 
-### 4. コンテナ起動
+### 4. Start the Container
 
 ```bash
 docker compose up -d
 ```
 
-ログに Dev Tunnels の URL が表示されます:
+The Dev Tunnels URL will appear in the logs:
 
 ```bash
 docker compose logs -f
 # ✅ Tunnel ready: https://xxxx-3000.use.devtunnels.ms
 ```
 
-この URL にブラウザでアクセスすると、jet-copilot ダッシュボードが開きます。
-Dev Tunnels の認証に使ったアカウントでブラウザからログインしてください。
+Open this URL in a browser to access the jet-copilot dashboard.
+Log in with the same account used for Dev Tunnels authentication.
 
-## 認証まとめ
+## Authentication Summary
 
-| 認証 | 用途 | 保存先 | 方法 |
-|------|------|--------|------|
+| Auth | Purpose | Location | Method |
+|------|---------|----------|--------|
 | `GH_TOKEN` (PAT) | Copilot CLI + Git | `~/jet-copilot/.env` | Fine-grained PAT |
-| Dev Tunnels | トンネル接続 | `~/.devtunnels/` → `~/DevTunnels` | `devtunnel user login` |
+| Dev Tunnels | Tunnel connection | `~/.devtunnels/` → `~/DevTunnels` | `devtunnel user login` |
 
-> **ローカル PC（Windows/macOS）** ではキーチェーンがあるため、ブラウザ認証だけで動きます。
-> PAT や `.env` の設定は不要です。
+> On **local PCs (Windows/macOS)**, the keychain handles auth — browser login is sufficient.
+> No PAT or `.env` configuration is needed.
 
-## ボリューム
+## Volumes
 
-| ホスト | コンテナ | 用途 |
-|--------|----------|------|
-| `~/workspace/` | `/workspace/` | 作業ディレクトリ（clone、新規作成）**← デフォルト cwd** |
-| `~/.copilot/` | `/home/jetuser/.copilot/` | Copilot セッション履歴（--resume） |
-| `~/.devtunnels/` | `/home/jetuser/DevTunnels` | Dev Tunnels 認証 |
+| Host | Container | Purpose |
+|------|-----------|---------|
+| `~/workspace/` | `/workspace/` | Working directory (clone, create) **← default cwd** |
+| `~/.copilot/` | `/home/jetuser/.copilot/` | Copilot session history (--resume) |
+| `~/.devtunnels/` | `/home/jetuser/DevTunnels` | Dev Tunnels credentials |
 
-`/workspace` はコンテナの起動ディレクトリ（WORKDIR）です。
-ダッシュボードやCopilot CLI セッションはここを起点に動作します。
-`git clone` したリポジトリはホスト側 `~/workspace/` に永続化され、コンテナ再起動後も残ります。
+`/workspace` is the container's working directory (WORKDIR).
+The dashboard and Copilot CLI sessions use this as their starting point.
+Cloned repositories persist on the host at `~/workspace/` across container restarts.
 
-## コスト
+## Cost
 
-| リソース | 月額 |
-|----------|------|
+| Resource | Monthly |
+|----------|---------|
 | Standard_B2s VM | ~$30 |
 | Standard SSD 30GB | ~$2 |
-| Azure Bastion Developer | 無料 |
-| **合計** | **~$32** |
+| Azure Bastion Developer | Free |
+| **Total** | **~$32** |
 
-Auto-shutdown（デフォルト UTC 15:00 = JST 0:00）で実質 $15-20 に抑制可能。
-
-## 運用
+## Operations
 
 ```bash
-# コンテナログ確認
+# Check container logs
 docker compose logs -f
 
-# jet-copilot 更新
+# Update jet-copilot
 cd ~/jet-copilot && git pull && docker compose up -d --build
 
-# VM 停止（コスト節約）
+# Stop VM (save costs)
 az vm deallocate -g jet-copilot-rg -n jet-copilot-vm
 
-# VM 起動
+# Start VM
 az vm start -g jet-copilot-rg -n jet-copilot-vm
-# → docker compose は restart: unless-stopped なので自動再開
+# → docker compose has restart: unless-stopped, so it auto-restarts
 ```
 
-> ⚠️ `az vm run-command` 経由で `docker compose` を実行する場合は、
-> `export HOME=/home/jetuser` を先に実行してください。
-> root の `~` が `/root/` に展開され、ボリュームマウントがずれます。
+> ⚠️ When running `docker compose` via `az vm run-command`, run
+> `export HOME=/home/jetuser` first.
+> Otherwise `~` resolves to `/root/`, causing volume mount mismatches.
 >
 > ```bash
 > az vm run-command invoke ... --scripts \
 >   "export HOME=/home/jetuser && cd ~/jet-copilot && docker compose up -d"
 > ```
 
-## リソース削除
+## Delete Resources
 
 ```bash
 az group delete --name jet-copilot-rg --yes
