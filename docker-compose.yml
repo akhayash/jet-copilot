@@ -4,9 +4,13 @@ services:
     container_name: jet-copilot
     restart: unless-stopped
     user: "${UID:-1000}:${GID:-1000}"
+    env_file:
+      - path: .env
+        required: false
     environment:
       - HOME=/home/jetuser
       - DOTNET_BUNDLE_EXTRACT_BASE_DIR=/tmp/dotnet-bundle
+      - GH_TOKEN=${GH_TOKEN:-}
     volumes:
       # Working directory for Copilot sessions
       - ~/workspace:/workspace

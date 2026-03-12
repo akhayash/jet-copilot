@@ -26,6 +26,7 @@
   - macOS: `brew install --cask devtunnel`
   - Linux: `curl -sL https://aka.ms/DevTunnelCliInstall | bash`
   - 認証: `devtunnel user login -g` (GitHubアカウント)
+    または `devtunnel user login -e` (Microsoft / Entra ID アカウント)
 - **Windows / macOS / Linux**
 - **ビルドツール** (node-ptyのネイティブコンパイルに必要、`npm install`時に使用):
   - Windows: [Visual Studio Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/)（C++ワークロード）
@@ -44,7 +45,7 @@ npm install
 
 # 3. Dev Tunnelsにログイン（初回のみ）
 devtunnel user login -g    # GitHubアカウント
-# または: devtunnel user login -m  (Microsoftアカウント)
+# または: devtunnel user login -e  (Microsoft / Entra ID アカウント)
 ```
 
 ### `.env` の設定（オプション）

@@ -26,6 +26,7 @@ Browser (any device)  ── HTTPS ──  Dev Tunnels (Microsoft Cloud)  ──
   - macOS: `brew install --cask devtunnel`
   - Linux: `curl -sL https://aka.ms/DevTunnelCliInstall | bash`
   - Auth: `devtunnel user login -g` (GitHub account)
+    or `devtunnel user login -e` (Microsoft / Entra ID account)
 - **Windows / macOS / Linux**
 - **Build tools** (required by node-pty for native compilation during `npm install`):
   - Windows: [Visual Studio Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/) with C++ workload
@@ -44,7 +45,7 @@ npm install
 
 # 3. Login to Dev Tunnels (first time only)
 devtunnel user login -g    # GitHub account
-# or: devtunnel user login -m  (Microsoft account)
+# or: devtunnel user login -e  (Microsoft / Entra ID account)
 ```
 
 ### `.env` Configuration (Optional)

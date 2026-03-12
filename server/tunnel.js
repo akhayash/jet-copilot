@@ -24,7 +24,7 @@ async function startTunnel(port) {
       console.error('  ❌ devtunnel is not logged in.');
       console.error('     Run one of:');
       console.error('       devtunnel user login -g   (GitHub)');
-      console.error('       devtunnel user login -m   (Microsoft)');
+      console.error('       devtunnel user login -e   (Microsoft / Entra ID)');
       console.error(`\n  📱 Manual access: http://localhost:${port}\n`);
       return;
     }
