@@ -6,6 +6,7 @@ services:
     user: "${UID:-1000}:${GID:-1000}"
     environment:
       - HOME=/home/jetuser
+      - DOTNET_BUNDLE_EXTRACT_BASE_DIR=/tmp/dotnet-bundle
     volumes:
       # Working directory for Copilot sessions
       - ~/workspace:/workspace
