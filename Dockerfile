@@ -31,6 +31,11 @@ RUN curl -sL https://aka.ms/TunnelsCliDownload/linux-x64 -o /usr/local/bin/devtu
 RUN groupadd -r jetuser && useradd -r -g jetuser -m -s /bin/bash jetuser && \
     chmod 777 /home/jetuser
 
+# Configure git to use GH_TOKEN for GitHub auth when available
+RUN printf '#!/bin/sh\nif [ -n "$GH_TOKEN" ]; then\n  echo "protocol=https"\n  echo "host=github.com"\n  echo "username=x-access-token"\n  echo "password=$GH_TOKEN"\nfi\n' > /usr/local/bin/git-credential-env && \
+    chmod +x /usr/local/bin/git-credential-env && \
+    git config --system credential.helper env
+
 WORKDIR /app
 COPY --from=builder /app .
 

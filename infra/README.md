@@ -40,75 +40,97 @@ deploy.sh による追加セットアップ（3-5分）:
 ## 初回セットアップ
 
 デプロイ直後、Docker イメージはビルド済みですが、まだ起動していません。
-Copilot CLI と Dev Tunnels の認証を行ってからコンテナを起動します。
+認証を設定してからコンテナを起動します。
 
-> 💡 認証はデバイスコードフロー（URL + コードをブラウザで入力）で行います。
-> VM にブラウザは不要です。表示された URL を手元の PC のブラウザで開いてください。
+> 💡 VM にはブラウザ不要です。デバイスコードフローの URL を手元の PC で開きます。
 
 ### 1. SSH 接続
 
-デプロイ出力に表示された Public IP で直接 SSH します。
+Azure Portal → VM → Connect → Bastion（ブラウザ SSH）。
 
-```bash
-ssh jetuser@<public-ip>
-```
+### 2. GitHub PAT の作成と設定
 
-または Azure Portal → VM → Connect → Bastion（ブラウザ SSH）。
+Docker コンテナにはキーチェーンがないため、**GitHub Fine-grained PAT** で認証します。
+1つの PAT で **Copilot CLI** と **Git** の両方を認証できます。
 
-### 2. Copilot CLI 認証
+#### PAT 作成手順
 
-一時的なコンテナでCopilot CLI を起動し、GitHub アカウントで認証します。
+1. https://github.com/settings/personal-access-tokens/new を開く
+2. 名前: `jet-copilot-vm`、有効期限: 任意（最大1年）
+3. **Repository access**: jet-copilot で使うリポジトリ、または All repositories
+4. **Permissions** で以下を追加:
+   - **Copilot Requests** — Copilot CLI の認証に必要
+   - **Contents** (Read and write) — Git clone/push に必要
+5. Generate token → トークンをコピー
+
+#### VM に設定
 
 ```bash
 cd ~/jet-copilot
-docker compose run --rm jet-copilot copilot
+echo 'GH_TOKEN=github_pat_XXXX...' > .env
+chmod 600 .env
 ```
 
-画面に以下のような表示が出ます:
+> ⚠️ `.env` は `.gitignore` に含まれており、リポジトリにはコミットされません。
 
-```
-To sign in, use a web browser to open https://github.com/login/device
-and enter the code XXXX-XXXX to authenticate.
-```
-
-手元の PC のブラウザでこの URL を開き、コードを入力してください。
-認証完了後、`Ctrl+C` で Copilot を終了します。
+この `GH_TOKEN` は `docker-compose.yml` 経由でコンテナに渡され、以下の用途で自動的に使われます:
+- **Copilot CLI**: `GH_TOKEN` 環境変数を自動検出（ブラウザ認証不要）
+- **Git**: credential helper 経由で `git clone` / `git push` に使用
 
 ### 3. Dev Tunnels 認証
 
-同様に一時コンテナで Dev Tunnels の GitHub 認証を行います。
+一時コンテナで Dev Tunnels の認証を行います。
+この認証情報は `~/DevTunnels` にボリュームマウントされ、コンテナ再起動後も保持されます。
+
+**Microsoft 個人アカウント（推奨）:**
 
 ```bash
-docker compose run --rm jet-copilot devtunnel user login -g
+docker compose run --rm jet-copilot devtunnel user login -e -d
 ```
 
-ブラウザで URL を開き、コードを入力してください。
+**GitHub アカウント:**
+
+```bash
+docker compose run --rm jet-copilot devtunnel user login -g -d
+```
+
+> ⚠️ Dev Tunnels のブラウザアクセスには、トンネル作成時と同じアカウントでログインが必要です。
+> GitHub 認証の場合、サービス側の不具合で 403 になることがあります（[microsoft/dev-tunnels#578](https://github.com/microsoft/dev-tunnels/issues/578)）。
+> Microsoft 個人アカウントでの認証が安定しています。
 
 ### 4. コンテナ起動
-
-認証情報はボリュームに保存されています。
-コンテナを起動すると、認証済みの状態で Dev Tunnels が接続されます。
 
 ```bash
 docker compose up -d
 ```
 
-再起動後、Dev Tunnels の URL がログに表示される:
+ログに Dev Tunnels の URL が表示されます:
 
 ```bash
 docker compose logs -f
-# ✅ Tunnel ready: https://xxxx-3000.jpe1.devtunnels.ms
+# ✅ Tunnel ready: https://xxxx-3000.use.devtunnels.ms
 ```
 
-この URL にブラウザでアクセスすると、jet-copilot ダッシュボードが開く。
+この URL にブラウザでアクセスすると、jet-copilot ダッシュボードが開きます。
+Dev Tunnels の認証に使ったアカウントでブラウザからログインしてください。
+
+## 認証まとめ
+
+| 認証 | 用途 | 保存先 | 方法 |
+|------|------|--------|------|
+| `GH_TOKEN` (PAT) | Copilot CLI + Git | `~/jet-copilot/.env` | Fine-grained PAT |
+| Dev Tunnels | トンネル接続 | `~/.devtunnels/` → `~/DevTunnels` | `devtunnel user login` |
+
+> **ローカル PC（Windows/macOS）** ではキーチェーンがあるため、ブラウザ認証だけで動きます。
+> PAT や `.env` の設定は不要です。
 
 ## ボリューム
 
 | ホスト | コンテナ | 用途 |
 |--------|----------|------|
 | `~/workspace/` | `/workspace/` | 作業ディレクトリ（clone、新規作成） |
-| `~/.copilot/` | `/home/jetuser/.copilot/` | Copilot 認証 + セッション履歴 |
-| `~/.devtunnels/` | `/home/jetuser/.devtunnels/` | Dev Tunnels 認証 |
+| `~/.copilot/` | `/home/jetuser/.copilot/` | Copilot セッション履歴（--resume） |
+| `~/.devtunnels/` | `/home/jetuser/DevTunnels` | Dev Tunnels 認証 |
 
 ## コスト
 
