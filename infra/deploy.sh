@@ -71,16 +71,14 @@ az vm run-command invoke \
 echo ""
 echo "✅ Deployment complete!"
 echo ""
+
+# Get public IP
+PUBLIC_IP=$(az vm show -g "$RESOURCE_GROUP" -n "$VM_NAME" -d --query publicIps -o tsv)
+
 echo "=== Next Steps ==="
 echo ""
-echo "1. Connect via Azure Bastion:"
-echo "   az network bastion ssh \\"
-echo "     --name ${VM_NAME}-bastion \\"
-echo "     --resource-group $RESOURCE_GROUP \\"
-echo "     --target-resource-id \$(az vm show -g $RESOURCE_GROUP -n $VM_NAME --query id -o tsv) \\"
-echo "     --auth-type ssh-key \\"
-echo "     --username jetuser \\"
-echo "     --ssh-key ${SSH_KEY_PATH%.pub}"
+echo "1. SSH into the VM:"
+echo "   ssh jetuser@${PUBLIC_IP}"
 echo ""
 echo "2. Authenticate Copilot CLI and Dev Tunnels:"
 echo "   cd ~/jet-copilot"

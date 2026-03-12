@@ -23,12 +23,26 @@ var nsgName = '${vmName}-nsg'
 var nicName = '${vmName}-nic'
 var bastionName = '${vmName}-bastion'
 
-// Network Security Group — deny all inbound (Bastion handles SSH)
+// Network Security Group — allow SSH only
 resource nsg 'Microsoft.Network/networkSecurityGroups@2024-05-01' = {
   name: nsgName
   location: location
   properties: {
-    securityRules: []
+    securityRules: [
+      {
+        name: 'AllowSSH'
+        properties: {
+          priority: 1000
+          direction: 'Inbound'
+          access: 'Allow'
+          protocol: 'Tcp'
+          sourcePortRange: '*'
+          destinationPortRange: '22'
+          sourceAddressPrefix: '*'
+          destinationAddressPrefix: '*'
+        }
+      }
+    ]
   }
 }
 
@@ -54,7 +68,19 @@ resource vnet 'Microsoft.Network/virtualNetworks@2024-05-01' = {
   }
 }
 
-// NIC (no public IP)
+// Public IP for SSH access
+resource publicIp 'Microsoft.Network/publicIPAddresses@2024-05-01' = {
+  name: '${vmName}-pip'
+  location: location
+  sku: {
+    name: 'Standard'
+  }
+  properties: {
+    publicIPAllocationMethod: 'Static'
+  }
+}
+
+// NIC with public IP
 resource nic 'Microsoft.Network/networkInterfaces@2024-05-01' = {
   name: nicName
   location: location
@@ -67,6 +93,9 @@ resource nic 'Microsoft.Network/networkInterfaces@2024-05-01' = {
             id: vnet.properties.subnets[0].id
           }
           privateIPAllocationMethod: 'Dynamic'
+          publicIPAddress: {
+            id: publicIp.id
+          }
         }
       }
     ]
@@ -154,3 +183,4 @@ resource autoShutdown 'Microsoft.DevTestLab/schedules@2018-09-15' = {
 output vmId string = vm.id
 output bastionName string = bastion.name
 output adminUsername string = adminUsername
+output publicIpAddress string = publicIp.properties.ipAddress
