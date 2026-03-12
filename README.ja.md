@@ -37,7 +37,7 @@
 
 ```bash
 # 1. クローン
-git clone <your-repo-url>
+git clone https://github.com/akhayash/jet-copilot.git
 cd jet-copilot
 
 # 2. 依存パッケージインストール
