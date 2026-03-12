@@ -1,0 +1,16 @@
+services:
+  jet-copilot:
+    build: .
+    container_name: jet-copilot
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+    volumes:
+      # Working directory for Copilot sessions
+      - ~/workspace:/workspace
+      # Copilot CLI auth + session history (for --resume)
+      - ~/.copilot:/home/jetuser/.copilot
+      # Dev Tunnels auth
+      - ~/.devtunnels:/home/jetuser/.devtunnels
