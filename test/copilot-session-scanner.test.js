@@ -148,3 +148,31 @@ test('scanCopilotSessions skips sessions without workspace.yaml', () => {
     fs.rmSync(sessionDir, { recursive: true, force: true });
   }
 });
+
+test('scanCopilotSessions returns all sessions when cwd is omitted', () => {
+  const sessionDir = createTempDir();
+
+  writeWorkspaceYaml(sessionDir, 'video-odd', {
+    id: 'video-odd',
+    cwd: 'C:\\Repos\\video-odd',
+    summary: 'Video odd session',
+    updated_at: '2026-03-12T20:44:45.149Z',
+  });
+
+  writeWorkspaceYaml(sessionDir, 'jet-copilot', {
+    id: 'jet-copilot',
+    cwd: 'C:\\Repos\\jet-copilot',
+    summary: 'Jet session',
+    updated_at: '2026-03-12T20:00:00.000Z',
+  });
+
+  try {
+    const results = scanCopilotSessions(undefined, { sessionDir });
+
+    assert.equal(results.length, 2);
+    assert.equal(results[0].copilotSessionId, 'video-odd');
+    assert.equal(results[1].copilotSessionId, 'jet-copilot');
+  } finally {
+    fs.rmSync(sessionDir, { recursive: true, force: true });
+  }
+});
