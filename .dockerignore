@@ -1,0 +1,23 @@
+# Docker
+.dockerignore
+Dockerfile
+docker-compose.yml
+
+# Dependencies (rebuilt in container)
+node_modules
+
+# Dev/test files
+test
+eslint.config.js
+.github
+
+# Infrastructure
+infra
+
+# Git
+.git
+.gitignore
+
+# OS
+.DS_Store
+Thumbs.db

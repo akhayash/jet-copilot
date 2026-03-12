@@ -20,7 +20,7 @@ async function startTunnel(port) {
   try {
     // Check if user is logged in
     const loginStatus = execSync('devtunnel user show 2>&1', { encoding: 'utf-8', shell: true });
-    if (loginStatus.includes('not logged in') || loginStatus.includes('No current user')) {
+    if (loginStatus.toLowerCase().includes('not logged in') || loginStatus.includes('No current user')) {
       console.error('  ❌ devtunnel is not logged in.');
       console.error('     Run one of:');
       console.error('       devtunnel user login -g   (GitHub)');

@@ -3,11 +3,24 @@ const os = require('os');
 const path = require('path');
 
 let _nodeScreenshots;
+let _screenshotsAvailable;
 function loadScreenshots() {
   if (!_nodeScreenshots) {
     _nodeScreenshots = require('node-screenshots');
   }
   return _nodeScreenshots;
+}
+
+function isScreenshotsAvailable() {
+  if (_screenshotsAvailable === undefined) {
+    try {
+      loadScreenshots();
+      _screenshotsAvailable = true;
+    } catch {
+      _screenshotsAvailable = false;
+    }
+  }
+  return _screenshotsAvailable;
 }
 
 class WindowCapture {
@@ -28,6 +41,11 @@ class WindowCapture {
       this._screenshots = loadScreenshots();
     }
     return this._screenshots;
+  }
+
+  isAvailable() {
+    if (this._screenshots) return true;
+    return isScreenshotsAvailable();
   }
 
   listWindows() {

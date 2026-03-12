@@ -1,0 +1,12 @@
+services:
+  jet-copilot:
+    build: .
+    container_name: jet-copilot
+    restart: unless-stopped
+    volumes:
+      # Working directory for Copilot sessions
+      - ~/workspace:/workspace
+      # Copilot CLI auth + session history (for --resume)
+      - ~/.copilot:/home/jetuser/.copilot
+      # Dev Tunnels auth
+      - ~/.devtunnels:/home/jetuser/.devtunnels
