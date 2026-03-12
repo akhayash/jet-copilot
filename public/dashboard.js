@@ -28,6 +28,12 @@ async function loadStatus() {
     if (updateBtn) {
       updateBtn.style.display = version.updatable ? '' : 'none';
     }
+
+    // Hide capture section if not available (e.g. headless Linux)
+    const captureSection = document.querySelector('.capture-section');
+    if (captureSection) {
+      captureSection.style.display = status.captureAvailable ? '' : 'none';
+    }
   } catch {
     document.getElementById('status-text').textContent = 'Offline';
   }

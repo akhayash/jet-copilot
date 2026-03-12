@@ -52,7 +52,9 @@ function createApp({
   });
 
   app.get('/api/status', (_req, res) => {
-    res.json(sessions.getStatus());
+    const status = sessions.getStatus();
+    status.captureAvailable = capture.isAvailable();
+    res.json(status);
   });
 
   app.get('/api/sessions', (_req, res) => {
