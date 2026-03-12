@@ -34,10 +34,10 @@ async function startTunnel(port) {
   }
 
   try {
-    // Require GitHub/Microsoft login at the tunnel level (remove --allow-anonymous for security)
     const proc = spawn('devtunnel', [
       'host',
       '--port-numbers', String(port),
+      '--allow-anonymous',
     ], {
       stdio: ['ignore', 'pipe', 'pipe'],
       shell: true,
