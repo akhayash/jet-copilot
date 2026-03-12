@@ -3,8 +3,6 @@ services:
     build: .
     container_name: jet-copilot
     restart: unless-stopped
-    ports:
-      - "3000:3000"
     environment:
       - PORT=3000
     volumes:
