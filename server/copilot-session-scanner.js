@@ -2,6 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const os = require('os');
 const yaml = require('./yaml-lite');
+const { getSessionContext, resolveFolderName } = require('./session-context');
 
 const DEFAULT_SESSION_DIR = path.join(os.homedir(), '.copilot', 'session-state');
 
@@ -37,6 +38,14 @@ function scanCopilotSessions(cwd, {
 
       if (sessionCwd !== normalizedCwd && gitRoot !== normalizedCwd) continue;
 
+      const contextPath = data.cwd || data.git_root || null;
+      const context = contextPath
+        ? getSessionContext(contextPath, { fsModule, pathModule })
+        : null;
+      const repoRoot = context?.repoRoot || (data.git_root ? pathModule.resolve(data.git_root) : null);
+      const folderName = contextPath ? resolveFolderName(contextPath, pathModule) : null;
+      const repoName = repoRoot ? resolveFolderName(repoRoot, pathModule) : null;
+
       results.push({
         copilotSessionId: data.id || entry.name,
         cwd: data.cwd || null,
@@ -46,6 +55,11 @@ function scanCopilotSessions(cwd, {
         summary: data.summary || null,
         createdAt: data.created_at || null,
         updatedAt: data.updated_at || null,
+        folderName,
+        repoName,
+        repoRoot,
+        inRepo: Boolean(repoRoot),
+        displayName: repoName || folderName,
       });
     } catch {
       // Skip unreadable sessions

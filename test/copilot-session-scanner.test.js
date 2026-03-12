@@ -47,6 +47,11 @@ test('scanCopilotSessions finds sessions matching cwd', () => {
     assert.equal(results[0].copilotSessionId, 'aaa-111');
     assert.equal(results[0].branch, 'main');
     assert.equal(results[0].summary, 'Fix bug');
+    assert.equal(results[0].folderName, 'my-project');
+    assert.equal(results[0].repoName, null);
+    assert.equal(results[0].repoRoot, null);
+    assert.equal(results[0].inRepo, false);
+    assert.equal(results[0].displayName, 'my-project');
   } finally {
     fs.rmSync(sessionDir, { recursive: true, force: true });
   }
@@ -70,6 +75,11 @@ test('scanCopilotSessions matches on git_root', () => {
 
     assert.equal(results.length, 1);
     assert.equal(results[0].copilotSessionId, 'ccc-333');
+    assert.equal(results[0].folderName, 'app');
+    assert.equal(results[0].repoName, 'my-project');
+    assert.equal(results[0].repoRoot, cwd);
+    assert.equal(results[0].inRepo, true);
+    assert.equal(results[0].displayName, 'my-project');
   } finally {
     fs.rmSync(sessionDir, { recursive: true, force: true });
   }
