@@ -127,6 +127,27 @@ test('mkdir API creates a directory', async () => {
   }
 });
 
+test('copilot sessions API returns all sessions when cwd is omitted', async () => {
+  const scanCalls = [];
+  const mockSessions = [
+    { copilotSessionId: 'video-odd', cwd: 'C:\\Repos\\video-odd' },
+    { copilotSessionId: 'jet-copilot', cwd: 'C:\\Repos\\jet-copilot' },
+  ];
+  const { app } = createApp({
+    sessions: new SessionManager(),
+    previews: { list: () => [], start: async () => ({}), stop: () => {} },
+    scanCopilotSessionsFn(cwd) {
+      scanCalls.push(cwd);
+      return mockSessions;
+    },
+  });
+
+  const response = await request(app).get('/api/copilot-sessions').expect(200);
+
+  assert.deepEqual(scanCalls, [undefined]);
+  assert.deepEqual(response.body, mockSessions);
+});
+
 test('upload API stores image in session cwd', async () => {
   const root = createTempDir();
   const sessions = new SessionManager();

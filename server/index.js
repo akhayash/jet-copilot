@@ -39,6 +39,7 @@ function createApp({
   pkgRoot = PKG_ROOT,
   getTunnelUrlFn = getTunnelUrl,
   qrcodeModule = QRCode,
+  scanCopilotSessionsFn = scanCopilotSessions,
 } = {}) {
   const app = express();
   const upload = multerModule({
@@ -127,9 +128,9 @@ function createApp({
   });
 
   app.get('/api/copilot-sessions', (req, res) => {
-    const cwd = req.query.cwd || process.cwd();
+    const cwd = req.query.cwd || undefined;
     try {
-      const copilotSessions = scanCopilotSessions(cwd);
+      const copilotSessions = scanCopilotSessionsFn(cwd);
       res.json(copilotSessions);
     } catch (err) {
       res.status(500).json({ error: err.message });

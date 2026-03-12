@@ -13,7 +13,7 @@ function scanCopilotSessions(cwd, {
 } = {}) {
   if (!fsModule.existsSync(sessionDir)) return [];
 
-  const normalizedCwd = pathModule.resolve(cwd).toLowerCase();
+  const normalizedCwd = cwd ? pathModule.resolve(cwd).toLowerCase() : null;
   const results = [];
 
   let entries;
@@ -36,7 +36,7 @@ function scanCopilotSessions(cwd, {
       const sessionCwd = (data.cwd || '').toLowerCase();
       const gitRoot = (data.git_root || '').toLowerCase();
 
-      if (sessionCwd !== normalizedCwd && gitRoot !== normalizedCwd) continue;
+      if (normalizedCwd && sessionCwd !== normalizedCwd && gitRoot !== normalizedCwd) continue;
 
       const contextPath = data.cwd || data.git_root || null;
       const context = contextPath
