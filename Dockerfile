@@ -22,8 +22,12 @@ RUN apt-get update && apt-get install -y \
 # Install GitHub Copilot CLI
 RUN npm install -g @github/copilot
 
-# Install Dev Tunnels CLI
-RUN curl -sL https://aka.ms/DevTunnelCliInstall | bash
+# Install Dev Tunnels CLI (manual download, no sudo needed in Docker)
+RUN ARCH=$(dpkg --print-architecture) && \
+    curl -sL "https://aka.ms/DevTunnelCliInstall" -o /tmp/dt-install.sh && \
+    sed -i 's/sudo //g' /tmp/dt-install.sh && \
+    bash /tmp/dt-install.sh && \
+    rm /tmp/dt-install.sh
 
 # Create non-root user
 RUN groupadd -r jetuser && useradd -r -g jetuser -m -s /bin/bash jetuser
