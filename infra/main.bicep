@@ -14,9 +14,6 @@ param vmSize string = 'Standard_B2s'
 @description('Location')
 param location string = resourceGroup().location
 
-@description('Auto-shutdown time (UTC, e.g. 1500 = midnight JST)')
-param autoShutdownTime string = '1500'
-
 var vnetName = '${vmName}-vnet'
 var subnetName = 'default'
 var nsgName = '${vmName}-nsg'
@@ -162,21 +159,6 @@ resource vm 'Microsoft.Compute/virtualMachines@2024-07-01' = {
         }
       ]
     }
-  }
-}
-
-// Auto-shutdown schedule
-resource autoShutdown 'Microsoft.DevTestLab/schedules@2018-09-15' = {
-  name: 'shutdown-computevm-${vmName}'
-  location: location
-  properties: {
-    status: 'Enabled'
-    taskType: 'ComputeVmShutdownTask'
-    dailyRecurrence: {
-      time: autoShutdownTime
-    }
-    timeZoneId: 'UTC'
-    targetResourceId: vm.id
   }
 }
 
