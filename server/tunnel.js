@@ -1,6 +1,12 @@
 const { spawn, execSync } = require('child_process');
 const qrcode = require('qrcode-terminal');
 
+let tunnelUrl = null;
+
+function getTunnelUrl() {
+  return tunnelUrl;
+}
+
 async function startTunnel(port) {
   console.log('  🔗 Starting Dev Tunnel...');
 
@@ -52,6 +58,7 @@ async function startTunnel(port) {
       if (allUrls && !url) {
         // Pick the URL without a port suffix (port is in subdomain instead)
         url = allUrls.find(u => !u.match(/:\d+$/)) || allUrls[0].replace(/[,;]+$/, '');
+        tunnelUrl = url;
         console.log(`  ✅ Tunnel ready: ${url}`);
         console.log('\n  📱 Scan this QR code with your phone:\n');
         qrcode.generate(url, { small: true }, (code) => {
@@ -82,4 +89,4 @@ async function startTunnel(port) {
   }
 }
 
-module.exports = { startTunnel };
+module.exports = { startTunnel, getTunnelUrl };

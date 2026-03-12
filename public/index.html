@@ -13,6 +13,17 @@
     <div class="dashboard">
       <header>
         <h1>✈️ Jet Copilot</h1>
+        <button id="qr-btn" class="qr-btn" onclick="showQrModal()" title="Show QR Code">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="2" y="2" width="8" height="8" rx="1"/>
+            <rect x="14" y="2" width="8" height="8" rx="1"/>
+            <rect x="2" y="14" width="8" height="8" rx="1"/>
+            <rect x="14" y="14" width="4" height="4"/>
+            <rect x="20" y="14" width="2" height="2"/>
+            <rect x="14" y="20" width="2" height="2"/>
+            <rect x="20" y="20" width="2" height="2"/>
+          </svg>
+        </button>
         <span id="server-status" class="server-status">
           <span id="status-indicator" class="status-dot offline"></span>
           <span id="status-text">Connecting...</span>
@@ -83,6 +94,14 @@
           <button id="update-btn" class="update-btn" onclick="updateServer()" style="display:none">🔄 Update</button>
         </footer>
       </div>
+    </div>
+  </div>
+  <div id="qr-modal" class="qr-modal hidden" onclick="hideQrModal(event)">
+    <div class="qr-modal-content" onclick="event.stopPropagation()">
+      <button class="qr-modal-close" onclick="hideQrModal()">&times;</button>
+      <div id="qr-image" class="qr-image"></div>
+      <div id="qr-url" class="qr-url"></div>
+      <button class="qr-copy-btn" onclick="copyQrUrl()">📋 Copy URL</button>
     </div>
   </div>
   <script src="app-utils.js"></script>

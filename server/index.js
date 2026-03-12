@@ -10,8 +10,9 @@ const { loadEnv } = require('./load-env');
 const { SessionManager } = require('./session-manager');
 const { PreviewManager } = require('./preview-manager');
 const { WindowCapture } = require('./window-capture');
-const { startTunnel } = require('./tunnel');
+const { startTunnel, getTunnelUrl } = require('./tunnel');
 const { scanCopilotSessions } = require('./copilot-session-scanner');
+const QRCode = require('qrcode');
 
 loadEnv();
 
@@ -36,6 +37,8 @@ function createApp({
   multerModule = multer,
   execSyncFn = execSync,
   pkgRoot = PKG_ROOT,
+  getTunnelUrlFn = getTunnelUrl,
+  qrcodeModule = QRCode,
 } = {}) {
   const app = express();
   const upload = multerModule({
@@ -128,6 +131,21 @@ function createApp({
     try {
       const copilotSessions = scanCopilotSessions(cwd);
       res.json(copilotSessions);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.get('/api/tunnel', (_req, res) => {
+    res.json({ url: getTunnelUrlFn() });
+  });
+
+  app.get('/api/qrcode', async (req, res) => {
+    const url = req.query.url;
+    if (!url) return res.status(400).json({ error: 'url query parameter is required' });
+    try {
+      const svg = await qrcodeModule.toString(url, { type: 'svg', margin: 1 });
+      res.type('image/svg+xml').send(svg);
     } catch (err) {
       res.status(500).json({ error: err.message });
     }

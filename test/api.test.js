@@ -298,3 +298,54 @@ test('update API rejects non-git installations', async () => {
     fs.rmSync(root, { recursive: true, force: true });
   }
 });
+
+test('tunnel API returns tunnel URL', async () => {
+  const { app } = createApp({
+    sessions: new SessionManager(),
+    previews: { list: () => [], start: async () => ({}), stop: () => {} },
+    getTunnelUrlFn: () => 'https://test-3000.jpe1.devtunnels.ms',
+  });
+
+  const response = await request(app).get('/api/tunnel').expect(200);
+  assert.equal(response.body.url, 'https://test-3000.jpe1.devtunnels.ms');
+});
+
+test('tunnel API returns null when no tunnel is active', async () => {
+  const { app } = createApp({
+    sessions: new SessionManager(),
+    previews: { list: () => [], start: async () => ({}), stop: () => {} },
+    getTunnelUrlFn: () => null,
+  });
+
+  const response = await request(app).get('/api/tunnel').expect(200);
+  assert.equal(response.body.url, null);
+});
+
+test('qrcode API returns SVG for valid URL', async () => {
+  const { app } = createApp({
+    sessions: new SessionManager(),
+    previews: { list: () => [], start: async () => ({}), stop: () => {} },
+  });
+
+  const response = await request(app)
+    .get('/api/qrcode')
+    .query({ url: 'https://example.com' })
+    .expect(200);
+
+  assert.equal(response.headers['content-type'], 'image/svg+xml; charset=utf-8');
+  assert.match(response.text, /<svg/);
+  assert.match(response.text, /<\/svg>/);
+});
+
+test('qrcode API rejects missing URL', async () => {
+  const { app } = createApp({
+    sessions: new SessionManager(),
+    previews: { list: () => [], start: async () => ({}), stop: () => {} },
+  });
+
+  const response = await request(app)
+    .get('/api/qrcode')
+    .expect(400);
+
+  assert.match(response.body.error, /url/i);
+});
