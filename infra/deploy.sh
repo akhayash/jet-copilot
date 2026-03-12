@@ -5,11 +5,13 @@ set -euo pipefail
 RESOURCE_GROUP="${1:-jet-copilot-rg}"
 LOCATION="${2:-japaneast}"
 VM_NAME="${3:-jet-copilot-vm}"
+REPO_URL="${4:-https://github.com/akhayash/jet-copilot.git}"
 
 echo "=== jet-copilot Azure Deployment ==="
 echo "  Resource Group: $RESOURCE_GROUP"
 echo "  Location:       $LOCATION"
 echo "  VM Name:        $VM_NAME"
+echo "  Repo URL:       $REPO_URL"
 echo ""
 
 # Check prerequisites
@@ -36,7 +38,7 @@ echo "📦 Creating resource group..."
 az group create --name "$RESOURCE_GROUP" --location "$LOCATION" --output none
 
 # Deploy Bicep template
-echo "🚀 Deploying infrastructure..."
+echo "🚀 Deploying infrastructure (VM + Bastion)..."
 az deployment group create \
   --resource-group "$RESOURCE_GROUP" \
   --template-file "$(dirname "$0")/main.bicep" \
@@ -46,25 +48,45 @@ az deployment group create \
   --output table
 
 echo ""
+echo "⏳ Waiting for cloud-init to finish (Docker install)..."
+az vm run-command invoke \
+  --resource-group "$RESOURCE_GROUP" \
+  --name "$VM_NAME" \
+  --command-id RunShellScript \
+  --scripts "cloud-init status --wait" \
+  --output none
+
+# Clone repo and build Docker image on VM
+echo "📥 Cloning repo and building Docker image on VM..."
+az vm run-command invoke \
+  --resource-group "$RESOURCE_GROUP" \
+  --name "$VM_NAME" \
+  --command-id RunShellScript \
+  --scripts "
+    su - jetuser -c 'git clone $REPO_URL /home/jetuser/jet-copilot' &&
+    su - jetuser -c 'cd /home/jetuser/jet-copilot && docker compose build'
+  " \
+  --output table
+
+echo ""
 echo "✅ Deployment complete!"
 echo ""
 echo "=== Next Steps ==="
 echo ""
-echo "1. Wait a few minutes for cloud-init to finish (Docker + jet-copilot setup)"
-echo ""
-echo "2. Connect via Azure Bastion:"
+echo "1. Connect via Azure Bastion:"
 echo "   az network bastion ssh \\"
 echo "     --name ${VM_NAME}-bastion \\"
 echo "     --resource-group $RESOURCE_GROUP \\"
 echo "     --target-resource-id \$(az vm show -g $RESOURCE_GROUP -n $VM_NAME --query id -o tsv) \\"
 echo "     --auth-type ssh-key \\"
 echo "     --username jetuser \\"
-echo "     --ssh-key $SSH_KEY_PATH"
+echo "     --ssh-key ${SSH_KEY_PATH%.pub}"
 echo ""
-echo "3. Authenticate Copilot CLI and Dev Tunnels:"
-echo "   docker exec -it jet-copilot copilot"
-echo "   docker exec -it jet-copilot devtunnel user login -g"
+echo "2. Authenticate Copilot CLI and Dev Tunnels:"
+echo "   cd ~/jet-copilot"
+echo "   docker compose run --rm jet-copilot copilot"
+echo "   docker compose run --rm jet-copilot devtunnel user login -g"
 echo ""
-echo "4. Restart container to apply auth:"
-echo "   cd ~/jet-copilot && docker compose restart"
+echo "3. Start jet-copilot:"
+echo "   docker compose up -d"
 echo ""

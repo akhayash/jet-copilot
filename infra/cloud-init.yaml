@@ -24,9 +24,3 @@ runcmd:
   - mkdir -p /home/jetuser/.copilot
   - mkdir -p /home/jetuser/.devtunnels
   - chown -R jetuser:jetuser /home/jetuser/workspace /home/jetuser/.copilot /home/jetuser/.devtunnels
-
-  # Clone jet-copilot
-  - su - jetuser -c "git clone https://github.com/akhayash/jet-copilot.git /home/jetuser/jet-copilot"
-
-  # Build jet-copilot image (don't start yet — auth needed first)
-  - su - jetuser -c "cd /home/jetuser/jet-copilot && docker compose build"
