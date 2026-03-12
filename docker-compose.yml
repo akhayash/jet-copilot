@@ -3,6 +3,7 @@ services:
     build: .
     container_name: jet-copilot
     restart: unless-stopped
+    user: "${UID:-1000}:${GID:-1000}"
     volumes:
       # Working directory for Copilot sessions
       - ~/workspace:/workspace

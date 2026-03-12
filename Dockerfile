@@ -27,16 +27,14 @@ RUN npm install -g @github/copilot
 RUN curl -sL https://aka.ms/TunnelsCliDownload/linux-x64 -o /usr/local/bin/devtunnel && \
     chmod +x /usr/local/bin/devtunnel
 
-# Create non-root user with UID 1000 (matches default cloud VM user)
-RUN groupadd -r -g 1000 jetuser && useradd -r -g jetuser -u 1000 -m -s /bin/bash jetuser
+# Create non-root user
+RUN groupadd -r jetuser && useradd -r -g jetuser -m -s /bin/bash jetuser
 
 WORKDIR /app
 COPY --from=builder /app .
 
 # Ensure jetuser owns the app
 RUN chown -R jetuser:jetuser /app
-
-USER jetuser
 
 EXPOSE 3000
 
