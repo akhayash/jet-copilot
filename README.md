@@ -37,7 +37,7 @@ Browser (any device)  ── HTTPS ──  Dev Tunnels (Microsoft Cloud)  ──
 
 ```bash
 # 1. Clone
-git clone <your-repo-url>
+git clone https://github.com/akhayash/jet-copilot.git
 cd jet-copilot
 
 # 2. Install dependencies
