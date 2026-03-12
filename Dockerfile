@@ -39,4 +39,5 @@ RUN chown -R jetuser:jetuser /app
 
 EXPOSE 3000
 
-CMD ["node", "server/index.js"]
+WORKDIR /home/jetuser
+CMD ["node", "/app/server/index.js"]
