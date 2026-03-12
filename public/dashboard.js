@@ -167,6 +167,7 @@ async function browseTo(dirPath) {
     }
 
     document.getElementById('cwd-input').value = data.current;
+    loadCopilotSessions();
 
     const currentEl = document.getElementById('folder-current');
     currentEl.textContent = data.current;
@@ -335,7 +336,7 @@ loadStatus();
 loadSessions();
 loadPreviews();
 loadCopilotSessions();
-setInterval(() => { loadStatus(); loadSessions(); loadPreviews(); }, 5000);
+setInterval(() => { loadStatus(); loadSessions(); loadPreviews(); loadCopilotSessions(); }, 5000);
 
 // QR code modal
 let qrCurrentUrl = null;
