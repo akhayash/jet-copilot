@@ -323,6 +323,59 @@ loadPreviews();
 loadCopilotSessions();
 setInterval(() => { loadStatus(); loadSessions(); loadPreviews(); }, 5000);
 
+// QR code modal
+let qrCurrentUrl = null;
+
+async function showQrModal() {
+  const modal = document.getElementById('qr-modal');
+  const imageEl = document.getElementById('qr-image');
+  const urlEl = document.getElementById('qr-url');
+
+  imageEl.innerHTML = '<span style="color:var(--text-muted)">Loading...</span>';
+  urlEl.textContent = '';
+  modal.classList.remove('hidden');
+
+  try {
+    const tunnelRes = await fetch('/api/tunnel');
+    const { url: tunnelUrl } = await tunnelRes.json();
+    qrCurrentUrl = tunnelUrl || window.location.href;
+    urlEl.textContent = qrCurrentUrl;
+    imageEl.innerHTML = `<img src="/api/qrcode?url=${encodeURIComponent(qrCurrentUrl)}" alt="QR Code">`;
+  } catch {
+    qrCurrentUrl = window.location.href;
+    urlEl.textContent = qrCurrentUrl;
+    imageEl.innerHTML = `<img src="/api/qrcode?url=${encodeURIComponent(qrCurrentUrl)}" alt="QR Code">`;
+  }
+}
+
+function hideQrModal(event) {
+  if (event && event.target !== event.currentTarget) return;
+  document.getElementById('qr-modal').classList.add('hidden');
+}
+
+async function copyQrUrl() {
+  if (!qrCurrentUrl) return;
+  try {
+    await navigator.clipboard.writeText(qrCurrentUrl);
+    const btn = document.querySelector('.qr-copy-btn');
+    const original = btn.textContent;
+    btn.textContent = '✅ Copied!';
+    setTimeout(() => { btn.textContent = original; }, 1500);
+  } catch {
+    // Fallback for non-HTTPS contexts
+    const textarea = document.createElement('textarea');
+    textarea.value = qrCurrentUrl;
+    document.body.appendChild(textarea);
+    textarea.select();
+    document.execCommand('copy');
+    document.body.removeChild(textarea);
+    const btn = document.querySelector('.qr-copy-btn');
+    const original = btn.textContent;
+    btn.textContent = '✅ Copied!';
+    setTimeout(() => { btn.textContent = original; }, 1500);
+  }
+}
+
 // Update
 async function updateServer() {
   if (!confirm('jet-copilot を更新して再起動しますか？\nアクティブなセッションは終了されます。')) return;
