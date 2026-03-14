@@ -92,6 +92,8 @@ npm start
 
 [xterm.js](https://xtermjs.org/) v6 によるフルインタラクティブターミナル。URL は自動でクリック可能リンクになります。
 
+- **再接続リプレイ**: 接続が切れても自動再接続し、直近 100 KB の出力をリプレイ。コンテキストを失いません
+
 #### ショートカットボタン（ヘッダー）
 
 | ボタン | 動作 |
@@ -135,6 +137,31 @@ Copilot CLIで開発中のWebサービスをブラウザで確認できます。
 3. 表示されるURLを開く → ブラウザでプレビュー
 4. アクティブなプレビューは5秒ごとに更新。**Stop** でトンネルを終了
 
+## REST API
+
+| メソッド | パス | 説明 |
+|----------|------|------|
+| GET | `/api/status` | サーバー状態（稼働時間、セッション数、キャプチャ可否） |
+| GET | `/api/version` | バージョン情報と更新可能フラグ |
+| POST | `/api/update` | `git pull` → 再起動でセルフアップデート |
+| GET | `/api/sessions` | 全セッション一覧 |
+| GET | `/api/sessions/:id` | セッション詳細 |
+| POST | `/api/sessions` | 新規セッション作成 |
+| DELETE | `/api/sessions/:id` | セッション終了 |
+| GET | `/api/browse` | ディレクトリ参照 |
+| POST | `/api/mkdir` | ディレクトリ作成 |
+| GET | `/api/copilot-sessions` | Copilot CLI セッション履歴一覧 |
+| POST | `/api/upload` | 画像をセッションの cwd にアップロード |
+| GET | `/api/preview` | アクティブなプレビュートンネル一覧 |
+| POST | `/api/preview` | プレビュートンネル開始 |
+| DELETE | `/api/preview/:port` | プレビュートンネル停止 |
+| GET | `/api/windows` | サーバー上のキャプチャ可能ウィンドウ一覧 |
+| POST | `/api/capture` | ウィンドウスクリーンショット |
+| GET | `/api/captures/:filename` | キャプチャ画像配信 |
+| GET | `/api/tunnel` | アクティブな Dev Tunnel URL 取得 |
+| GET | `/api/qrcode` | URL の QR コード SVG 生成 |
+| GET | `/health` | ヘルスチェック |
+
 ## ファイル構成
 
 ```
@@ -147,8 +174,10 @@ jet-copilot/
 ├── server/
 │   ├── index.js              # Express + WebSocket + APIサーバー
 │   ├── copilot-runner.js     # node-ptyでcopilot起動・I/O中継
-│   ├── session-manager.js    # セッション管理
+│   ├── session-manager.js    # セッション管理（出力リプレイバッファ付き）
 │   ├── session-context.js    # リポジトリルート検出（セッションコンテキスト）
+│   ├── copilot-session-scanner.js # Copilot CLIセッション履歴スキャン
+│   ├── yaml-lite.js          # workspace.yaml用ミニYAMLパーサー
 │   ├── preview-manager.js    # プレビュートンネル管理
 │   ├── window-capture.js     # クロスプラットフォーム ウィンドウスクリーンショット
 │   ├── tunnel.js             # Dev Tunnel自動起動 + QRコード表示
@@ -159,7 +188,7 @@ jet-copilot/
 │   ├── dashboard.js          # ダッシュボードロジック
 │   ├── app.js                # xterm.js + WebSocket通信
 │   ├── app-utils.js          # 共有ユーティリティ（browser/CommonJS両対応）
-│   └── style.css             # ダークモードUI
+│   └── style.css             # ダークモードUI（Lucide Icons CDN使用）
 └── test/                     # テスト（node:test + supertest）
     ├── api.test.js
     ├── app-utils.test.js
@@ -173,4 +202,4 @@ jet-copilot/
 
 ## ライセンス
 
-Private
+[MIT](LICENSE)
