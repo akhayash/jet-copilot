@@ -20,7 +20,7 @@
     "devtunnel"
   ],
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "type": "commonjs",
   "engines": {
     "node": ">=18.0.0"
