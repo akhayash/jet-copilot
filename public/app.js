@@ -64,6 +64,51 @@ function focusTerminal() {
   term.focus();
 }
 
+// Workaround: xterm.js v6.0.0 touch scrolling is broken (#5489)
+// Also handles keyboard-zone suppression on touch.
+function setupTouchScroll(container) {
+  const xtermScreen = container.querySelector('.xterm-screen');
+  if (!xtermScreen) return;
+
+  let touchStartY = 0;
+  let touchActive = false;
+  let accumulated = 0;
+
+  xtermScreen.addEventListener('touchstart', (e) => {
+    if (e.touches.length === 1) {
+      touchStartY = e.touches[0].clientY;
+      touchActive = true;
+      accumulated = 0;
+      if (xtermTextarea) {
+        if (shouldShowKeyboard(e.touches[0].clientY)) {
+          xtermTextarea.removeAttribute('inputmode');
+        } else {
+          xtermTextarea.setAttribute('inputmode', 'none');
+        }
+      }
+    }
+  }, { passive: true });
+
+  xtermScreen.addEventListener('touchmove', (e) => {
+    if (!touchActive || e.touches.length !== 1) return;
+    e.preventDefault();
+    const currentY = e.touches[0].clientY;
+    const delta = touchStartY - currentY;
+    accumulated += delta;
+    const lineH = Math.ceil(14 * 1.2);
+    const lines = Math.trunc(accumulated / lineH);
+    if (lines !== 0) {
+      term.scrollLines(lines);
+      accumulated -= lines * lineH;
+    }
+    touchStartY = currentY;
+  }, { passive: false });
+
+  xtermScreen.addEventListener('touchend', () => {
+    touchActive = false;
+  }, { passive: true });
+}
+
 function updateSessionHeader(_sessionId, session) {
   const context = document.getElementById('session-context');
   const label = document.getElementById('session-label');
@@ -194,47 +239,7 @@ function connect() {
       }
 
       // Workaround: xterm.js v6.0.0 touch scrolling is broken (#5489)
-      const xtermScreen = container.querySelector('.xterm-screen');
-      if (xtermScreen) {
-        let touchStartY = 0;
-        let touchActive = false;
-        let accumulated = 0;
-
-        // Keyboard zone: suppress virtual keyboard when touching the upper 80%
-        xtermScreen.addEventListener('touchstart', (e) => {
-          if (e.touches.length === 1) {
-            touchStartY = e.touches[0].clientY;
-            touchActive = true;
-            accumulated = 0;
-            if (xtermTextarea) {
-              if (shouldShowKeyboard(e.touches[0].clientY)) {
-                xtermTextarea.removeAttribute('inputmode');
-              } else {
-                xtermTextarea.setAttribute('inputmode', 'none');
-              }
-            }
-          }
-        }, { passive: true });
-
-        xtermScreen.addEventListener('touchmove', (e) => {
-          if (!touchActive || e.touches.length !== 1) return;
-          e.preventDefault();
-          const currentY = e.touches[0].clientY;
-          const delta = touchStartY - currentY;
-          accumulated += delta;
-          const lineH = Math.ceil(14 * 1.2);
-          const lines = Math.trunc(accumulated / lineH);
-          if (lines !== 0) {
-            term.scrollLines(lines);
-            accumulated -= lines * lineH;
-          }
-          touchStartY = currentY;
-        }, { passive: false });
-
-        xtermScreen.addEventListener('touchend', () => {
-          touchActive = false;
-        }, { passive: true });
-      }
+      setupTouchScroll(container);
 
       term.onData((data) => {
         if (!ws || ws.readyState !== WebSocket.OPEN) return;

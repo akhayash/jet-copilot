@@ -339,7 +339,8 @@ loadStatus();
 loadSessions();
 loadPreviews();
 loadCopilotSessions();
-setInterval(() => { loadStatus(); loadSessions(); loadPreviews(); loadCopilotSessions(); }, 5000);
+const _refreshInterval = setInterval(() => { loadStatus(); loadSessions(); loadPreviews(); loadCopilotSessions(); }, 5000);
+window.addEventListener('beforeunload', () => clearInterval(_refreshInterval));
 
 // QR code modal
 let qrCurrentUrl = null;
