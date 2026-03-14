@@ -92,6 +92,8 @@ The terminal will display:
 
 Full interactive terminal via [xterm.js](https://xtermjs.org/) v6 with clickable URLs.
 
+- **Reconnect Replay**: If the connection drops, the terminal automatically reconnects and replays up to 100 KB of recent output so you never lose context
+
 #### Shortcut Buttons (header)
 
 | Button | Action |
@@ -135,6 +137,31 @@ Preview web services you're developing with Copilot CLI directly on your device.
 3. Open the displayed URL on your device
 4. Active previews refresh every 5 seconds; tap **Stop** to tear down the tunnel
 
+## REST API
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/api/status` | Server status (uptime, session count, captureAvailable) |
+| GET | `/api/version` | Version info and updatable flag |
+| POST | `/api/update` | Self-update via `git pull` → restart |
+| GET | `/api/sessions` | List all sessions |
+| GET | `/api/sessions/:id` | Get a single session |
+| POST | `/api/sessions` | Create a new session |
+| DELETE | `/api/sessions/:id` | End a session |
+| GET | `/api/browse` | Browse directories |
+| POST | `/api/mkdir` | Create a directory |
+| GET | `/api/copilot-sessions` | List Copilot CLI session history |
+| POST | `/api/upload` | Upload an image to the session cwd |
+| GET | `/api/preview` | List active preview tunnels |
+| POST | `/api/preview` | Start a preview tunnel for a port |
+| DELETE | `/api/preview/:port` | Stop a preview tunnel |
+| GET | `/api/windows` | List capturable windows on the server |
+| POST | `/api/capture` | Capture a window screenshot |
+| GET | `/api/captures/:filename` | Serve a captured PNG |
+| GET | `/api/tunnel` | Get the active Dev Tunnel URL |
+| GET | `/api/qrcode` | Generate a QR code SVG for a URL |
+| GET | `/health` | Health check |
+
 ## File Structure
 
 ```
@@ -147,8 +174,10 @@ jet-copilot/
 ├── server/
 │   ├── index.js              # Express + WebSocket + API server
 │   ├── copilot-runner.js     # Spawns copilot via node-pty, relays I/O
-│   ├── session-manager.js    # Session management
+│   ├── session-manager.js    # Session management (with output replay buffer)
 │   ├── session-context.js    # Repo root detection for session context
+│   ├── copilot-session-scanner.js # Scan Copilot CLI session history
+│   ├── yaml-lite.js          # Minimal YAML parser for workspace.yaml
 │   ├── preview-manager.js    # Preview tunnel management
 │   ├── window-capture.js     # Cross-platform window screenshot
 │   ├── tunnel.js             # Dev Tunnel auto-start + QR code display
@@ -159,7 +188,7 @@ jet-copilot/
 │   ├── dashboard.js          # Dashboard logic
 │   ├── app.js                # xterm.js + WebSocket communication
 │   ├── app-utils.js          # Shared utilities (browser/CommonJS)
-│   └── style.css             # Dark mode UI
+│   └── style.css             # Dark mode UI (Lucide Icons via CDN)
 └── test/                     # Tests (node:test + supertest)
     ├── api.test.js
     ├── app-utils.test.js
@@ -173,4 +202,4 @@ jet-copilot/
 
 ## License
 
-Private
+[MIT](LICENSE)

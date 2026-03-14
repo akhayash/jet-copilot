@@ -34,4 +34,5 @@ JSON messages with `type` field:
 | Client → Server | `resize` | `{ cols, rows }` |
 | Client → Server | `restart` | _(none)_ |
 | Server → Client | `output` | `{ content }` |
+| Server → Client | `replay` | `{ content }` |
 | Server → Client | `error` | `{ content }` |
