@@ -5,7 +5,17 @@ let fitTimer = null;
 let activeSessionHeaderId = null;
 let keyboardLocked = false;
 let xtermTextarea = null;
+let _keyboardTransition = false;
+let _kbTransitionTimer = null;
 const isTouchDevice = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
+
+function debounce(fn, ms) {
+  let timer;
+  return (...args) => {
+    clearTimeout(timer);
+    timer = setTimeout(() => fn(...args), ms);
+  };
+}
 
 function shouldShowKeyboard(clientY) {
   if (!isTouchDevice) return true;
@@ -14,6 +24,17 @@ function shouldShowKeyboard(clientY) {
   if (!rect) return true;
   // Only show keyboard when touching the bottom 20% of the terminal
   return (clientY - rect.top) > rect.height * 0.8;
+}
+
+// Mark keyboard transition in progress to suppress resize thrashing
+function beginKeyboardTransition() {
+  _keyboardTransition = true;
+  clearTimeout(_kbTransitionTimer);
+  _kbTransitionTimer = setTimeout(() => {
+    _keyboardTransition = false;
+    adjustScreenHeight();
+    scheduleFit(0);
+  }, 400);
 }
 
 function scheduleFit(delay = 0) {
@@ -34,6 +55,13 @@ function adjustScreenHeight() {
   if (window.visualViewport) {
     screen.style.height = `${window.visualViewport.height}px`;
   }
+}
+
+// Focus terminal for keyboard input, guarding against transition thrash
+function focusTerminal() {
+  if (!term || keyboardLocked) return;
+  beginKeyboardTransition();
+  term.focus();
 }
 
 function updateSessionHeader(_sessionId, session) {
@@ -212,15 +240,23 @@ function connect() {
         ws.send(JSON.stringify({ type: 'input', content: data }));
       });
 
-      const resizeObserver = new ResizeObserver(() => scheduleFit(50));
+      const resizeObserver = new ResizeObserver(() => {
+        if (!_keyboardTransition) scheduleFit(50);
+      });
       resizeObserver.observe(container);
 
       if (window.visualViewport) {
-        window.visualViewport.addEventListener('resize', () => {
+        const debouncedViewportResize = debounce(() => {
           adjustScreenHeight();
           scheduleFit(50);
+        }, 150);
+        window.visualViewport.addEventListener('resize', () => {
+          if (_keyboardTransition) return;
+          debouncedViewportResize();
         });
-        window.visualViewport.addEventListener('scroll', () => scheduleFit(50));
+        window.visualViewport.addEventListener('scroll', () => {
+          if (!_keyboardTransition) scheduleFit(100);
+        });
         adjustScreenHeight();
       }
 
@@ -233,7 +269,6 @@ function connect() {
 
     if (!keyboardLocked) {
       term.focus();
-      setTimeout(() => { if (term && !keyboardLocked) term.focus(); }, 300);
     }
   };
 
@@ -560,6 +595,8 @@ document.addEventListener('DOMContentLoaded', () => {
   if (container) {
     container.addEventListener('pointerdown', (e) => {
       closeAllPanels();
+      // On touch devices, defer focus to touchend to avoid double-focus thrash
+      if (isTouchDevice) return;
       if (term && shouldShowKeyboard(e.clientY)) term.focus();
     });
   }
@@ -580,7 +617,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (tag === 'BUTTON' || tag === 'SELECT' || tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'A') return;
       if (e.target.closest('.toolbar, .voice-bar, .preview-panel, .capture-panel, .capture-modal')) return;
       const touch = e.changedTouches?.[0];
-      if (term && touch && shouldShowKeyboard(touch.clientY)) term.focus();
+      if (term && touch && shouldShowKeyboard(touch.clientY)) focusTerminal();
     }, { passive: true });
   }
 
