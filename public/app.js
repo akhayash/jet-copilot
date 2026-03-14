@@ -525,12 +525,7 @@ async function openPreview() {
 }
 
 async function stopPreview(port) {
-  try {
-    await fetch(`/api/preview/${port}`, { method: 'DELETE' });
-    loadSessionPreviews();
-  } catch (err) {
-    alert('Failed to stop preview: ' + err.message);
-  }
+  await AppUtils.stopPreviewByPort(port, loadSessionPreviews);
 }
 
 // Image upload

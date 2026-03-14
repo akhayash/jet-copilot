@@ -497,12 +497,7 @@ if (previewInput) {
 }
 
 async function stopPreview(port) {
-  try {
-    await fetch(`/api/preview/${port}`, { method: 'DELETE' });
-    loadPreviews();
-  } catch (err) {
-    alert('Failed to stop preview: ' + err.message);
-  }
+  await AppUtils.stopPreviewByPort(port, loadPreviews);
 }
 
 // Window capture
