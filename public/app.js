@@ -276,6 +276,9 @@ function connect() {
     const msg = JSON.parse(event.data);
     if (msg.type === 'output' && term) {
       term.write(msg.content);
+    } else if (msg.type === 'replay' && term) {
+      term.reset();
+      term.write(msg.content);
     } else if (msg.type === 'error') {
       console.warn('[server]', msg.content);
     }

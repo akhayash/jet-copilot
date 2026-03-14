@@ -1,6 +1,8 @@
 const crypto = require('crypto');
 const { getSessionContext } = require('./session-context');
 
+const OUTPUT_BUFFER_MAX = 100 * 1024; // 100 KB
+
 class SessionManager {
   constructor() {
     this._sessions = new Map();
@@ -24,6 +26,7 @@ class SessionManager {
       endedAt: null,
       clients: new Set(),
       runner: null,
+      outputBuffer: '',
     };
     this._sessions.set(id, session);
     return session;
@@ -76,6 +79,20 @@ class SessionManager {
     if (session) {
       session.clients.delete(ws);
     }
+  }
+
+  appendOutput(id, data) {
+    const session = this._sessions.get(id);
+    if (!session) return;
+    session.outputBuffer += data;
+    if (session.outputBuffer.length > OUTPUT_BUFFER_MAX) {
+      session.outputBuffer = session.outputBuffer.slice(-OUTPUT_BUFFER_MAX);
+    }
+  }
+
+  getOutputBuffer(id) {
+    const session = this._sessions.get(id);
+    return session ? session.outputBuffer : '';
   }
 
   getStatus() {
