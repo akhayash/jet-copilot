@@ -1,4 +1,4 @@
-# ✈️ Jet Copilot
+# 🚀 Jet Copilot
 
 **English** | [日本語](README.ja.md)
 
