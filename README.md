@@ -53,6 +53,7 @@ devtunnel user login -g    # GitHub account
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `PORT` | Server port number | `3000` |
+| `DEVTUNNEL_ID` | Persistent tunnel ID (stable URL across restarts) | _(none — uses temporary tunnel)_ |
 
 ## Usage
 
