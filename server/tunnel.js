@@ -7,12 +7,46 @@ function getTunnelUrl() {
   return tunnelUrl;
 }
 
-async function startTunnel(port) {
+function ensurePersistentTunnel(tunnelId, port, { execSyncFn = execSync } = {}) {
+  let needsCreate = false;
+  try {
+    execSyncFn(`devtunnel show ${tunnelId}`, { stdio: 'ignore', shell: true });
+    console.log(`  ✅ Persistent tunnel "${tunnelId}" found`);
+  } catch {
+    needsCreate = true;
+  }
+
+  if (needsCreate) {
+    console.log(`  ⚠️ Tunnel "${tunnelId}" not found or expired, creating...`);
+    execSyncFn(`devtunnel create ${tunnelId} --allow-anonymous`, {
+      stdio: 'ignore',
+      shell: true,
+    });
+    console.log(`  ✅ Tunnel "${tunnelId}" created`);
+  }
+
+  try {
+    const portInfo = execSyncFn(`devtunnel port show ${tunnelId} -p ${port} 2>&1`, {
+      encoding: 'utf-8',
+      shell: true,
+    });
+    if (!portInfo.includes(String(port))) {
+      throw new Error('port not listed');
+    }
+  } catch {
+    execSyncFn(`devtunnel port create ${tunnelId} -p ${port}`, {
+      stdio: 'ignore',
+      shell: true,
+    });
+    console.log(`  ✅ Port ${port} added to tunnel "${tunnelId}"`);
+  }
+}
+
+async function startTunnel(port, { execSyncFn = execSync, spawnFn = spawn } = {}) {
   console.log('  🔗 Starting Dev Tunnel...');
 
   try {
-    // Check if devtunnel is available
-    execSync('devtunnel --version', { stdio: 'ignore' });
+    execSyncFn('devtunnel --version', { stdio: 'ignore' });
   } catch {
     console.error('  ❌ devtunnel CLI not found.');
     console.error('     Install:');
@@ -24,8 +58,7 @@ async function startTunnel(port) {
   }
 
   try {
-    // Check if user is logged in
-    const loginStatus = execSync('devtunnel user show 2>&1', { encoding: 'utf-8', shell: true });
+    const loginStatus = execSyncFn('devtunnel user show 2>&1', { encoding: 'utf-8', shell: true });
     if (loginStatus.toLowerCase().includes('not logged in') || loginStatus.includes('No current user')) {
       console.error('  ❌ devtunnel is not logged in.');
       console.error('     Run one of:');
@@ -39,11 +72,24 @@ async function startTunnel(port) {
     // If command fails, try to proceed anyway
   }
 
+  const tunnelId = process.env.DEVTUNNEL_ID;
+
+  if (tunnelId) {
+    try {
+      ensurePersistentTunnel(tunnelId, port, { execSyncFn });
+    } catch (err) {
+      console.error(`  ❌ Failed to set up persistent tunnel "${tunnelId}":`, err.message);
+      console.error(`\n  📱 Manual access: http://localhost:${port}\n`);
+      return;
+    }
+  }
+
   try {
-    const proc = spawn('devtunnel', [
-      'host',
-      '--port-numbers', String(port),
-    ], {
+    const args = tunnelId
+      ? ['host', tunnelId]
+      : ['host', '--port-numbers', String(port)];
+
+    const proc = spawnFn('devtunnel', args, {
       stdio: ['ignore', 'pipe', 'pipe'],
       shell: true,
     });
@@ -89,4 +135,4 @@ async function startTunnel(port) {
   }
 }
 
-module.exports = { startTunnel, getTunnelUrl };
+module.exports = { startTunnel, getTunnelUrl, ensurePersistentTunnel };
