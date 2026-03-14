@@ -69,7 +69,7 @@ function renderSessionNameLabels(session) {
 }
 
 function renderSessionCwd(session) {
-  return session.cwd ? `<div class="session-cwd">📁 ${AppUtils.escapeHtml(session.cwd)}</div>` : '';
+  return session.cwd ? `<div class="session-cwd"><i data-lucide="folder" class="icon-inline"></i> ${AppUtils.escapeHtml(session.cwd)}</div>` : '';
 }
 
 function renderSessions(sectionId, containerId, sessions, showConnect) {
@@ -85,10 +85,10 @@ function renderSessions(sectionId, containerId, sessions, showConnect) {
   container.innerHTML = sessions.map((s) => {
     const time = formatTime(s.startedAt);
     const endTime = s.endedAt ? ` – ${formatTime(s.endedAt)}` : '';
-    const statusIcon = s.status === 'active' ? '🟢' : '⚫';
+    const statusIcon = s.status === 'active' ? '<i data-lucide="circle" class="icon-status icon-active"></i>' : '<i data-lucide="circle" class="icon-status icon-ended"></i>';
     const connectBtn = showConnect
       ? `<div class="session-actions">
-           <button class="connect-btn" onclick="connectSession('${s.id}')">Connect →</button>
+           <button class="connect-btn" onclick="connectSession('${s.id}')">Connect <i data-lucide="arrow-right" class="icon-inline"></i></button>
            <button class="end-btn" onclick="endSession('${s.id}')">End</button>
          </div>`
       : '';
@@ -109,6 +109,7 @@ function renderSessions(sectionId, containerId, sessions, showConnect) {
       </div>
     `;
   }).join('');
+  if (typeof lucide !== 'undefined') lucide.createIcons();
 }
 
 async function createSession() {
@@ -197,7 +198,7 @@ function renderFolderList(data, filter) {
 
   // Parent directory (always visible)
   if (data.parent !== data.current && !filter) {
-    html += `<div class="folder-item" onclick="browseTo('${escapeAttr(data.parent)}')">📂 ..</div>`;
+    html += `<div class="folder-item" onclick="browseTo('${escapeAttr(data.parent)}')"><i data-lucide="folder-up" class="icon-inline"></i> ..</div>`;
   }
 
   const lowerFilter = filter.toLowerCase();
@@ -207,7 +208,7 @@ function renderFolderList(data, filter) {
 
   for (const dir of dirs) {
     const full = data.current + sep + dir;
-    html += `<div class="folder-item" onclick="browseTo('${escapeAttr(full)}')">📁 ${dir}</div>`;
+    html += `<div class="folder-item" onclick="browseTo('${escapeAttr(full)}')"><i data-lucide="folder" class="icon-inline"></i> ${dir}</div>`;
   }
 
   if (filter && dirs.length === 0) {
@@ -215,6 +216,7 @@ function renderFolderList(data, filter) {
   }
 
   listEl.innerHTML = html;
+  if (typeof lucide !== 'undefined') lucide.createIcons();
 }
 
 async function createFolder(parentPath, sep) {
@@ -297,7 +299,7 @@ async function loadCopilotSessions() {
       return `
         <div class="session-card">
           <div class="session-info">
-            <span class="session-id">💬 ${AppUtils.escapeHtml(s.copilotSessionId.substring(0, 8))}</span>
+            <span class="session-id"><i data-lucide="message-square" class="icon-inline"></i> ${AppUtils.escapeHtml(s.copilotSessionId.substring(0, 8))}</span>
             ${nameLabels}
             ${branch}
           </div>
@@ -305,11 +307,12 @@ async function loadCopilotSessions() {
           ${summary}
           <div class="session-time">${time}</div>
           <div class="session-actions">
-            <button class="connect-btn" onclick="resumeCopilotSession('${AppUtils.escapeHtml(s.copilotSessionId)}', '${escapeAttr(s.cwd || '')}')">Resume →</button>
+            <button class="connect-btn" onclick="resumeCopilotSession('${AppUtils.escapeHtml(s.copilotSessionId)}', '${escapeAttr(s.cwd || '')}')">Resume <i data-lucide="arrow-right" class="icon-inline"></i></button>
           </div>
         </div>
       `;
     }).join('');
+    if (typeof lucide !== 'undefined') lucide.createIcons();
   } catch {
     // Ignore
   }
@@ -395,13 +398,13 @@ async function copyQrUrl() {
 async function updateServer() {
   if (!confirm('jet-copilot を更新して再起動しますか？\nアクティブなセッションは終了されます。')) return;
   const btn = document.getElementById('update-btn');
-  if (btn) { btn.disabled = true; btn.textContent = '🔄 Updating...'; }
+  if (btn) { btn.disabled = true; btn.textContent = 'Updating...'; }
   try {
     const res = await fetch('/api/update', { method: 'POST' });
     const data = await res.json();
     if (!res.ok) {
       alert('Update failed: ' + (data.error || 'Unknown error'));
-      if (btn) { btn.disabled = false; btn.textContent = '🔄 Update'; }
+      if (btn) { btn.disabled = false; btn.textContent = 'Update'; }
       return;
     }
     if (btn) btn.textContent = '✅ Restarting...';
@@ -451,12 +454,13 @@ async function loadPreviews() {
             ${urlLink}
           </div>
           <div class="preview-actions">
-            ${p.url ? `<a href="${p.url}" target="_blank" class="preview-action-btn">Open ↗</a>` : ''}
+            ${p.url ? `<a href="${p.url}" target="_blank" class="preview-action-btn">Open <i data-lucide="external-link" class="icon-inline"></i></a>` : ''}
             <button class="preview-stop-btn" onclick="stopPreview(${p.port})">Stop</button>
           </div>
         </div>
       `;
     }).join('');
+    if (typeof lucide !== 'undefined') lucide.createIcons();
   } catch {
     // Ignore
   }

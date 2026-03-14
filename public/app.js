@@ -109,7 +109,7 @@ function renderSessionPreviewList(list) {
       ? `<a href="${preview.url}" target="_blank" class="preview-url">${preview.url}</a>`
       : '<span class="preview-url">Starting...</span>';
     const open = preview.url
-      ? `<a href="${preview.url}" target="_blank" class="preview-action-btn">Open ↗</a>`
+      ? `<a href="${preview.url}" target="_blank" class="preview-action-btn">Open <i data-lucide="external-link" class="icon-inline"></i></a>`
       : '';
     return `
       <div class="preview-item">
@@ -124,6 +124,7 @@ function renderSessionPreviewList(list) {
       </div>
     `;
   }).join('');
+  if (typeof lucide !== 'undefined') lucide.createIcons();
 }
 
 async function loadSessionPreviews() {
