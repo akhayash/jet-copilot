@@ -306,11 +306,18 @@ function attachWebSocketServer(wss, {
 
     sessions.addClient(sessionId, ws);
 
+    // Replay buffered output to newly connected client
+    const buffer = sessions.getOutputBuffer(sessionId);
+    if (buffer) {
+      ws.send(JSON.stringify({ type: 'replay', content: buffer }));
+    }
+
     if (!session.runner) {
       const resumeArgs = session.copilotSessionId
         ? ['--resume', session.copilotSessionId]
         : [];
       session.runner = runnerFactory((data) => {
+        sessions.appendOutput(sessionId, data);
         for (const client of session.clients) {
           if (client.readyState === 1) {
             client.send(JSON.stringify({ type: 'output', content: data }));

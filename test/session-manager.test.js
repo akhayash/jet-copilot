@@ -97,3 +97,37 @@ test('getSessionContext falls back to the folder name outside a git repo', () =>
   assert.equal(context.displayName, 'plain-folder');
   assert.equal(context.folderName, 'plain-folder');
 });
+
+test('SessionManager.appendOutput stores output and getOutputBuffer retrieves it', () => {
+  const manager = new SessionManager();
+  const session = manager.create();
+
+  manager.appendOutput(session.id, 'hello ');
+  manager.appendOutput(session.id, 'world');
+
+  assert.equal(manager.getOutputBuffer(session.id), 'hello world');
+});
+
+test('SessionManager.appendOutput truncates buffer exceeding 100KB', () => {
+  const manager = new SessionManager();
+  const session = manager.create();
+
+  const chunk = 'x'.repeat(60 * 1024);
+  manager.appendOutput(session.id, chunk);
+  manager.appendOutput(session.id, chunk);
+
+  const buf = manager.getOutputBuffer(session.id);
+  assert.equal(buf.length, 100 * 1024);
+  assert.equal(buf, (chunk + chunk).slice(-(100 * 1024)));
+});
+
+test('SessionManager.getOutputBuffer returns empty string for unknown session', () => {
+  const manager = new SessionManager();
+  assert.equal(manager.getOutputBuffer('nonexistent'), '');
+});
+
+test('SessionManager.appendOutput is no-op for unknown session', () => {
+  const manager = new SessionManager();
+  manager.appendOutput('nonexistent', 'data');
+  assert.equal(manager.getOutputBuffer('nonexistent'), '');
+});
