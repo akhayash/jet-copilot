@@ -13,7 +13,7 @@
   <div id="app">
     <div id="terminal-screen" class="screen">
       <header>
-        <a href="/" class="back-link">←</a>
+        <a href="/" class="back-link"><i data-lucide="arrow-left"></i></a>
         <div class="session-meta">
           <span id="session-context" class="session-context"></span>
           <span id="session-label" class="session-label"></span>
@@ -31,27 +31,27 @@
       <div id="terminal-container"></div>
       <div class="toolbar">
         <button id="preview-toggle" class="toolbar-btn" onclick="togglePreviewInput()">
-          <span class="toolbar-icon">🌐</span>
+          <span class="toolbar-icon"><i data-lucide="globe"></i></span>
           <span class="toolbar-label">Preview</span>
         </button>
         <button id="image-toggle" class="toolbar-btn" onclick="toggleImageUpload()">
-          <span class="toolbar-icon">📎</span>
+          <span class="toolbar-icon"><i data-lucide="paperclip"></i></span>
           <span class="toolbar-label">Upload</span>
         </button>
         <button id="paste-toggle" class="toolbar-btn" onclick="pasteFromClipboard()">
-          <span class="toolbar-icon">📋</span>
+          <span class="toolbar-icon"><i data-lucide="clipboard"></i></span>
           <span class="toolbar-label">Paste</span>
         </button>
         <button id="voice-toggle" class="toolbar-btn" onclick="toggleVoiceInput()">
-          <span class="toolbar-icon">⌨️</span>
+          <span class="toolbar-icon"><i data-lucide="keyboard"></i></span>
           <span class="toolbar-label">Text</span>
         </button>
         <button id="capture-toggle" class="toolbar-btn" onclick="toggleCapturePanel()">
-          <span class="toolbar-icon">📸</span>
+          <span class="toolbar-icon"><i data-lucide="camera"></i></span>
           <span class="toolbar-label">Capture</span>
         </button>
         <button id="kb-toggle" class="toolbar-btn" onclick="toggleKeyboard()">
-          <span class="toolbar-icon">🔒</span>
+          <span class="toolbar-icon"><i data-lucide="lock"></i></span>
           <span class="toolbar-label">KB</span>
         </button>
       </div>
@@ -61,7 +61,7 @@
             <div class="preview-panel-title">Session Preview</div>
             <div class="preview-panel-copy">Open or stop previews for the service you are working on now.</div>
           </div>
-          <button class="voice-close" onclick="togglePreviewInput()">✕</button>
+          <button class="voice-close" onclick="togglePreviewInput()"><i data-lucide="x"></i></button>
         </div>
         <div class="preview-input-group preview-input-group-terminal">
           <input type="number" id="preview-port-input" class="preview-port-input" placeholder="Port (e.g. 3001)" min="1" max="65535">
@@ -73,7 +73,7 @@
       <div id="voice-bar" class="voice-bar hidden">
         <textarea id="voice-input" class="voice-input" placeholder="Voice input..." rows="1"></textarea>
         <button class="voice-send" onclick="sendVoiceInput()">Send</button>
-        <button class="voice-close" onclick="toggleVoiceInput()">✕</button>
+        <button class="voice-close" onclick="toggleVoiceInput()"><i data-lucide="x"></i></button>
       </div>
       <div id="image-bar" class="voice-bar hidden">
         <label class="image-file-label">
@@ -81,22 +81,22 @@
           <input type="file" id="image-file-input" accept="image/*" style="display:none">
         </label>
         <button class="voice-send" onclick="uploadImage()">Send</button>
-        <button class="voice-close" onclick="toggleImageUpload()">✕</button>
+        <button class="voice-close" onclick="toggleImageUpload()"><i data-lucide="x"></i></button>
       </div>
       <div id="capture-panel" class="capture-panel hidden">
         <div class="capture-panel-header">
           <div>
-            <div class="preview-panel-title">📸 Window Capture</div>
+            <div class="preview-panel-title"><i data-lucide="camera" class="icon-inline"></i> Window Capture</div>
             <div class="preview-panel-copy">Capture a window on the server for visual confirmation.</div>
           </div>
-          <button class="voice-close" onclick="toggleCapturePanel()">✕</button>
+          <button class="voice-close" onclick="toggleCapturePanel()"><i data-lucide="x"></i></button>
         </div>
         <div class="capture-input-group">
-          <button class="capture-refresh-btn" onclick="loadCaptureWindows()">🔄</button>
+          <button class="capture-refresh-btn" onclick="loadCaptureWindows()"><i data-lucide="refresh-cw"></i></button>
           <select id="capture-window-select" class="capture-window-select">
             <option value="">Loading...</option>
           </select>
-          <button class="preview-open-btn" onclick="captureWindow()">📸 Capture</button>
+          <button class="preview-open-btn" onclick="captureWindow()"><i data-lucide="camera" class="icon-inline"></i> Capture</button>
         </div>
       </div>
       <div id="capture-modal" class="capture-modal hidden" onclick="closeCaptureModal(event)">
@@ -104,10 +104,10 @@
           <img id="capture-modal-img" class="capture-modal-img" src="" alt="Captured window">
           <div class="capture-modal-info" id="capture-modal-info"></div>
           <div class="capture-modal-actions">
-            <button class="preview-action-btn" onclick="recaptureWindow()">🔄 Re-capture</button>
-            <button class="preview-action-btn" onclick="copyCapturedPath()">📋 Copy Path</button>
-            <button class="preview-action-btn" onclick="sendCapturedPath()">📨 Send to CLI</button>
-            <button class="preview-stop-btn" onclick="closeCaptureModal()">✕ Close</button>
+            <button class="preview-action-btn" onclick="recaptureWindow()"><i data-lucide="refresh-cw" class="icon-inline"></i> Re-capture</button>
+            <button class="preview-action-btn" onclick="copyCapturedPath()"><i data-lucide="clipboard" class="icon-inline"></i> Copy Path</button>
+            <button class="preview-action-btn" onclick="sendCapturedPath()"><i data-lucide="send" class="icon-inline"></i> Send to CLI</button>
+            <button class="preview-stop-btn" onclick="closeCaptureModal()"><i data-lucide="x" class="icon-inline"></i> Close</button>
           </div>
         </div>
       </div>
@@ -118,5 +118,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@xterm/addon-web-links@0.12.0/lib/addon-web-links.js"></script>
   <script src="app-utils.js"></script>
   <script src="app.js"></script>
+  <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
+  <script>lucide.createIcons();</script>
 </body>
 </html>

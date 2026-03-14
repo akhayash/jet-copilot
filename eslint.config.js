@@ -55,6 +55,7 @@ module.exports = [
         requestAnimationFrame: 'readonly',
         globalThis: 'readonly',
         AppUtils: 'readonly',
+        lucide: 'readonly',
       },
     },
     rules: {
