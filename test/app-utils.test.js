@@ -1,7 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
-const { getShortcutContent, escapeHtml } = require('../public/app-utils');
+const { getShortcutContent, escapeHtml, stopPreviewByPort } = require('../public/app-utils');
 
 test('getShortcutContent maps special shortcut keys', () => {
   assert.equal(getShortcutContent('esc'), '\x1b');
@@ -19,4 +19,8 @@ test('escapeHtml escapes dangerous characters', () => {
   assert.equal(escapeHtml('<script>alert("xss")</script>'), '&lt;script&gt;alert(&quot;xss&quot;)&lt;/script&gt;');
   assert.equal(escapeHtml('a&b'), 'a&amp;b');
   assert.equal(escapeHtml('normal text'), 'normal text');
+});
+
+test('stopPreviewByPort is exported as a function', () => {
+  assert.equal(typeof stopPreviewByPort, 'function');
 });

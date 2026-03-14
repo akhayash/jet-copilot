@@ -28,5 +28,14 @@
       .replace(/"/g, '&quot;');
   }
 
-  return { getShortcutContent, escapeHtml };
+  async function stopPreviewByPort(port, onSuccess) {
+    try {
+      await fetch(`/api/preview/${port}`, { method: 'DELETE' });
+      if (onSuccess) onSuccess();
+    } catch (err) {
+      alert('Failed to stop preview: ' + err.message);
+    }
+  }
+
+  return { getShortcutContent, escapeHtml, stopPreviewByPort };
 }));
