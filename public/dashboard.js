@@ -134,7 +134,7 @@ function connectSession(id) {
 }
 
 async function endSession(id) {
-  if (!confirm(`Session #${id} を終了しますか？`)) return;
+  if (!confirm(`End session #${id}?`)) return;
   try {
     await fetch(`/api/sessions/${id}`, { method: 'DELETE' });
     loadSessions();
@@ -212,7 +212,7 @@ function renderFolderList(data, filter) {
   }
 
   if (filter && dirs.length === 0) {
-    html += `<div class="folder-item" style="color:var(--text-muted);cursor:default">一致するフォルダがありません</div>`;
+    html += `<div class="folder-item" style="color:var(--text-muted);cursor:default">No matching folders</div>`;
   }
 
   listEl.innerHTML = html;
@@ -380,23 +380,13 @@ async function copyQrUrl() {
     btn.textContent = '✅ Copied!';
     setTimeout(() => { btn.textContent = original; }, 1500);
   } catch {
-    // Fallback for non-HTTPS contexts
-    const textarea = document.createElement('textarea');
-    textarea.value = qrCurrentUrl;
-    document.body.appendChild(textarea);
-    textarea.select();
-    document.execCommand('copy');
-    document.body.removeChild(textarea);
-    const btn = document.querySelector('.qr-copy-btn');
-    const original = btn.textContent;
-    btn.textContent = '✅ Copied!';
-    setTimeout(() => { btn.textContent = original; }, 1500);
+    alert('Failed to copy URL');
   }
 }
 
 // Update
 async function updateServer() {
-  if (!confirm('jet-copilot を更新して再起動しますか？\nアクティブなセッションは終了されます。')) return;
+  if (!confirm('Update and restart jet-copilot?\nActive sessions will be terminated.')) return;
   const btn = document.getElementById('update-btn');
   if (btn) { btn.disabled = true; btn.textContent = 'Updating...'; }
   try {

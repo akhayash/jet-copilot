@@ -562,7 +562,7 @@ async function uploadImage(file) {
     try {
       data = await res.json();
     } catch {
-      alert('Upload failed: サーバーエラー (status ' + res.status + ')');
+      alert('Upload failed: server error (status ' + res.status + ')');
       return;
     }
     if (!res.ok) {
@@ -576,7 +576,7 @@ async function uploadImage(file) {
     // Reset UI
     const input = document.getElementById('image-file-input');
     input.value = '';
-    document.getElementById('image-file-name').textContent = '画像を選択';
+    document.getElementById('image-file-name').textContent = 'Select image';
     const bar = document.getElementById('image-bar');
     if (!bar.classList.contains('hidden')) toggleImageUpload();
   } catch (err) {
@@ -589,7 +589,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const fileInput = document.getElementById('image-file-input');
   if (fileInput) {
     fileInput.addEventListener('change', () => {
-      const name = fileInput.files[0]?.name || '画像を選択';
+      const name = fileInput.files[0]?.name || 'Select image';
       document.getElementById('image-file-name').textContent = name;
     });
   }
@@ -677,7 +677,7 @@ function softReset() {
 
 function hardReset() {
   if (!ws || ws.readyState !== WebSocket.OPEN) return;
-  if (!confirm('Copilot CLIを再起動しますか？')) return;
+  if (!confirm('Restart Copilot CLI?')) return;
   ws.send(JSON.stringify({ type: 'restart' }));
   if (term) {
     term.reset();
