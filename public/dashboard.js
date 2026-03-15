@@ -486,7 +486,7 @@ async function loadPreviews() {
 
     container.innerHTML = list.map((p) => {
       const urlLink = p.url
-        ? `<a href="${p.url}" target="_blank" class="preview-url">${p.url}</a>`
+        ? `<a href="${AppUtils.escapeHtml(p.url)}" target="_blank" class="preview-url">${AppUtils.escapeHtml(p.url)}</a>`
         : '<span class="preview-url">Starting...</span>';
       return `
         <div class="preview-item preview-item-compact">
@@ -495,7 +495,7 @@ async function loadPreviews() {
             ${urlLink}
           </div>
           <div class="preview-actions">
-            ${p.url ? `<a href="${p.url}" target="_blank" class="preview-action-btn">Open <i data-lucide="external-link" class="icon-inline"></i></a>` : ''}
+            ${p.url ? `<a href="${AppUtils.escapeHtml(p.url)}" target="_blank" class="preview-action-btn">Open <i data-lucide="external-link" class="icon-inline"></i></a>` : ''}
             <button class="preview-stop-btn" onclick="stopPreview(${p.port})">Stop</button>
           </div>
         </div>

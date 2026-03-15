@@ -172,7 +172,11 @@ function createApp({
         const uploadDir = pathModule.join(session.cwd || process.cwd(), '.copilot-uploads');
         fsModule.mkdirSync(uploadDir, { recursive: true });
 
-        const ext = pathModule.extname(req.file.originalname) || '.png';
+        const ALLOWED_EXT = ['.png', '.jpg', '.jpeg', '.gif', '.webp'];
+        const ext = pathModule.extname(req.file.originalname).toLowerCase() || '.png';
+        if (!ALLOWED_EXT.includes(ext)) {
+          return res.status(400).json({ error: `File type not allowed. Accepted: ${ALLOWED_EXT.join(', ')}` });
+        }
         const filename = `${Date.now()}${ext}`;
         const filePath = pathModule.join(uploadDir, filename);
 

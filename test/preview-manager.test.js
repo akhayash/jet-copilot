@@ -4,18 +4,12 @@ const assert = require('node:assert/strict');
 const { PreviewManager } = require('../server/preview-manager');
 
 test('PreviewManager.start adds port to tunnel and builds URL', async () => {
-  const calls = [];
+  const addedPorts = [];
   const manager = new PreviewManager({
-    execSyncFn: (cmd, _opts) => {
-      calls.push(cmd);
-      if (cmd.includes('port show')) throw new Error('not found');
-      return '';
-    },
+    execFileSyncFn: () => '',
     getTunnelUrlFn: () => 'https://abc-4117.jpe1.devtunnels.ms',
     getTunnelIdFn: () => 'my-tunnel',
-    addPortFn: (_id, _port, opts) => {
-      opts.execSyncFn(`devtunnel port create ${_id} -p ${_port}`, {});
-    },
+    addPortFn: (_id, port) => { addedPorts.push(port); },
     removePortFn: () => {},
   });
 
@@ -23,13 +17,14 @@ test('PreviewManager.start adds port to tunnel and builds URL', async () => {
 
   assert.equal(preview.port, 3001);
   assert.equal(preview.url, 'https://abc-3001.jpe1.devtunnels.ms');
+  assert.deepEqual(addedPorts, [3001]);
   assert.deepEqual(manager.list(), [{ port: 3001, url: 'https://abc-3001.jpe1.devtunnels.ms' }]);
 });
 
 test('PreviewManager.start reuses existing preview', async () => {
   let addCount = 0;
   const manager = new PreviewManager({
-    execSyncFn: () => '',
+    execFileSyncFn: () => '',
     getTunnelUrlFn: () => 'https://abc-4117.jpe1.devtunnels.ms',
     getTunnelIdFn: () => 'my-tunnel',
     addPortFn: () => { addCount++; },
@@ -46,7 +41,7 @@ test('PreviewManager.start reuses existing preview', async () => {
 test('PreviewManager.stop removes port from tunnel', async () => {
   const removedPorts = [];
   const manager = new PreviewManager({
-    execSyncFn: () => '',
+    execFileSyncFn: () => '',
     getTunnelUrlFn: () => 'https://abc-4117.jpe1.devtunnels.ms',
     getTunnelIdFn: () => 'my-tunnel',
     addPortFn: () => {},
@@ -62,7 +57,7 @@ test('PreviewManager.stop removes port from tunnel', async () => {
 
 test('PreviewManager.start throws when no tunnel is active', async () => {
   const manager = new PreviewManager({
-    execSyncFn: () => '',
+    execFileSyncFn: () => '',
     getTunnelUrlFn: () => null,
     getTunnelIdFn: () => null,
     addPortFn: () => {},
