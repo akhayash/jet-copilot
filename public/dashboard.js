@@ -271,6 +271,26 @@ function formatDate(iso) {
   return d.toLocaleDateString([], { month: 'short', day: 'numeric' }) + ' ' + formatTime(iso);
 }
 
+function formatRelativeTime(iso) {
+  if (!iso) return '';
+  const now = Date.now();
+  const then = new Date(iso).getTime();
+  const diffSec = Math.floor((now - then) / 1000);
+  if (diffSec < 60) return `${diffSec}s ago`;
+  const diffMin = Math.floor(diffSec / 60);
+  if (diffMin < 60) return `${diffMin}m ago`;
+  const diffHour = Math.floor(diffMin / 60);
+  if (diffHour < 24) return `${diffHour}h ago`;
+  const diffDay = Math.floor(diffHour / 24);
+  if (diffDay < 7) return `${diffDay}d ago`;
+  const diffWeek = Math.floor(diffDay / 7);
+  if (diffWeek < 5) return `${diffWeek}w ago`;
+  const diffMonth = Math.floor(diffDay / 30);
+  if (diffMonth < 12) return `${diffMonth}mo ago`;
+  const diffYear = Math.floor(diffDay / 365);
+  return `${diffYear}y ago`;
+}
+
 async function loadCopilotSessions() {
   try {
     const cwdInput = document.getElementById('cwd-input');
@@ -288,34 +308,46 @@ async function loadCopilotSessions() {
     }
 
     section.classList.remove('hidden');
-    container.innerHTML = sessions.slice(0, 20).map((s) => {
-      const time = formatDate(s.updatedAt || s.createdAt);
-      const summary = s.summary
-        ? `<div class="session-summary">${AppUtils.escapeHtml(s.summary)}</div>`
-        : '';
-      const branch = s.branch
-        ? `<span class="branch-badge">${AppUtils.escapeHtml(s.branch)}</span>`
-        : '';
-      const nameLabels = renderSessionNameLabels(s);
-      const cwdLabel = renderSessionCwd(s);
-      const filterText = [s.copilotSessionId.substring(0, 8), s.repoName, s.folderName, s.branch, s.summary, s.cwd].filter(Boolean).join(' ').toLowerCase();
 
-      return `
-        <div class="session-card" data-filter-text="${AppUtils.escapeHtml(filterText)}">
-          <div class="session-info">
-            <span class="session-id"><i data-lucide="message-square" class="icon-inline"></i> ${AppUtils.escapeHtml(s.copilotSessionId.substring(0, 8))}</span>
-            ${nameLabels}
-            ${branch}
+    // Group sessions by repository/folder name
+    const groups = new Map();
+    for (const s of sessions.slice(0, 30)) {
+      const groupKey = s.displayName || s.folderName || 'Other';
+      if (!groups.has(groupKey)) groups.set(groupKey, []);
+      groups.get(groupKey).push(s);
+    }
+
+    let html = '';
+    for (const [groupName, groupSessions] of groups) {
+      html += `<div class="session-group-header"><i data-lucide="folder-git-2" class="icon-inline"></i> ${AppUtils.escapeHtml(groupName)}</div>`;
+      html += groupSessions.map((s) => {
+        const time = formatRelativeTime(s.updatedAt || s.createdAt);
+        const summary = s.summary
+          ? `<div class="session-summary">${AppUtils.escapeHtml(s.summary)}</div>`
+          : '';
+        const branch = s.branch
+          ? `<span class="branch-badge">${AppUtils.escapeHtml(s.branch)}</span>`
+          : '';
+        const cwdLabel = renderSessionCwd(s);
+        const filterText = [s.copilotSessionId.substring(0, 8), s.repoName, s.folderName, s.branch, s.summary, s.cwd].filter(Boolean).join(' ').toLowerCase();
+
+        return `
+          <div class="session-card" data-filter-text="${AppUtils.escapeHtml(filterText)}">
+            <div class="session-info">
+              <span class="session-id"><i data-lucide="message-square" class="icon-inline"></i> ${AppUtils.escapeHtml(s.copilotSessionId.substring(0, 8))}</span>
+              ${branch}
+              <span class="session-time-inline">${time}</span>
+            </div>
+            ${cwdLabel}
+            ${summary}
+            <div class="session-actions">
+              <button class="connect-btn" onclick="resumeCopilotSession('${AppUtils.escapeHtml(s.copilotSessionId)}', '${escapeAttr(s.cwd || '')}')">Resume <i data-lucide="arrow-right" class="icon-inline"></i></button>
+            </div>
           </div>
-          ${cwdLabel}
-          ${summary}
-          <div class="session-time">${time}</div>
-          <div class="session-actions">
-            <button class="connect-btn" onclick="resumeCopilotSession('${AppUtils.escapeHtml(s.copilotSessionId)}', '${escapeAttr(s.cwd || '')}')">Resume <i data-lucide="arrow-right" class="icon-inline"></i></button>
-          </div>
-        </div>
-      `;
-    }).join('');
+        `;
+      }).join('');
+    }
+    container.innerHTML = html;
     if (typeof lucide !== 'undefined') lucide.createIcons();
     applyFilter();
     updateFilterBarVisibility();
