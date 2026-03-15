@@ -309,7 +309,10 @@ function attachWebSocketServer(wss, {
     // Replay buffered output to newly connected client
     const buffer = sessions.getOutputBuffer(sessionId);
     if (buffer) {
+      console.log(`  📋 [replay] Sending ${buffer.length} bytes to session ${sessionId}`);
       ws.send(JSON.stringify({ type: 'replay', content: buffer }));
+    } else {
+      console.log(`  📋 [replay] No buffered output for session ${sessionId}`);
     }
 
     if (!session.runner) {

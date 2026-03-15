@@ -283,8 +283,11 @@ function connect() {
     if (msg.type === 'output' && term) {
       term.write(msg.content);
     } else if (msg.type === 'replay' && term) {
+      console.log(`[replay] Received ${msg.content.length} bytes`);
       term.reset();
       term.write(msg.content);
+    } else if (msg.type === 'replay' && !term) {
+      console.warn('[replay] Received replay but terminal not ready');
     } else if (msg.type === 'error') {
       console.warn('[server]', msg.content);
     }
