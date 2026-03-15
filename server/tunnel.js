@@ -46,6 +46,23 @@ function removePort(id, port, { execFileSyncFn = execFileSync } = {}) {
   }
 }
 
+function listPorts(id, { execFileSyncFn = execFileSync } = {}) {
+  try {
+    const output = execFileSyncFn('devtunnel', ['port', 'list', id], {
+      encoding: 'utf-8',
+      stdio: 'pipe',
+    });
+    const ports = [];
+    for (const line of output.split('\n')) {
+      const match = line.match(/^\s*(\d+)\s/);
+      if (match) ports.push(Number(match[1]));
+    }
+    return ports;
+  } catch {
+    return [];
+  }
+}
+
 function ensurePersistentTunnel(id, port, { execFileSyncFn = execFileSync } = {}) {
   validateTunnelId(id);
   let needsCreate = false;
@@ -60,6 +77,14 @@ function ensurePersistentTunnel(id, port, { execFileSyncFn = execFileSync } = {}
     console.log(`  ⚠️ Tunnel "${id}" not found or expired, creating...`);
     execFileSyncFn('devtunnel', ['create', id], { stdio: 'ignore' });
     console.log(`  ✅ Tunnel "${id}" created`);
+  }
+
+  const existingPorts = listPorts(id, { execFileSyncFn });
+  for (const p of existingPorts) {
+    if (p !== port) {
+      console.log(`  🧹 Removing stale port ${p} from tunnel "${id}"`);
+      removePort(id, p, { execFileSyncFn });
+    }
   }
 
   addPort(id, port, { execFileSyncFn });
@@ -157,4 +182,4 @@ async function startTunnel(port, { execFileSyncFn = execFileSync, spawnFn = spaw
   }
 }
 
-module.exports = { startTunnel, getTunnelUrl, getTunnelId, ensurePersistentTunnel, addPort, removePort, validateTunnelId };
+module.exports = { startTunnel, getTunnelUrl, getTunnelId, ensurePersistentTunnel, addPort, removePort, listPorts, validateTunnelId };
