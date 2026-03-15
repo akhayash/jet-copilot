@@ -2,7 +2,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const { EventEmitter } = require('node:events');
 
-const { ensurePersistentTunnel, startTunnel, addPort, removePort, validateTunnelId } = require('../server/tunnel');
+const { ensurePersistentTunnel, startTunnel, addPort, removePort, listPorts, validateTunnelId } = require('../server/tunnel');
 
 function createFakeSpawn(stdoutData) {
   return (_cmd, _args, _opts) => {
@@ -39,6 +39,7 @@ test('ensurePersistentTunnel creates tunnel when show fails', () => {
     const cmd = `${file} ${args.join(' ')}`;
     calls.push(cmd);
     if (args.includes('show') && !args.includes('port')) throw new Error('not found');
+    if (args[0] === 'port' && args[1] === 'list') return '';
     if (args[0] === 'port' && args[1] === 'show') throw new Error('no port');
     return '';
   };
@@ -56,6 +57,7 @@ test('ensurePersistentTunnel reuses existing tunnel', () => {
   const execFileSyncFn = (file, args, _opts) => {
     const cmd = `${file} ${args.join(' ')}`;
     calls.push(cmd);
+    if (args[0] === 'port' && args[1] === 'list') return 'Port Number\n3000  auto';
     return 'Port 3000';
   };
 
@@ -70,6 +72,7 @@ test('ensurePersistentTunnel adds port when missing', () => {
   const execFileSyncFn = (file, args, _opts) => {
     const cmd = `${file} ${args.join(' ')}`;
     calls.push(cmd);
+    if (args[0] === 'port' && args[1] === 'list') return '';
     if (args[0] === 'port' && args[1] === 'show') throw new Error('no port');
     return '';
   };
@@ -210,6 +213,7 @@ test('ensurePersistentTunnel recreates expired tunnel', () => {
     const cmd = `${file} ${args.join(' ')}`;
     calls.push(cmd);
     if (args.includes('show') && !args.includes('port')) throw new Error('not found');
+    if (args[0] === 'port' && args[1] === 'list') return '';
     if (args[0] === 'port' && args[1] === 'show') throw new Error('no port');
     return '';
   };
@@ -219,6 +223,75 @@ test('ensurePersistentTunnel recreates expired tunnel', () => {
   assert.ok(calls.some(c => c.includes('devtunnel create expired-tunnel')));
   assert.ok(!calls.some(c => c.includes('--allow-anonymous')));
   assert.ok(calls.some(c => c.includes('port create expired-tunnel -p 3000')));
+});
+
+// --- stale port cleanup ---
+
+test('ensurePersistentTunnel removes stale ports when port changes', () => {
+  const calls = [];
+  const portListOutput = [
+    'Found 2 tunnel ports.',
+    'Port Number   Protocol      Current Connections',
+    '3000          auto          0',
+    '5000          auto          0',
+  ].join('\n');
+
+  const execFileSyncFn = (file, args, _opts) => {
+    const cmd = `${file} ${args.join(' ')}`;
+    calls.push(cmd);
+    if (args[0] === 'port' && args[1] === 'list') return portListOutput;
+    if (args[0] === 'port' && args[1] === 'show') return 'Port 4117';
+    return '';
+  };
+
+  ensurePersistentTunnel('my-tunnel', 4117, { execFileSyncFn });
+
+  assert.ok(calls.some(c => c.includes('port delete my-tunnel -p 3000')));
+  assert.ok(calls.some(c => c.includes('port delete my-tunnel -p 5000')));
+  assert.ok(!calls.some(c => c.includes('port delete my-tunnel -p 4117')));
+});
+
+test('ensurePersistentTunnel does not remove current port', () => {
+  const calls = [];
+  const portListOutput = [
+    'Found 1 tunnel port.',
+    'Port Number   Protocol',
+    '3000          auto',
+  ].join('\n');
+
+  const execFileSyncFn = (file, args, _opts) => {
+    const cmd = `${file} ${args.join(' ')}`;
+    calls.push(cmd);
+    if (args[0] === 'port' && args[1] === 'list') return portListOutput;
+    return 'Port 3000';
+  };
+
+  ensurePersistentTunnel('my-tunnel', 3000, { execFileSyncFn });
+
+  assert.ok(!calls.some(c => c.includes('port delete')));
+});
+
+// --- listPorts ---
+
+test('listPorts parses port numbers from devtunnel output', () => {
+  const output = [
+    'Found 2 tunnel ports.',
+    'Port Number   Protocol      Current Connections',
+    '3000          auto          0',
+    '4117          auto',
+  ].join('\n');
+
+  const execFileSyncFn = () => output;
+  const ports = listPorts('my-tunnel', { execFileSyncFn });
+
+  assert.deepEqual(ports, [3000, 4117]);
+});
+
+test('listPorts returns empty array on error', () => {
+  const execFileSyncFn = () => { throw new Error('fail'); };
+  const ports = listPorts('my-tunnel', { execFileSyncFn });
+
+  assert.deepEqual(ports, []);
 });
 
 // --- addPort / removePort ---
