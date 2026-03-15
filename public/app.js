@@ -376,7 +376,7 @@ function closeAllPanels() {
   ids.forEach(({ bar, btn }) => {
     const barEl = document.getElementById(bar);
     const btnEl = document.getElementById(btn);
-    if (barEl) barEl.classList.add('hidden');
+    if (barEl) barEl.classList.remove('panel-open');
     if (btnEl) btnEl.classList.remove('active');
   });
 }
@@ -384,12 +384,12 @@ function closeAllPanels() {
 function toggleBar(barId, btnId, focusId) {
   const bar = document.getElementById(barId);
   const btn = document.getElementById(btnId);
-  const opening = bar.classList.contains('hidden');
+  const opening = !bar.classList.contains('panel-open');
 
   closeAllPanels();
 
   if (opening) {
-    bar.classList.remove('hidden');
+    bar.classList.add('panel-open');
     btn.classList.add('active');
     const focusEl = focusId && document.getElementById(focusId);
     if (focusEl) focusEl.focus();
@@ -500,7 +500,7 @@ async function pasteFromClipboard() {
 
 // Preview from terminal
 function togglePreviewInput() {
-  const wasHidden = document.getElementById('preview-panel')?.classList.contains('hidden');
+  const wasHidden = !document.getElementById('preview-panel')?.classList.contains('panel-open');
   toggleBar('preview-panel', 'preview-toggle', 'preview-port-input');
   if (wasHidden) loadSessionPreviews();
 }
@@ -578,7 +578,7 @@ async function uploadImage(file) {
     input.value = '';
     document.getElementById('image-file-name').textContent = 'Select image';
     const bar = document.getElementById('image-bar');
-    if (!bar.classList.contains('hidden')) toggleImageUpload();
+    if (bar.classList.contains('panel-open')) toggleImageUpload();
   } catch (err) {
     alert('Upload failed: ' + err.message);
   }
@@ -691,7 +691,7 @@ let lastCaptureResult = null;
 let lastCaptureWindowId = null;
 
 function toggleCapturePanel() {
-  const wasHidden = document.getElementById('capture-panel')?.classList.contains('hidden');
+  const wasHidden = !document.getElementById('capture-panel')?.classList.contains('panel-open');
   toggleBar('capture-panel', 'capture-toggle');
   if (wasHidden) loadCaptureWindows();
 }
@@ -802,7 +802,7 @@ document.addEventListener('keydown', (e) => {
 window.addEventListener('load', () => connect());
 window.setInterval(() => {
   const panel = document.getElementById('preview-panel');
-  if (panel && !panel.classList.contains('hidden')) {
+  if (panel && panel.classList.contains('panel-open')) {
     loadSessionPreviews();
   }
 }, 5000);
