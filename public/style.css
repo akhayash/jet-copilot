@@ -317,6 +317,37 @@ header h1 { font-size: 1.1rem; flex: 1; }
   margin-bottom: 10px;
 }
 
+.session-filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  padding: 8px 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.filter-icon {
+  width: 16px;
+  height: 16px;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.session-filter {
+  flex: 1;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  font-size: 14px;
+  outline: none;
+}
+
+.session-filter::placeholder {
+  color: var(--text-muted);
+}
+
 .section-heading {
   display: flex;
   flex-direction: column;

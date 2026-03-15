@@ -49,6 +49,7 @@ async function loadSessions() {
 
     renderSessions('active-section', 'active-sessions', active, true);
     renderSessions('past-section', 'past-sessions', past, false);
+    updateFilterBarVisibility();
   } catch {
     // Ignore
   }
@@ -95,9 +96,10 @@ function renderSessions(sectionId, containerId, sessions, showConnect) {
     const clients = s.clientCount > 0 ? `<span class="client-badge">${s.clientCount} connected</span>` : '';
     const nameLabels = renderSessionNameLabels(s);
     const cwdLabel = renderSessionCwd(s);
+    const filterText = [s.id, s.repoName, s.folderName, s.cwd].filter(Boolean).join(' ').toLowerCase();
 
     return `
-      <div class="session-card">
+      <div class="session-card" data-filter-text="${AppUtils.escapeHtml(filterText)}">
         <div class="session-info">
           <span class="session-id">${statusIcon} #${s.id}</span>
           ${nameLabels}
@@ -110,6 +112,7 @@ function renderSessions(sectionId, containerId, sessions, showConnect) {
     `;
   }).join('');
   if (typeof lucide !== 'undefined') lucide.createIcons();
+  applyFilter();
 }
 
 async function createSession() {
@@ -295,9 +298,10 @@ async function loadCopilotSessions() {
         : '';
       const nameLabels = renderSessionNameLabels(s);
       const cwdLabel = renderSessionCwd(s);
+      const filterText = [s.copilotSessionId.substring(0, 8), s.repoName, s.folderName, s.branch, s.summary, s.cwd].filter(Boolean).join(' ').toLowerCase();
 
       return `
-        <div class="session-card">
+        <div class="session-card" data-filter-text="${AppUtils.escapeHtml(filterText)}">
           <div class="session-info">
             <span class="session-id"><i data-lucide="message-square" class="icon-inline"></i> ${AppUtils.escapeHtml(s.copilotSessionId.substring(0, 8))}</span>
             ${nameLabels}
@@ -313,6 +317,8 @@ async function loadCopilotSessions() {
       `;
     }).join('');
     if (typeof lucide !== 'undefined') lucide.createIcons();
+    applyFilter();
+    updateFilterBarVisibility();
   } catch {
     // Ignore
   }
@@ -334,6 +340,43 @@ async function resumeCopilotSession(copilotSessionId, cwd) {
   }
 }
 
+// Session filter
+function applyFilter() {
+  const input = document.getElementById('session-filter');
+  const query = (input?.value || '').toLowerCase().trim();
+  const sections = [
+    { sectionId: 'active-section', containerId: 'active-sessions' },
+    { sectionId: 'past-section', containerId: 'past-sessions' },
+    { sectionId: 'copilot-sessions-section', containerId: 'copilot-sessions' },
+  ];
+
+  sections.forEach(({ sectionId, containerId }) => {
+    const container = document.getElementById(containerId);
+    const section = document.getElementById(sectionId);
+    if (!container || !section) return;
+
+    const cards = container.querySelectorAll('.session-card');
+    let visibleCount = 0;
+    cards.forEach((card) => {
+      const text = card.getAttribute('data-filter-text') || '';
+      const match = !query || text.includes(query);
+      card.classList.toggle('hidden', !match);
+      if (match) visibleCount++;
+    });
+
+    if (cards.length > 0) {
+      section.classList.toggle('hidden', visibleCount === 0);
+    }
+  });
+}
+
+function updateFilterBarVisibility() {
+  const bar = document.getElementById('session-filter-bar');
+  if (!bar) return;
+  const hasCards = document.querySelectorAll('.session-card').length > 0;
+  bar.classList.toggle('hidden', !hasCards);
+}
+
 // Load on start and refresh periodically
 loadStatus();
 loadSessions();
@@ -341,6 +384,13 @@ loadPreviews();
 loadCopilotSessions();
 const _refreshInterval = setInterval(() => { loadStatus(); loadSessions(); loadPreviews(); loadCopilotSessions(); }, 5000);
 window.addEventListener('beforeunload', () => clearInterval(_refreshInterval));
+
+document.addEventListener('DOMContentLoaded', () => {
+  const filterInput = document.getElementById('session-filter');
+  if (filterInput) {
+    filterInput.addEventListener('input', applyFilter);
+  }
+});
 
 // QR code modal
 let qrCurrentUrl = null;
