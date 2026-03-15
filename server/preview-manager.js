@@ -1,16 +1,16 @@
-const { execSync } = require('child_process');
+const { execFileSync } = require('child_process');
 const { getTunnelUrl, getTunnelId, addPort, removePort } = require('./tunnel');
 
 class PreviewManager {
   constructor({
-    execSyncFn = execSync,
+    execFileSyncFn = execFileSync,
     getTunnelUrlFn = getTunnelUrl,
     getTunnelIdFn = getTunnelId,
     addPortFn = addPort,
     removePortFn = removePort,
   } = {}) {
     this._previews = new Map(); // port -> { url, port }
-    this._execSync = execSyncFn;
+    this._execFileSync = execFileSyncFn;
     this._getTunnelUrl = getTunnelUrlFn;
     this._getTunnelId = getTunnelIdFn;
     this._addPort = addPortFn;
@@ -29,7 +29,7 @@ class PreviewManager {
       throw new Error('No active tunnel. Set DEVTUNNEL_ID to enable previews.');
     }
 
-    this._addPort(id, port, { execSyncFn: this._execSync });
+    this._addPort(id, port, { execFileSyncFn: this._execFileSync });
 
     // Build URL from main tunnel URL pattern: https://<sub>-<mainPort>.<cluster>.devtunnels.ms
     // Replace the main port with the preview port in the subdomain
@@ -43,7 +43,7 @@ class PreviewManager {
   stop(port) {
     const id = this._getTunnelId();
     if (id) {
-      this._removePort(id, port, { execSyncFn: this._execSync });
+      this._removePort(id, port, { execFileSyncFn: this._execFileSync });
     }
     this._previews.delete(port);
   }

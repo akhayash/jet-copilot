@@ -151,10 +151,10 @@ function renderSessionPreviewList(list) {
   summary.textContent = `${list.length} preview${list.length === 1 ? '' : 's'} active`;
   container.innerHTML = list.map((preview) => {
     const url = preview.url
-      ? `<a href="${preview.url}" target="_blank" class="preview-url">${preview.url}</a>`
+      ? `<a href="${AppUtils.escapeHtml(preview.url)}" target="_blank" class="preview-url">${AppUtils.escapeHtml(preview.url)}</a>`
       : '<span class="preview-url">Starting...</span>';
     const open = preview.url
-      ? `<a href="${preview.url}" target="_blank" class="preview-action-btn">Open <i data-lucide="external-link" class="icon-inline"></i></a>`
+      ? `<a href="${AppUtils.escapeHtml(preview.url)}" target="_blank" class="preview-action-btn">Open <i data-lucide="external-link" class="icon-inline"></i></a>`
       : '';
     return `
       <div class="preview-item">
