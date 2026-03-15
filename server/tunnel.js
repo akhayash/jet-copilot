@@ -2,44 +2,61 @@ const { spawn, execSync } = require('child_process');
 const qrcode = require('qrcode-terminal');
 
 let tunnelUrl = null;
+let tunnelId = null;
 
 function getTunnelUrl() {
   return tunnelUrl;
 }
 
-function ensurePersistentTunnel(tunnelId, port, { execSyncFn = execSync } = {}) {
+function getTunnelId() {
+  return tunnelId;
+}
+
+function addPort(id, port, { execSyncFn = execSync } = {}) {
+  try {
+    execSyncFn(`devtunnel port show ${id} -p ${port} 2>&1`, {
+      encoding: 'utf-8',
+      shell: true,
+    });
+  } catch {
+    execSyncFn(`devtunnel port create ${id} -p ${port}`, {
+      stdio: 'ignore',
+      shell: true,
+    });
+    console.log(`  ✅ Port ${port} added to tunnel "${id}"`);
+  }
+}
+
+function removePort(id, port, { execSyncFn = execSync } = {}) {
+  try {
+    execSyncFn(`devtunnel port delete ${id} -p ${port}`, {
+      stdio: 'ignore',
+      shell: true,
+    });
+  } catch {
+    // Port may already be removed
+  }
+}
+
+function ensurePersistentTunnel(id, port, { execSyncFn = execSync } = {}) {
   let needsCreate = false;
   try {
-    execSyncFn(`devtunnel show ${tunnelId}`, { stdio: 'ignore', shell: true });
-    console.log(`  ✅ Persistent tunnel "${tunnelId}" found`);
+    execSyncFn(`devtunnel show ${id}`, { stdio: 'ignore', shell: true });
+    console.log(`  ✅ Persistent tunnel "${id}" found`);
   } catch {
     needsCreate = true;
   }
 
   if (needsCreate) {
-    console.log(`  ⚠️ Tunnel "${tunnelId}" not found or expired, creating...`);
-    execSyncFn(`devtunnel create ${tunnelId} --allow-anonymous`, {
+    console.log(`  ⚠️ Tunnel "${id}" not found or expired, creating...`);
+    execSyncFn(`devtunnel create ${id}`, {
       stdio: 'ignore',
       shell: true,
     });
-    console.log(`  ✅ Tunnel "${tunnelId}" created`);
+    console.log(`  ✅ Tunnel "${id}" created`);
   }
 
-  try {
-    const portInfo = execSyncFn(`devtunnel port show ${tunnelId} -p ${port} 2>&1`, {
-      encoding: 'utf-8',
-      shell: true,
-    });
-    if (!portInfo.includes(String(port))) {
-      throw new Error('port not listed');
-    }
-  } catch {
-    execSyncFn(`devtunnel port create ${tunnelId} -p ${port}`, {
-      stdio: 'ignore',
-      shell: true,
-    });
-    console.log(`  ✅ Port ${port} added to tunnel "${tunnelId}"`);
-  }
+  addPort(id, port, { execSyncFn });
 }
 
 async function startTunnel(port, { execSyncFn = execSync, spawnFn = spawn } = {}) {
@@ -72,21 +89,22 @@ async function startTunnel(port, { execSyncFn = execSync, spawnFn = spawn } = {}
     // If command fails, try to proceed anyway
   }
 
-  const tunnelId = process.env.DEVTUNNEL_ID;
+  const configuredId = process.env.DEVTUNNEL_ID;
 
-  if (tunnelId) {
+  if (configuredId) {
     try {
-      ensurePersistentTunnel(tunnelId, port, { execSyncFn });
+      ensurePersistentTunnel(configuredId, port, { execSyncFn });
+      tunnelId = configuredId;
     } catch (err) {
-      console.error(`  ❌ Failed to set up persistent tunnel "${tunnelId}":`, err.message);
+      console.error(`  ❌ Failed to set up persistent tunnel "${configuredId}":`, err.message);
       console.error(`\n  📱 Manual access: http://localhost:${port}\n`);
       return;
     }
   }
 
   try {
-    const args = tunnelId
-      ? ['host', tunnelId]
+    const args = configuredId
+      ? ['host', configuredId]
       : ['host', '--port-numbers', String(port)];
 
     const proc = spawnFn('devtunnel', args, {
@@ -135,4 +153,4 @@ async function startTunnel(port, { execSyncFn = execSync, spawnFn = spawn } = {}
   }
 }
 
-module.exports = { startTunnel, getTunnelUrl, ensurePersistentTunnel };
+module.exports = { startTunnel, getTunnelUrl, getTunnelId, ensurePersistentTunnel, addPort, removePort };

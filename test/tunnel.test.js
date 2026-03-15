@@ -2,7 +2,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const { EventEmitter } = require('node:events');
 
-const { ensurePersistentTunnel, startTunnel } = require('../server/tunnel');
+const { ensurePersistentTunnel, startTunnel, addPort, removePort } = require('../server/tunnel');
 
 function createFakeSpawn(stdoutData) {
   return (_cmd, _args, _opts) => {
@@ -34,7 +34,8 @@ test('ensurePersistentTunnel creates tunnel when show fails', () => {
   ensurePersistentTunnel('my-tunnel', 3000, { execSyncFn });
 
   assert.ok(calls.some(c => c.includes('devtunnel show my-tunnel')));
-  assert.ok(calls.some(c => c.includes('devtunnel create my-tunnel --allow-anonymous')));
+  assert.ok(calls.some(c => c.includes('devtunnel create my-tunnel')));
+  assert.ok(!calls.some(c => c.includes('--allow-anonymous')));
   assert.ok(calls.some(c => c.includes('devtunnel port create my-tunnel -p 3000')));
 });
 
@@ -216,6 +217,46 @@ test('ensurePersistentTunnel recreates expired tunnel', () => {
 
   ensurePersistentTunnel('expired-tunnel', 3000, { execSyncFn });
 
-  assert.ok(calls.some(c => c.includes('devtunnel create expired-tunnel --allow-anonymous')));
+  assert.ok(calls.some(c => c.includes('devtunnel create expired-tunnel')));
+  assert.ok(!calls.some(c => c.includes('--allow-anonymous')));
   assert.ok(calls.some(c => c.includes('devtunnel port create expired-tunnel -p 3000')));
+});
+
+// --- addPort / removePort ---
+
+test('addPort creates port when not found', () => {
+  const calls = [];
+  const execSyncFn = (cmd, _opts) => {
+    calls.push(cmd);
+    if (cmd.includes('devtunnel port show')) throw new Error('not found');
+    return '';
+  };
+
+  addPort('my-tunnel', 5000, { execSyncFn });
+
+  assert.ok(calls.some(c => c.includes('devtunnel port create my-tunnel -p 5000')));
+});
+
+test('addPort skips when port already exists', () => {
+  const calls = [];
+  const execSyncFn = (cmd, _opts) => {
+    calls.push(cmd);
+    return 'Port 5000';
+  };
+
+  addPort('my-tunnel', 5000, { execSyncFn });
+
+  assert.ok(!calls.some(c => c.includes('devtunnel port create')));
+});
+
+test('removePort calls devtunnel port delete', () => {
+  const calls = [];
+  const execSyncFn = (cmd, _opts) => {
+    calls.push(cmd);
+    return '';
+  };
+
+  removePort('my-tunnel', 5000, { execSyncFn });
+
+  assert.ok(calls.some(c => c.includes('devtunnel port delete my-tunnel -p 5000')));
 });

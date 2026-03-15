@@ -16,7 +16,7 @@ const QRCode = require('qrcode');
 
 loadEnv();
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 4117;
 const EXIT_RESTART = 100;
 const PKG_ROOT = path.resolve(__dirname, '..');
 
