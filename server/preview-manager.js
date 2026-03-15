@@ -1,86 +1,51 @@
-const { spawn } = require('child_process');
+const { execSync } = require('child_process');
+const { getTunnelUrl, getTunnelId, addPort, removePort } = require('./tunnel');
 
 class PreviewManager {
   constructor({
-    spawnFn = spawn,
-    setIntervalFn = setInterval,
-    clearIntervalFn = clearInterval,
-    setTimeoutFn = setTimeout,
-    clearTimeoutFn = clearTimeout,
+    execSyncFn = execSync,
+    getTunnelUrlFn = getTunnelUrl,
+    getTunnelIdFn = getTunnelId,
+    addPortFn = addPort,
+    removePortFn = removePort,
   } = {}) {
-    this._previews = new Map(); // port -> { proc, url, port }
-    this._spawn = spawnFn;
-    this._setInterval = setIntervalFn;
-    this._clearInterval = clearIntervalFn;
-    this._setTimeout = setTimeoutFn;
-    this._clearTimeout = clearTimeoutFn;
+    this._previews = new Map(); // port -> { url, port }
+    this._execSync = execSyncFn;
+    this._getTunnelUrl = getTunnelUrlFn;
+    this._getTunnelId = getTunnelIdFn;
+    this._addPort = addPortFn;
+    this._removePort = removePortFn;
   }
 
-  start(port) {
-    return new Promise((resolve, reject) => {
-      if (this._previews.has(port)) {
-        const existing = this._previews.get(port);
-        return resolve(existing);
-      }
+  async start(port) {
+    if (this._previews.has(port)) {
+      return this._previews.get(port);
+    }
 
-      const proc = this._spawn('devtunnel', [
-        'host',
-        '--port-numbers', String(port),
-        '--allow-anonymous',
-      ], {
-        stdio: ['ignore', 'pipe', 'pipe'],
-        shell: true,
-      });
+    const id = this._getTunnelId();
+    const mainUrl = this._getTunnelUrl();
 
-      let url = null;
-      const preview = { proc, url: null, port };
-      this._previews.set(port, preview);
+    if (!id || !mainUrl) {
+      throw new Error('No active tunnel. Set DEVTUNNEL_ID to enable previews.');
+    }
 
-      const handleOutput = (data) => {
-        const text = data.toString();
-        const allUrls = text.match(/https:\/\/[^\s,]+\.devtunnels\.ms[^\s,]*/g);
-        if (allUrls && !url) {
-          url = allUrls.find((u) => !u.match(/:\d+$/)) || allUrls[0].replace(/[,;]+$/, '');
-          preview.url = url;
-        }
-      };
+    this._addPort(id, port, { execSyncFn: this._execSync });
 
-      proc.stdout.on('data', handleOutput);
-      proc.stderr.on('data', handleOutput);
+    // Build URL from main tunnel URL pattern: https://<sub>-<mainPort>.<cluster>.devtunnels.ms
+    // Replace the main port with the preview port in the subdomain
+    const url = mainUrl.replace(/-\d+\./, `-${port}.`);
 
-      proc.on('error', (err) => {
-        this._previews.delete(port);
-        reject(err);
-      });
-
-      proc.on('close', () => {
-        this._previews.delete(port);
-      });
-
-      // Wait for URL to be ready
-      const check = this._setInterval(() => {
-        if (url) {
-          this._clearInterval(check);
-          this._clearTimeout(timeout);
-          resolve(preview);
-        }
-      }, 500);
-
-      const timeout = this._setTimeout(() => {
-        this._clearInterval(check);
-        if (!url) {
-          resolve(preview); // Return anyway, URL may appear later
-        }
-      }, 10000);
-    });
+    const preview = { port, url };
+    this._previews.set(port, preview);
+    return preview;
   }
 
   stop(port) {
-    const preview = this._previews.get(port);
-    if (preview && preview.proc) {
-      preview.proc.kill();
-      this._previews.delete(port);
+    const id = this._getTunnelId();
+    if (id) {
+      this._removePort(id, port, { execSyncFn: this._execSync });
     }
+    this._previews.delete(port);
   }
 
   list() {

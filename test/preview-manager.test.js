@@ -1,65 +1,76 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { EventEmitter } = require('node:events');
 
 const { PreviewManager } = require('../server/preview-manager');
 
-function createFakeProc() {
-  const proc = new EventEmitter();
-  proc.stdout = new EventEmitter();
-  proc.stderr = new EventEmitter();
-  proc.killCalled = false;
-  proc.kill = () => {
-    proc.killCalled = true;
-    proc.emit('close');
-  };
-  return proc;
-}
-
-test('PreviewManager.start extracts tunnel URL and reuses existing preview', async () => {
-  let spawnCount = 0;
-  const proc = createFakeProc();
+test('PreviewManager.start adds port to tunnel and builds URL', async () => {
+  const calls = [];
   const manager = new PreviewManager({
-    spawnFn() {
-      spawnCount += 1;
-      process.nextTick(() => {
-        proc.stdout.emit('data', 'Tunnel: https://abc.devtunnels.ms');
-      });
-      return proc;
+    execSyncFn: (cmd, _opts) => {
+      calls.push(cmd);
+      if (cmd.includes('port show')) throw new Error('not found');
+      return '';
     },
-    setIntervalFn: (cb) => setInterval(cb, 1),
-    clearIntervalFn: clearInterval,
-    setTimeoutFn: (cb, ms) => setTimeout(cb, Math.min(ms, 20)),
-    clearTimeoutFn: clearTimeout,
+    getTunnelUrlFn: () => 'https://abc-4117.jpe1.devtunnels.ms',
+    getTunnelIdFn: () => 'my-tunnel',
+    addPortFn: (_id, _port, opts) => {
+      opts.execSyncFn(`devtunnel port create ${_id} -p ${_port}`, {});
+    },
+    removePortFn: () => {},
   });
 
-  const previewA = await manager.start(3001);
-  const previewB = await manager.start(3001);
+  const preview = await manager.start(3001);
 
-  assert.equal(spawnCount, 1);
-  assert.equal(previewA, previewB);
-  assert.equal(previewA.url, 'https://abc.devtunnels.ms');
-  assert.deepEqual(manager.list(), [{ port: 3001, url: 'https://abc.devtunnels.ms' }]);
+  assert.equal(preview.port, 3001);
+  assert.equal(preview.url, 'https://abc-3001.jpe1.devtunnels.ms');
+  assert.deepEqual(manager.list(), [{ port: 3001, url: 'https://abc-3001.jpe1.devtunnels.ms' }]);
 });
 
-test('PreviewManager.stop kills process and removes preview', async () => {
-  const proc = createFakeProc();
+test('PreviewManager.start reuses existing preview', async () => {
+  let addCount = 0;
   const manager = new PreviewManager({
-    spawnFn() {
-      process.nextTick(() => {
-        proc.stdout.emit('data', 'Tunnel: https://xyz.devtunnels.ms');
-      });
-      return proc;
-    },
-    setIntervalFn: (cb) => setInterval(cb, 1),
-    clearIntervalFn: clearInterval,
-    setTimeoutFn: (cb, ms) => setTimeout(cb, Math.min(ms, 20)),
-    clearTimeoutFn: clearTimeout,
+    execSyncFn: () => '',
+    getTunnelUrlFn: () => 'https://abc-4117.jpe1.devtunnels.ms',
+    getTunnelIdFn: () => 'my-tunnel',
+    addPortFn: () => { addCount++; },
+    removePortFn: () => {},
+  });
+
+  const a = await manager.start(3001);
+  const b = await manager.start(3001);
+
+  assert.equal(a, b);
+  assert.equal(addCount, 1);
+});
+
+test('PreviewManager.stop removes port from tunnel', async () => {
+  const removedPorts = [];
+  const manager = new PreviewManager({
+    execSyncFn: () => '',
+    getTunnelUrlFn: () => 'https://abc-4117.jpe1.devtunnels.ms',
+    getTunnelIdFn: () => 'my-tunnel',
+    addPortFn: () => {},
+    removePortFn: (_id, port) => { removedPorts.push(port); },
   });
 
   await manager.start(3002);
   manager.stop(3002);
 
-  assert.equal(proc.killCalled, true);
+  assert.deepEqual(removedPorts, [3002]);
   assert.deepEqual(manager.list(), []);
+});
+
+test('PreviewManager.start throws when no tunnel is active', async () => {
+  const manager = new PreviewManager({
+    execSyncFn: () => '',
+    getTunnelUrlFn: () => null,
+    getTunnelIdFn: () => null,
+    addPortFn: () => {},
+    removePortFn: () => {},
+  });
+
+  await assert.rejects(
+    () => manager.start(3001),
+    { message: 'No active tunnel. Set DEVTUNNEL_ID to enable previews.' }
+  );
 });
