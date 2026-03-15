@@ -406,6 +406,12 @@ header h1 { font-size: 1.1rem; flex: 1; }
   margin-bottom: 8px;
 }
 
+.session-time-inline {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-left: auto;
+}
+
 .session-cwd {
   font-size: 12px;
   color: var(--text-muted);
@@ -432,6 +438,21 @@ header h1 { font-size: 1.1rem; flex: 1; }
   padding: 2px 8px;
   border-radius: 10px;
   font-family: 'SF Mono', 'Fira Code', monospace;
+}
+
+.session-group-header {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  padding: 8px 0 4px;
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.session-group-header:first-child {
+  margin-top: 0;
 }
 
 .connect-btn {
