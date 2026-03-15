@@ -17,6 +17,8 @@ function writeWorkspaceYaml(sessionDir, id, data) {
     .map(([k, v]) => `${k}: ${v === null ? '' : v}`)
     .join('\n');
   fs.writeFileSync(path.join(dir, 'workspace.yaml'), lines);
+  // Create events.jsonl to mark session as having transcript data
+  fs.writeFileSync(path.join(dir, 'events.jsonl'), '');
 }
 
 test('scanCopilotSessions finds sessions matching cwd', () => {
@@ -172,6 +174,37 @@ test('scanCopilotSessions returns all sessions when cwd is omitted', () => {
     assert.equal(results.length, 2);
     assert.equal(results[0].copilotSessionId, 'video-odd');
     assert.equal(results[1].copilotSessionId, 'jet-copilot');
+  } finally {
+    fs.rmSync(sessionDir, { recursive: true, force: true });
+  }
+});
+
+test('scanCopilotSessions skips ghost sessions without events.jsonl', () => {
+  const sessionDir = createTempDir();
+  const cwd = 'C:\\Repos\\project';
+
+  // Real session with events.jsonl
+  writeWorkspaceYaml(sessionDir, 'real-session', {
+    id: 'real-session',
+    cwd: cwd,
+    summary: 'Real work',
+    created_at: '2026-03-10T10:00:00Z',
+  });
+
+  // Ghost session: workspace.yaml but no events.jsonl
+  const ghostDir = path.join(sessionDir, 'ghost-session');
+  fs.mkdirSync(ghostDir, { recursive: true });
+  fs.writeFileSync(path.join(ghostDir, 'workspace.yaml'), [
+    'id: ghost-session',
+    `cwd: ${cwd}`,
+    'created_at: 2026-03-10T11:00:00Z',
+  ].join('\n'));
+
+  try {
+    const results = scanCopilotSessions(cwd, { sessionDir });
+
+    assert.equal(results.length, 1);
+    assert.equal(results[0].copilotSessionId, 'real-session');
   } finally {
     fs.rmSync(sessionDir, { recursive: true, force: true });
   }

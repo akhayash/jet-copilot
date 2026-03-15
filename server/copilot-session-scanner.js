@@ -29,6 +29,10 @@ function scanCopilotSessions(cwd, {
     const workspacePath = pathModule.join(sessionDir, entry.name, 'workspace.yaml');
     if (!fsModule.existsSync(workspacePath)) continue;
 
+    // Skip sessions without transcript data (ghost sessions from aborted startups)
+    const eventsPath = pathModule.join(sessionDir, entry.name, 'events.jsonl');
+    if (!fsModule.existsSync(eventsPath)) continue;
+
     try {
       const content = fsModule.readFileSync(workspacePath, 'utf-8');
       const data = yaml.parse(content);
