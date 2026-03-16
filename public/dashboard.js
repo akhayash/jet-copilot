@@ -1,3 +1,21 @@
+const _openGroups = new Set();
+
+function toggleGroup(header) {
+  const groupName = header.getAttribute('data-group');
+  const body = header.nextElementSibling;
+  const isOpen = header.classList.contains('open');
+
+  if (isOpen) {
+    header.classList.remove('open');
+    body.classList.remove('open');
+    _openGroups.delete(groupName);
+  } else {
+    header.classList.add('open');
+    body.classList.add('open');
+    _openGroups.add(groupName);
+  }
+}
+
 async function loadStatus() {
   try {
     const [statusRes, versionRes] = await Promise.all([
@@ -311,7 +329,7 @@ async function loadCopilotSessions() {
 
     // Group sessions by repository/folder name
     const groups = new Map();
-    for (const s of sessions.slice(0, 30)) {
+    for (const s of sessions.slice(0, 50)) {
       const groupKey = s.displayName || s.folderName || 'Other';
       if (!groups.has(groupKey)) groups.set(groupKey, []);
       groups.get(groupKey).push(s);
@@ -319,7 +337,15 @@ async function loadCopilotSessions() {
 
     let html = '';
     for (const [groupName, groupSessions] of groups) {
-      html += `<div class="session-group-header"><i data-lucide="folder-git-2" class="icon-inline"></i> ${AppUtils.escapeHtml(groupName)}</div>`;
+      const groupId = `copilot-group-${groupName.replace(/[^a-zA-Z0-9-]/g, '_')}`;
+      const isOpen = _openGroups.has(groupName);
+      html += `<div class="session-group-header ${isOpen ? 'open' : ''}" data-group="${AppUtils.escapeHtml(groupName)}" onclick="toggleGroup(this)">
+        <i data-lucide="chevron-right" class="session-group-chevron"></i>
+        <i data-lucide="folder-git-2" class="icon-inline"></i>
+        <span class="session-group-name">${AppUtils.escapeHtml(groupName)}</span>
+        <span class="session-group-count">${groupSessions.length}</span>
+      </div>`;
+      html += `<div class="session-group-body ${isOpen ? 'open' : ''}" id="${groupId}">`;
       html += groupSessions.map((s) => {
         const time = formatRelativeTime(s.updatedAt || s.createdAt);
         const summary = s.summary
@@ -329,7 +355,7 @@ async function loadCopilotSessions() {
           ? `<span class="branch-badge">${AppUtils.escapeHtml(s.branch)}</span>`
           : '';
         const cwdLabel = renderSessionCwd(s);
-        const filterText = [s.copilotSessionId.substring(0, 8), s.repoName, s.folderName, s.branch, s.summary, s.cwd].filter(Boolean).join(' ').toLowerCase();
+        const filterText = [s.copilotSessionId.substring(0, 8), groupName, s.folderName, s.branch, s.summary, s.cwd].filter(Boolean).join(' ').toLowerCase();
 
         return `
           <div class="session-card" data-filter-text="${AppUtils.escapeHtml(filterText)}">
@@ -346,6 +372,7 @@ async function loadCopilotSessions() {
           </div>
         `;
       }).join('');
+      html += '</div>';
     }
     container.innerHTML = html;
     if (typeof lucide !== 'undefined') lucide.createIcons();
@@ -395,6 +422,28 @@ function applyFilter() {
       card.classList.toggle('hidden', !match);
       if (match) visibleCount++;
     });
+
+    // Auto-open groups with matching cards when filtering
+    if (query) {
+      container.querySelectorAll('.session-group-body').forEach((body) => {
+        const header = body.previousElementSibling;
+        const groupCards = body.querySelectorAll('.session-card');
+        const hasMatch = Array.from(groupCards).some((c) => !c.classList.contains('hidden'));
+        body.classList.toggle('open', hasMatch);
+        if (header) header.classList.toggle('open', hasMatch);
+        if (header) header.classList.toggle('hidden', !hasMatch);
+      });
+    } else {
+      // Restore user's open/close state
+      container.querySelectorAll('.session-group-header').forEach((header) => {
+        const groupName = header.getAttribute('data-group');
+        const body = header.nextElementSibling;
+        const isOpen = _openGroups.has(groupName);
+        header.classList.toggle('open', isOpen);
+        header.classList.remove('hidden');
+        if (body) body.classList.toggle('open', isOpen);
+      });
+    }
 
     if (cards.length > 0) {
       section.classList.toggle('hidden', visibleCount === 0);
