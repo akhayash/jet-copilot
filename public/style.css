@@ -441,18 +441,71 @@ header h1 { font-size: 1.1rem; flex: 1; }
 }
 
 .session-group-header {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
-  color: var(--text-muted);
-  padding: 8px 0 4px;
+  color: var(--text);
+  padding: 10px 12px;
   margin-top: 8px;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .session-group-header:first-child {
   margin-top: 0;
+}
+
+.session-group-header:active {
+  opacity: 0.7;
+}
+
+.session-group-chevron {
+  width: 14px;
+  height: 14px;
+  color: var(--text-muted);
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+}
+
+.session-group-header.open .session-group-chevron {
+  transform: rotate(90deg);
+}
+
+.session-group-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.session-group-count {
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--text-muted);
+  background: rgba(88, 166, 255, 0.1);
+  padding: 1px 7px;
+  border-radius: 10px;
+  flex-shrink: 0;
+}
+
+.session-group-body {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+}
+
+.session-group-body.open {
+  max-height: 2000px;
+}
+
+.session-group-body > .session-card:first-child {
+  margin-top: 6px;
 }
 
 .connect-btn {
