@@ -286,6 +286,7 @@ function connect() {
       console.log(`[replay] Received ${msg.content.length} bytes`);
       term.reset();
       term.write(msg.content);
+      if (!keyboardLocked) term.focus();
     } else if (msg.type === 'replay' && !term) {
       console.warn('[replay] Received replay but terminal not ready');
     } else if (msg.type === 'error') {
