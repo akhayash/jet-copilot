@@ -20,6 +20,10 @@ const PORT = process.env.PORT || 4117;
 const EXIT_RESTART = 100;
 const PKG_ROOT = path.resolve(__dirname, '..');
 
+// Strip synchronized output sequences that cause xterm.js v6 rendering freezes
+// eslint-disable-next-line no-control-regex
+const SYNC_OUTPUT_RE = /\x1b\[\?2026[hl]/g;
+
 function isPathSafe(resolved) {
   // Reject paths containing null bytes (injection)
   if (resolved.includes('\0')) return false;
@@ -324,10 +328,11 @@ function attachWebSocketServer(wss, {
         ? ['--resume', session.copilotSessionId]
         : [];
       session.runner = runnerFactory((data) => {
-        sessions.appendOutput(sessionId, data);
+        const filtered = data.replace(SYNC_OUTPUT_RE, '');
+        sessions.appendOutput(sessionId, filtered);
         for (const client of session.clients) {
           if (client.readyState === 1) {
-            client.send(JSON.stringify({ type: 'output', content: data }));
+            client.send(JSON.stringify({ type: 'output', content: filtered }));
           }
         }
       });
