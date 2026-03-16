@@ -7,6 +7,7 @@ let keyboardLocked = false;
 let xtermTextarea = null;
 let _keyboardTransition = false;
 let _kbTransitionTimer = null;
+let _pendingReplay = null;
 const isTouchDevice = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
 
 function debounce(fn, ms) {
@@ -271,6 +272,13 @@ function connect() {
       });
 
       window.addEventListener('resize', () => scheduleFit(50));
+
+      // Play queued replay that arrived before terminal was ready
+      if (_pendingReplay) {
+        term.reset();
+        term.write(_pendingReplay);
+        _pendingReplay = null;
+      }
     }
 
     if (!keyboardLocked) {
@@ -288,7 +296,8 @@ function connect() {
       term.write(msg.content);
       if (!keyboardLocked) term.focus();
     } else if (msg.type === 'replay' && !term) {
-      console.warn('[replay] Received replay but terminal not ready');
+      console.log('[replay] Terminal not ready, queueing replay');
+      _pendingReplay = msg.content;
     } else if (msg.type === 'error') {
       console.warn('[server]', msg.content);
     }
@@ -669,7 +678,7 @@ function softReset() {
   if (!ws || ws.readyState !== WebSocket.OPEN || !term) return;
   term.reset();
   scheduleFit();
-  term.focus();
+  if (!keyboardLocked) term.focus();
   // Force TUI redraw by triggering a resize (SIGWINCH)
   const cols = term.cols;
   const rows = term.rows;
@@ -686,7 +695,7 @@ function hardReset() {
   if (term) {
     term.reset();
     term.write('Restarting Copilot CLI...\r\n');
-    term.focus();
+    if (!keyboardLocked) term.focus();
   }
 }
 
