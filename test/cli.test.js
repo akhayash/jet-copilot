@@ -48,7 +48,7 @@ test('bin entrypoint launches the CLI runner', async () => {
   const fakeChild = new EventEmitter();
   const forkFn = () => { forkCount++; return fakeChild; };
 
-  run(forkFn);
+  run(forkFn, {});
   assert.equal(forkCount, 1);
 
   // Simulate normal exit — should not restart
@@ -69,10 +69,35 @@ test('bin restarts on EXIT_RESTART code', async () => {
     return child;
   };
 
-  run(forkFn);
+  run(forkFn, {});
   assert.equal(forkCount, 1);
 
   // Simulate restart exit code — should fork again
   children[0].emit('exit', EXIT_RESTART);
   assert.equal(forkCount, 2);
+});
+
+test('parseArgs extracts --port and --tunnel-id', () => {
+  const { parseArgs } = require('../bin/jet-copilot.js');
+
+  assert.deepEqual(parseArgs(['--port', '8080']), { PORT: '8080' });
+  assert.deepEqual(parseArgs(['-p', '3000']), { PORT: '3000' });
+  assert.deepEqual(parseArgs(['--tunnel-id', 'my-tunnel']), { DEVTUNNEL_ID: 'my-tunnel' });
+  assert.deepEqual(parseArgs(['-t', 'test']), { DEVTUNNEL_ID: 'test' });
+  assert.deepEqual(parseArgs(['-p', '9000', '-t', 'dev']), { PORT: '9000', DEVTUNNEL_ID: 'dev' });
+  assert.deepEqual(parseArgs([]), {});
+});
+
+test('run passes envOverrides to fork', () => {
+  const { EventEmitter } = require('node:events');
+  const { run } = require('../bin/jet-copilot.js');
+
+  let forkOpts = null;
+  const fakeChild = new EventEmitter();
+  const forkFn = (_script, _args, opts) => { forkOpts = opts; return fakeChild; };
+
+  run(forkFn, { PORT: '9999', DEVTUNNEL_ID: 'test' });
+
+  assert.equal(forkOpts.env.PORT, '9999');
+  assert.equal(forkOpts.env.DEVTUNNEL_ID, 'test');
 });

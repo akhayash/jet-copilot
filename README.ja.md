@@ -63,7 +63,17 @@ devtunnel user login -g    # GitHubアカウント
 node server/index.js
 # または
 npm start
+# オプション付き
+npx jet-copilot --port 8080 --tunnel-id my-tunnel
 ```
+
+**CLI オプション:**
+
+| オプション | 短縮 | 説明 | デフォルト |
+|-----------|------|------|-----------|
+| `--port` | `-p` | サーバーポート | `4117` |
+| `--tunnel-id` | `-t` | 永続 Dev Tunnel ID | _（なし）_ |
+| `--help` | `-h` | ヘルプ表示 | |
 
 ターミナルに以下が表示されます：
 - 🚀 サーバーURL（localhost）
