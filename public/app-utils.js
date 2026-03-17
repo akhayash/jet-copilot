@@ -37,5 +37,26 @@
     }
   }
 
-  return { getShortcutContent, escapeHtml, stopPreviewByPort };
+  async function loadWindowOptions(selectId) {
+    const select = document.getElementById(selectId);
+    if (!select) return;
+    select.innerHTML = '<option value="">Loading...</option>';
+    try {
+      const res = await fetch('/api/windows');
+      const windows = await res.json();
+      if (windows.length === 0) {
+        select.innerHTML = '<option value="">No windows found</option>';
+        return;
+      }
+      select.innerHTML = windows.map((w) => {
+        const raw = w.title ? `${w.appName} – ${w.title}` : w.appName;
+        const truncated = raw.length > 60 ? raw.substring(0, 57) + '...' : raw;
+        return `<option value="${w.id}">${escapeHtml(truncated)}</option>`;
+      }).join('');
+    } catch {
+      select.innerHTML = '<option value="">Failed to load windows</option>';
+    }
+  }
+
+  return { getShortcutContent, escapeHtml, stopPreviewByPort, loadWindowOptions };
 }));
