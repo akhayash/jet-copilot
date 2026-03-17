@@ -110,7 +110,7 @@ function setupTouchScroll(container) {
   }, { passive: true });
 }
 
-function updateSessionHeader(_sessionId, session) {
+function updateSessionHeader(session) {
   const context = document.getElementById('session-context');
   const label = document.getElementById('session-label');
   if (!context || !label) return;
@@ -124,16 +124,16 @@ async function loadSessionHeader(sessionId) {
   try {
     const res = await fetch(`/api/sessions/${encodeURIComponent(sessionId)}`);
     if (!res.ok || activeSessionHeaderId !== sessionId) {
-      updateSessionHeader(sessionId);
+      updateSessionHeader();
       return;
     }
 
     const session = await res.json();
     if (activeSessionHeaderId !== sessionId) return;
-    updateSessionHeader(sessionId, session);
+    updateSessionHeader(session);
   } catch {
     if (activeSessionHeaderId !== sessionId) return;
-    updateSessionHeader(sessionId);
+    updateSessionHeader();
   }
 }
 
@@ -710,25 +710,7 @@ function toggleCapturePanel() {
 }
 
 async function loadCaptureWindows() {
-  const select = document.getElementById('capture-window-select');
-  if (!select) return;
-  select.innerHTML = '<option value="">Loading...</option>';
-
-  try {
-    const res = await fetch('/api/windows');
-    const windows = await res.json();
-    if (windows.length === 0) {
-      select.innerHTML = '<option value="">No windows found</option>';
-      return;
-    }
-    select.innerHTML = windows.map((w) => {
-      const raw = w.title ? `${w.appName} – ${w.title}` : w.appName;
-      const truncated = raw.length > 60 ? raw.substring(0, 57) + '...' : raw;
-      return `<option value="${w.id}">${window.AppUtils.escapeHtml(truncated)}</option>`;
-    }).join('');
-  } catch {
-    select.innerHTML = '<option value="">Failed to load windows</option>';
-  }
+  AppUtils.loadWindowOptions('capture-window-select');
 }
 
 async function captureWindow() {

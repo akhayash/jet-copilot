@@ -212,14 +212,14 @@ function renderFolderList(data, filter) {
 
   const actionsHtml = `<div class="folder-actions">
     <button class="folder-action-btn" onclick="selectFolder()">Select</button>
-    <button class="folder-action-btn" onclick="createFolder('${escapeAttr(data.current)}', '${escapeAttr(sep)}')">+ New Folder</button>
+    <button class="folder-action-btn" onclick="createFolder('${escapeJsString(data.current)}', '${escapeJsString(sep)}')">+ New Folder</button>
   </div>`;
 
   let html = actionsHtml;
 
   // Parent directory (always visible)
   if (data.parent !== data.current && !filter) {
-    html += `<div class="folder-item" onclick="browseTo('${escapeAttr(data.parent)}')"><i data-lucide="folder-up" class="icon-inline"></i> ..</div>`;
+    html += `<div class="folder-item" onclick="browseTo('${escapeJsString(data.parent)}')"><i data-lucide="folder-up" class="icon-inline"></i> ..</div>`;
   }
 
   const lowerFilter = filter.toLowerCase();
@@ -229,7 +229,7 @@ function renderFolderList(data, filter) {
 
   for (const dir of dirs) {
     const full = data.current + sep + dir;
-    html += `<div class="folder-item" onclick="browseTo('${escapeAttr(full)}')"><i data-lucide="folder" class="icon-inline"></i> ${dir}</div>`;
+    html += `<div class="folder-item" onclick="browseTo('${escapeJsString(full)}')"><i data-lucide="folder" class="icon-inline"></i> ${dir}</div>`;
   }
 
   if (filter && dirs.length === 0) {
@@ -263,7 +263,7 @@ async function createFolder(parentPath, sep) {
   }
 }
 
-function escapeAttr(str) {
+function escapeJsString(str) {
   return str.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
 }
 
@@ -279,14 +279,6 @@ function formatUptime(ms) {
 function formatTime(iso) {
   const d = new Date(iso);
   return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-}
-
-function formatDate(iso) {
-  if (!iso) return '';
-  const d = new Date(iso);
-  const today = new Date();
-  if (d.toDateString() === today.toDateString()) return formatTime(iso);
-  return d.toLocaleDateString([], { month: 'short', day: 'numeric' }) + ' ' + formatTime(iso);
 }
 
 function formatRelativeTime(iso) {
@@ -367,7 +359,7 @@ async function loadCopilotSessions() {
             ${cwdLabel}
             ${summary}
             <div class="session-actions">
-              <button class="connect-btn" onclick="resumeCopilotSession('${AppUtils.escapeHtml(s.copilotSessionId)}', '${escapeAttr(s.cwd || '')}')">Resume <i data-lucide="arrow-right" class="icon-inline"></i></button>
+              <button class="connect-btn" onclick="resumeCopilotSession('${AppUtils.escapeHtml(s.copilotSessionId)}', '${escapeJsString(s.cwd || '')}')">Resume <i data-lucide="arrow-right" class="icon-inline"></i></button>
             </div>
           </div>
         `;
@@ -624,25 +616,7 @@ async function stopPreview(port) {
 
 // Window capture
 async function loadDashboardWindows() {
-  const select = document.getElementById('dashboard-capture-select');
-  if (!select) return;
-  select.innerHTML = '<option value="">Loading...</option>';
-
-  try {
-    const res = await fetch('/api/windows');
-    const windows = await res.json();
-    if (windows.length === 0) {
-      select.innerHTML = '<option value="">No windows found</option>';
-      return;
-    }
-    select.innerHTML = windows.map((w) => {
-      const raw = w.title ? `${w.appName} – ${w.title}` : w.appName;
-      const truncated = raw.length > 60 ? raw.substring(0, 57) + '...' : raw;
-      return `<option value="${w.id}">${AppUtils.escapeHtml(truncated)}</option>`;
-    }).join('');
-  } catch {
-    select.innerHTML = '<option value="">Failed to load windows</option>';
-  }
+  AppUtils.loadWindowOptions('dashboard-capture-select');
 }
 
 async function dashboardCapture() {
