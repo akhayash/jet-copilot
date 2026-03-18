@@ -8,6 +8,7 @@ let xtermTextarea = null;
 let _keyboardTransition = false;
 let _kbTransitionTimer = null;
 let _pendingReplay = null;
+let _reconnectTimer = null;
 const isTouchDevice = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
 
 function debounce(fn, ms) {
@@ -357,7 +358,10 @@ function connect() {
   ws.onclose = () => {
     document.getElementById('status-dot').classList.remove('online');
     document.getElementById('status-dot').classList.add('offline');
-    setTimeout(() => connect(), 3000);
+    // Only retry when online (e.g. server restart). If offline, window.online handler reconnects.
+    if (navigator.onLine) {
+      _reconnectTimer = setTimeout(() => connect(), 3000);
+    }
   };
 
   ws.onerror = () => {};
@@ -671,9 +675,32 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Re-focus terminal when page becomes visible (tab switch, screen unlock)
   document.addEventListener('visibilitychange', () => {
-    if (!document.hidden && term && !keyboardLocked) {
-      setTimeout(() => term.focus(), 100);
+    if (!document.hidden) {
+      if (term && !keyboardLocked) {
+        setTimeout(() => term.focus(), 100);
+      }
+      // Reconnect if WebSocket is not open when page becomes visible
+      if (!ws || ws.readyState === WebSocket.CLOSED || ws.readyState === WebSocket.CLOSING) {
+        clearTimeout(_reconnectTimer);
+        _reconnectTimer = null;
+        connect();
+      }
     }
+  });
+
+  // Reconnect immediately when network comes back online
+  window.addEventListener('online', () => {
+    clearTimeout(_reconnectTimer);
+    _reconnectTimer = null;
+    if (!ws || ws.readyState === WebSocket.CLOSED || ws.readyState === WebSocket.CLOSING) {
+      connect();
+    }
+  });
+
+  // Update status when network goes offline
+  window.addEventListener('offline', () => {
+    document.getElementById('status-dot').classList.remove('online');
+    document.getElementById('status-dot').classList.add('offline');
   });
 
   // Re-focus terminal on any touch in the terminal screen area
