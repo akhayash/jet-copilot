@@ -4,7 +4,7 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 
-const { scanCopilotSessions } = require('../server/copilot-session-scanner');
+const { scanCopilotSessions, getSessionHistory } = require('../server/copilot-session-scanner');
 
 function createTempDir() {
   return fs.mkdtempSync(path.join(os.tmpdir(), 'jet-copilot-scan-'));
@@ -205,6 +205,71 @@ test('scanCopilotSessions skips ghost sessions without events.jsonl', () => {
 
     assert.equal(results.length, 1);
     assert.equal(results[0].copilotSessionId, 'real-session');
+  } finally {
+    fs.rmSync(sessionDir, { recursive: true, force: true });
+  }
+});
+
+// --- getSessionHistory ---
+
+test('getSessionHistory returns user and assistant messages', () => {
+  const sessionDir = createTempDir();
+  const id = 'history-test';
+  const dir = path.join(sessionDir, id);
+  fs.mkdirSync(dir, { recursive: true });
+
+  const events = [
+    JSON.stringify({ type: 'session.start', data: { sessionId: id } }),
+    JSON.stringify({ type: 'user.message', data: { content: 'Hello' } }),
+    JSON.stringify({ type: 'tool.execution_start', data: { tool: 'grep' } }),
+    JSON.stringify({ type: 'assistant.message', data: { content: 'Hi there!' } }),
+    JSON.stringify({ type: 'user.message', data: { content: 'What is 2+2?' } }),
+    JSON.stringify({ type: 'assistant.message', data: { content: '4' } }),
+  ].join('\n');
+  fs.writeFileSync(path.join(dir, 'events.jsonl'), events);
+
+  try {
+    const history = getSessionHistory(id, { sessionDir });
+
+    assert.equal(history.length, 4);
+    assert.deepEqual(history[0], { role: 'user', content: 'Hello' });
+    assert.deepEqual(history[1], { role: 'assistant', content: 'Hi there!' });
+    assert.deepEqual(history[2], { role: 'user', content: 'What is 2+2?' });
+    assert.deepEqual(history[3], { role: 'assistant', content: '4' });
+  } finally {
+    fs.rmSync(sessionDir, { recursive: true, force: true });
+  }
+});
+
+test('getSessionHistory respects maxTurns limit', () => {
+  const sessionDir = createTempDir();
+  const id = 'limit-test';
+  const dir = path.join(sessionDir, id);
+  fs.mkdirSync(dir, { recursive: true });
+
+  const events = [];
+  for (let i = 0; i < 20; i++) {
+    events.push(JSON.stringify({ type: 'user.message', data: { content: `Q${i}` } }));
+    events.push(JSON.stringify({ type: 'assistant.message', data: { content: `A${i}` } }));
+  }
+  fs.writeFileSync(path.join(dir, 'events.jsonl'), events.join('\n'));
+
+  try {
+    const history = getSessionHistory(id, { sessionDir, maxTurns: 4 });
+
+    assert.equal(history.length, 4);
+    assert.equal(history[0].content, 'Q18');
+    assert.equal(history[3].content, 'A19');
+  } finally {
+    fs.rmSync(sessionDir, { recursive: true, force: true });
+  }
+});
+
+test('getSessionHistory returns empty array for missing session', () => {
+  const sessionDir = createTempDir();
+  try {
+    const history = getSessionHistory('nonexistent', { sessionDir });
+    assert.deepEqual(history, []);
   } finally {
     fs.rmSync(sessionDir, { recursive: true, force: true });
   }

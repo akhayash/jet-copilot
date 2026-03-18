@@ -11,7 +11,7 @@ const { SessionManager } = require('./session-manager');
 const { PreviewManager } = require('./preview-manager');
 const { WindowCapture } = require('./window-capture');
 const { startTunnel, getTunnelUrl } = require('./tunnel');
-const { scanCopilotSessions } = require('./copilot-session-scanner');
+const { scanCopilotSessions, getSessionHistory } = require('./copilot-session-scanner');
 const QRCode = require('qrcode');
 
 loadEnv();
@@ -40,6 +40,7 @@ function createApp({
   getTunnelUrlFn = getTunnelUrl,
   qrcodeModule = QRCode,
   scanCopilotSessionsFn = scanCopilotSessions,
+  getSessionHistoryFn = getSessionHistory,
 } = {}) {
   const app = express();
   const upload = multerModule({
@@ -132,6 +133,17 @@ function createApp({
     try {
       const copilotSessions = scanCopilotSessionsFn(cwd);
       res.json(copilotSessions);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.get('/api/copilot-sessions/:id/history', (req, res) => {
+    const { id } = req.params;
+    const maxTurns = parseInt(req.query.maxTurns, 10) || 10;
+    try {
+      const history = getSessionHistoryFn(id, { maxTurns });
+      res.json(history);
     } catch (err) {
       res.status(500).json({ error: err.message });
     }

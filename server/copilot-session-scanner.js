@@ -79,4 +79,35 @@ function scanCopilotSessions(cwd, {
   return results;
 }
 
-module.exports = { scanCopilotSessions, DEFAULT_SESSION_DIR };
+const DEFAULT_MAX_TURNS = 10;
+
+function getSessionHistory(copilotSessionId, {
+  sessionDir = DEFAULT_SESSION_DIR,
+  fsModule = fs,
+  pathModule = path,
+  maxTurns = DEFAULT_MAX_TURNS,
+} = {}) {
+  const eventsPath = pathModule.join(sessionDir, copilotSessionId, 'events.jsonl');
+  if (!fsModule.existsSync(eventsPath)) return [];
+
+  const content = fsModule.readFileSync(eventsPath, 'utf-8');
+  const turns = [];
+
+  for (const line of content.split('\n')) {
+    if (!line.trim()) continue;
+    try {
+      const event = JSON.parse(line);
+      if (event.type === 'user.message' && event.data?.content) {
+        turns.push({ role: 'user', content: event.data.content });
+      } else if (event.type === 'assistant.message' && event.data?.content) {
+        turns.push({ role: 'assistant', content: event.data.content });
+      }
+    } catch {
+      // Skip malformed lines
+    }
+  }
+
+  return turns.slice(-maxTurns);
+}
+
+module.exports = { scanCopilotSessions, getSessionHistory, DEFAULT_SESSION_DIR };

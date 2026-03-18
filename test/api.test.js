@@ -148,6 +148,39 @@ test('copilot sessions API returns all sessions when cwd is omitted', async () =
   assert.deepEqual(response.body, mockSessions);
 });
 
+test('copilot session history API returns conversation turns', async () => {
+  const mockHistory = [
+    { role: 'user', content: 'Hello' },
+    { role: 'assistant', content: 'Hi there!' },
+  ];
+  const { app } = createApp({
+    sessions: new SessionManager(),
+    previews: { list: () => [], start: async () => ({}), stop: () => {} },
+    getSessionHistoryFn: (_id, _opts) => mockHistory,
+  });
+
+  const response = await request(app).get('/api/copilot-sessions/test-id/history').expect(200);
+
+  assert.deepEqual(response.body, mockHistory);
+});
+
+test('copilot session history API passes maxTurns', async () => {
+  const calls = [];
+  const { app } = createApp({
+    sessions: new SessionManager(),
+    previews: { list: () => [], start: async () => ({}), stop: () => {} },
+    getSessionHistoryFn: (id, opts) => {
+      calls.push({ id, maxTurns: opts?.maxTurns });
+      return [];
+    },
+  });
+
+  await request(app).get('/api/copilot-sessions/abc/history?maxTurns=5').expect(200);
+
+  assert.equal(calls[0].id, 'abc');
+  assert.equal(calls[0].maxTurns, 5);
+});
+
 test('upload API stores image in session cwd', async () => {
   const root = createTempDir();
   const sessions = new SessionManager();
