@@ -54,7 +54,10 @@ function adjustScreenHeight() {
   const screen = document.getElementById('terminal-screen');
   if (!screen) return;
   if (window.visualViewport) {
-    screen.style.height = `${window.visualViewport.height}px`;
+    const vv = window.visualViewport;
+    screen.style.height = `${vv.height}px`;
+    // Compensate for iOS Safari scroll offset when address bar hides/shows
+    window.scrollTo(0, 0);
   }
 }
 
@@ -305,7 +308,10 @@ function connect() {
           debouncedViewportResize();
         });
         window.visualViewport.addEventListener('scroll', () => {
-          if (!_keyboardTransition) scheduleFit(100);
+          if (!_keyboardTransition) {
+            adjustScreenHeight();
+            scheduleFit(100);
+          }
         });
         adjustScreenHeight();
       }

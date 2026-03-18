@@ -61,6 +61,8 @@ body {
   height: 100vh;
   height: 100dvh;
   min-height: 0;
+  position: relative;
+  overflow: hidden;
 }
 
 /* Header */
@@ -653,7 +655,7 @@ header h1 { font-size: 1.1rem; flex: 1; }
 }
 
 .preview-panel {
-  position: fixed;
+  position: absolute;
   left: 12px;
   right: 12px;
   bottom: 52px;
@@ -950,7 +952,7 @@ header h1 { font-size: 1.1rem; flex: 1; }
 
 /* Window capture panel */
 .capture-panel {
-  position: fixed;
+  position: absolute;
   left: 12px;
   right: 12px;
   bottom: 52px;
