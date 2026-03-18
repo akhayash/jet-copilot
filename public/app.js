@@ -358,7 +358,10 @@ function connect() {
   ws.onclose = () => {
     document.getElementById('status-dot').classList.remove('online');
     document.getElementById('status-dot').classList.add('offline');
-    _reconnectTimer = setTimeout(() => connect(), 3000);
+    // Only retry when online (e.g. server restart). If offline, window.online handler reconnects.
+    if (navigator.onLine) {
+      _reconnectTimer = setTimeout(() => connect(), 3000);
+    }
   };
 
   ws.onerror = () => {};
