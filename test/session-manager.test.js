@@ -108,17 +108,17 @@ test('SessionManager.appendOutput stores output and getOutputBuffer retrieves it
   assert.equal(manager.getOutputBuffer(session.id), 'hello world');
 });
 
-test('SessionManager.appendOutput truncates buffer exceeding 100KB', () => {
+test('SessionManager.appendOutput truncates buffer exceeding 300KB', () => {
   const manager = new SessionManager();
   const session = manager.create();
 
-  const chunk = 'x'.repeat(60 * 1024);
+  const chunk = 'x'.repeat(200 * 1024);
   manager.appendOutput(session.id, chunk);
   manager.appendOutput(session.id, chunk);
 
   const buf = manager.getOutputBuffer(session.id);
-  assert.equal(buf.length, 100 * 1024);
-  assert.equal(buf, (chunk + chunk).slice(-(100 * 1024)));
+  assert.equal(buf.length, 300 * 1024);
+  assert.equal(buf, (chunk + chunk).slice(-(300 * 1024)));
 });
 
 test('SessionManager.getOutputBuffer returns empty string for unknown session', () => {

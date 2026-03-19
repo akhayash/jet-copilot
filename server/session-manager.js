@@ -1,7 +1,7 @@
 const crypto = require('crypto');
 const { getSessionContext } = require('./session-context');
 
-const OUTPUT_BUFFER_MAX = 100 * 1024; // 100 KB
+const OUTPUT_BUFFER_MAX = 300 * 1024; // 300 KB
 
 class SessionManager {
   constructor() {
