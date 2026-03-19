@@ -122,49 +122,6 @@ function updateSessionHeader(session) {
   label.textContent = session?.cwd || '';
 }
 
-function formatHistoryForTerminal(history) {
-  if (!history.length) return '';
-  const CYAN = '\x1b[36m';
-  const GREEN = '\x1b[32m';
-  const DIM = '\x1b[2m';
-  const RESET = '\x1b[0m';
-  const BOLD = '\x1b[1m';
-
-  let output = `${DIM}─── Previous conversation ───${RESET}\r\n\r\n`;
-  for (const turn of history) {
-    if (turn.role === 'user') {
-      const firstLine = turn.content.split('\n')[0].substring(0, 200);
-      output += `${BOLD}${CYAN}> ${firstLine}${RESET}\r\n`;
-    } else {
-      const lines = turn.content.split('\n');
-      const preview = lines.slice(0, 8).join('\r\n  ');
-      const truncated = lines.length > 8 ? `\r\n  ${DIM}... (${lines.length - 8} more lines)${RESET}` : '';
-      output += `${GREEN}  ${preview}${truncated}${RESET}\r\n`;
-    }
-    output += '\r\n';
-  }
-  output += `${DIM}─── Live session ───${RESET}\r\n\r\n`;
-  return output;
-}
-
-async function loadSessionHistory(sessionId) {
-  try {
-    const sessionRes = await fetch(`/api/sessions/${encodeURIComponent(sessionId)}`);
-    if (!sessionRes.ok) return;
-    const session = await sessionRes.json();
-    if (!session.copilotSessionId) return;
-
-    const histRes = await fetch(`/api/copilot-sessions/${encodeURIComponent(session.copilotSessionId)}/history?maxTurns=10`);
-    if (!histRes.ok) return;
-    const history = await histRes.json();
-    if (history.length && term) {
-      term.write(formatHistoryForTerminal(history));
-    }
-  } catch (err) {
-    console.warn('[history] Failed to load:', err.message);
-  }
-}
-
 async function loadSessionHeader(sessionId) {
   activeSessionHeaderId = sessionId;
   try {
@@ -333,8 +290,6 @@ function connect() {
     if (!keyboardLocked) {
       term.focus();
     }
-
-    loadSessionHistory(sessionId);
   };
 
   ws.onmessage = (event) => {
