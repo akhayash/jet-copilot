@@ -3,6 +3,52 @@ const { getSessionContext } = require('./session-context');
 
 const OUTPUT_BUFFER_MAX = 300 * 1024; // 300 KB
 
+// Strip alternate screen buffer content from replay data so xterm.js
+// stays in normal buffer mode where scrollback works.
+function stripAltScreen(buf) {
+  const ENTER = '\x1b[?1049h';
+  const EXIT = '\x1b[?1049l';
+
+  let result = '';
+  let depth = 0;
+  let pos = 0;
+
+  // Handle orphaned content before first exit (buffer truncation case)
+  const firstEnter = buf.indexOf(ENTER);
+  const firstExit = buf.indexOf(EXIT);
+  if (firstExit !== -1 && (firstEnter === -1 || firstExit < firstEnter)) {
+    pos = firstExit + EXIT.length;
+  }
+
+  while (pos < buf.length) {
+    const nextEnter = buf.indexOf(ENTER, pos);
+    const nextExit = buf.indexOf(EXIT, pos);
+
+    if (depth === 0) {
+      if (nextEnter === -1) {
+        result += buf.slice(pos);
+        break;
+      }
+      result += buf.slice(pos, nextEnter);
+      depth++;
+      pos = nextEnter + ENTER.length;
+    } else {
+      if (nextExit === -1) {
+        break; // trailing alt screen, discard rest
+      }
+      if (nextEnter !== -1 && nextEnter < nextExit) {
+        depth++;
+        pos = nextEnter + ENTER.length;
+      } else {
+        depth--;
+        pos = nextExit + EXIT.length;
+      }
+    }
+  }
+
+  return result;
+}
+
 class SessionManager {
   constructor() {
     this._sessions = new Map();
@@ -92,7 +138,8 @@ class SessionManager {
 
   getOutputBuffer(id) {
     const session = this._sessions.get(id);
-    return session ? session.outputBuffer : '';
+    if (!session) return '';
+    return stripAltScreen(session.outputBuffer);
   }
 
   getStatus() {

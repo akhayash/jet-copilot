@@ -212,6 +212,7 @@ function connect() {
       term = new Terminal({
         cursorBlink: true,
         fontSize: 14,
+        scrollback: 5000,
         fontFamily: "'SF Mono', 'Fira Code', 'Cascadia Code', 'Menlo', monospace",
         theme: {
           background: '#0d1117',
