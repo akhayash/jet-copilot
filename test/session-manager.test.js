@@ -131,3 +131,40 @@ test('SessionManager.appendOutput is no-op for unknown session', () => {
   manager.appendOutput('nonexistent', 'data');
   assert.equal(manager.getOutputBuffer('nonexistent'), '');
 });
+
+test('SessionManager.getOutputBuffer strips alt screen regions', () => {
+  const manager = new SessionManager();
+  const session = manager.create();
+
+  manager.appendOutput(session.id, 'before\x1b[?1049hTUI content\x1b[?1049lafter');
+
+  assert.equal(manager.getOutputBuffer(session.id), 'beforeafter');
+});
+
+test('SessionManager.getOutputBuffer strips trailing alt screen content', () => {
+  const manager = new SessionManager();
+  const session = manager.create();
+
+  manager.appendOutput(session.id, 'normal output\x1b[?1049hstill in alt screen');
+
+  assert.equal(manager.getOutputBuffer(session.id), 'normal output');
+});
+
+test('SessionManager.getOutputBuffer strips orphaned exit at buffer start', () => {
+  const manager = new SessionManager();
+  const session = manager.create();
+
+  // Simulates truncation cutting off the ENTER sequence
+  manager.appendOutput(session.id, 'alt garbage\x1b[?1049lnormal content');
+
+  assert.equal(manager.getOutputBuffer(session.id), 'normal content');
+});
+
+test('SessionManager.getOutputBuffer strips multiple alt screen regions', () => {
+  const manager = new SessionManager();
+  const session = manager.create();
+
+  manager.appendOutput(session.id, 'A\x1b[?1049hB\x1b[?1049lC\x1b[?1049hD\x1b[?1049lE');
+
+  assert.equal(manager.getOutputBuffer(session.id), 'ACE');
+});
