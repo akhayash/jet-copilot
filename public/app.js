@@ -195,6 +195,18 @@ function connect() {
     return;
   }
 
+  // Clean up previous WebSocket to prevent duplicate handlers
+  if (ws) {
+    ws.onopen = null;
+    ws.onmessage = null;
+    ws.onclose = null;
+    ws.onerror = null;
+    if (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING) {
+      ws.close();
+    }
+  }
+  clearTimeout(_reconnectTimer);
+
   const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
   const url = `${proto}//${location.host}?session=${encodeURIComponent(sessionId)}`;
 
@@ -286,7 +298,12 @@ function connect() {
         term.reset();
         term.write(_pendingReplay);
         _pendingReplay = null;
+        scheduleFit(0);
       }
+    } else {
+      // Reconnect: terminal exists, sync viewport and PTY dimensions
+      adjustScreenHeight();
+      scheduleFit(50);
     }
 
     if (!keyboardLocked) {
@@ -302,6 +319,18 @@ function connect() {
       console.log(`[replay] Received ${msg.content.length} bytes`);
       term.reset();
       term.write(msg.content);
+      scheduleFit(0);
+      // Force TUI redraw via SIGWINCH (same pattern as softReset)
+      if (ws.readyState === WebSocket.OPEN) {
+        const cols = term.cols;
+        const rows = term.rows;
+        ws.send(JSON.stringify({ type: 'resize', cols, rows: rows - 1 }));
+        setTimeout(() => {
+          if (ws && ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({ type: 'resize', cols, rows }));
+          }
+        }, 50);
+      }
       if (!keyboardLocked) term.focus();
     } else if (msg.type === 'replay' && !term) {
       console.log('[replay] Terminal not ready, queueing replay');
@@ -314,7 +343,7 @@ function connect() {
   ws.onclose = () => {
     document.getElementById('status-dot').classList.remove('online');
     document.getElementById('status-dot').classList.add('offline');
-    // Only retry when online (e.g. server restart). If offline, window.online handler reconnects.
+    clearTimeout(_reconnectTimer);
     if (navigator.onLine) {
       _reconnectTimer = setTimeout(() => connect(), 3000);
     }
