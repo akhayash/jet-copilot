@@ -1,6 +1,6 @@
 {
   "name": "jet-copilot",
-  "version": "0.3.2",
+  "version": "0.4.0",
   "description": "Remotely operate GitHub Copilot CLI from any browser via xterm.js + Dev Tunnels",
   "main": "server/index.js",
   "bin": {
