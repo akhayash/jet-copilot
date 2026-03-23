@@ -462,18 +462,6 @@ function toggleVoiceInput() {
   toggleBar('voice-bar', 'voice-toggle', 'voice-input');
 }
 
-function toggleKeyboard() {
-  keyboardLocked = !keyboardLocked;
-  const btn = document.getElementById('kb-toggle');
-  if (btn) btn.classList.toggle('active', keyboardLocked);
-  if (keyboardLocked && xtermTextarea) {
-    xtermTextarea.setAttribute('inputmode', 'none');
-    xtermTextarea.blur();
-  } else if (xtermTextarea) {
-    xtermTextarea.removeAttribute('inputmode');
-  }
-}
-
 function sendVoiceInput() {
   const input = document.getElementById('voice-input');
   const text = input.value;

@@ -200,16 +200,34 @@ header h1 { font-size: 1.1rem; flex: 1; }
   color: var(--accent);
 }
 
+.header-tool-btn.reset-btn {
+  color: var(--danger);
+}
+
+.header-tool-btn.reset-btn:active {
+  background: var(--danger);
+  color: #fff;
+}
+
 .shortcut-bar {
   display: flex;
-  gap: 4px;
   padding: 6px 8px;
   background: var(--surface);
   border-top: 1px solid var(--border);
   flex-shrink: 0;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.shortcut-left,
+.shortcut-center,
+.shortcut-right {
+  display: flex;
+  gap: 4px;
+}
+
+.shortcut-center {
   justify-content: center;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
 }
 
 .shortcut-btn {
@@ -225,19 +243,26 @@ header h1 { font-size: 1.1rem; flex: 1; }
   -webkit-tap-highlight-color: transparent;
 }
 
+.shortcut-enter {
+  padding: 8px 18px;
+  background: var(--accent);
+  color: #0d1117;
+  border-color: var(--accent);
+}
+
+.shortcut-enter .lucide {
+  width: 20px;
+  height: 20px;
+  stroke-width: 2.5;
+}
+
 .shortcut-btn:active {
   background: rgba(255, 255, 255, 0.15);
   color: var(--text);
 }
 
-.shortcut-btn.reset-btn {
-  border-color: var(--danger);
-  color: var(--danger);
-}
-
-.shortcut-btn.reset-btn:active {
-  background: var(--danger);
-  color: #fff;
+.shortcut-enter:active {
+  background: #4090e0;
 }
 
 /* Messages - terminal style */
@@ -573,12 +598,6 @@ header h1 { font-size: 1.1rem; flex: 1; }
 }
 
 .hidden { display: none !important; }
-
-/* KB toggle active state */
-#kb-toggle.active {
-  color: var(--danger);
-  border-color: var(--danger);
-}
 
 .voice-bar {
   display: flex;

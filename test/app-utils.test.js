@@ -6,8 +6,10 @@ const { getShortcutContent, escapeHtml, stopPreviewByPort } = require('../public
 test('getShortcutContent maps special shortcut keys', () => {
   assert.equal(getShortcutContent('esc'), '\x1b');
   assert.equal(getShortcutContent('mode'), '\x1b[Z');
+  assert.equal(getShortcutContent('left'), '\x1b[D');
   assert.equal(getShortcutContent('up'), '\x1b[A');
   assert.equal(getShortcutContent('down'), '\x1b[B');
+  assert.equal(getShortcutContent('right'), '\x1b[C');
   assert.equal(getShortcutContent('enter'), '\r');
   assert.equal(getShortcutContent('enqueue'), '\x11');
 });

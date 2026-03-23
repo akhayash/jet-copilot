@@ -107,17 +107,20 @@ Full interactive terminal via [xterm.js](https://xtermjs.org/) v6 with clickable
 
 #### Shortcut Bar (bottom)
 
-Key commands are always accessible at the bottom of the terminal for easy thumb access on mobile:
+Gamepad-style layout with three groups for easy thumb access on mobile:
 
-| Button | Action |
-|--------|--------|
-| **ESC** | Cancel Copilot operations |
-| **Mode** | Switch Copilot CLI modes (sends Shift+Tab) |
-| **↑ ↓** | Navigate menus and selection lists |
-| **Enter** | Confirm selection |
-| **Enqueue** | Queue input for Copilot CLI (sends Ctrl+Q) |
-| **Reset** | **Short press** — soft reset (clear screen, redraw TUI). **Long press (1 s+)** — hard restart the Copilot CLI process (confirmation dialog) |
-| **KB** | Toggle keyboard lock (prevent keyboard from appearing) |
+```
+[← ↑ ↓ →]     [ESC Mode Enqueue]     [ ↵ ]
+  D-pad            Commands          Enter
+```
+
+| Group | Buttons | Action |
+|-------|---------|--------|
+| **D-pad** (left) | **← ↑ ↓ →** | Navigate menus and selection lists |
+| **Commands** (center) | **ESC** | Cancel Copilot operations |
+| | **Mode** | Switch Copilot CLI modes (sends Shift+Tab) |
+| | **Enqueue** | Queue input for Copilot CLI (sends Ctrl+Q) |
+| **Action** (right) | **↵ Enter** | Confirm selection (large accent button) |
 
 #### Header Tools
 
@@ -131,6 +134,7 @@ Icon-only tool buttons in the header provide quick access to less-frequent actio
 | ⌨️ **Text** | Multiline text input | Opens a text area with speech-to-text support. Press **Enter** to add a new line; press **Ctrl+Enter** (Cmd+Enter on Mac) to send |
 | 📸 **Capture** | Window screenshot | Capture any window on the server machine (see [Window Capture](#window-capture) below) |
 | 💬 **History** | Conversation history | View the current session's conversation history |
+| 🔄 **Reset** | **Short press** — soft reset. **Long press (1 s+)** — hard restart Copilot CLI |
 
 #### Window Capture
 

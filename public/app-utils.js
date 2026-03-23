@@ -12,8 +12,10 @@
     const keys = {
       esc: ESC,
       mode: ESC + '[Z',
+      left: ESC + '[D',
       up: ESC + '[A',
       down: ESC + '[B',
+      right: ESC + '[C',
       enter: '\r',
       enqueue: '\x11',
     };
