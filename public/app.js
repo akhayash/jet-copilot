@@ -3,7 +3,6 @@ let term = null;
 let fitAddon = null;
 let fitTimer = null;
 let activeSessionHeaderId = null;
-let keyboardLocked = false;
 let xtermTextarea = null;
 let _keyboardTransition = false;
 let _kbTransitionTimer = null;
@@ -21,7 +20,6 @@ function debounce(fn, ms) {
 
 function shouldShowKeyboard(clientY) {
   if (!isTouchDevice) return true;
-  if (keyboardLocked) return false;
   const rect = document.getElementById('terminal-container')?.getBoundingClientRect();
   if (!rect) return true;
   // Only show keyboard when touching the bottom 20% of the terminal
@@ -64,7 +62,7 @@ function adjustScreenHeight() {
 
 // Focus terminal for keyboard input, guarding against transition thrash
 function focusTerminal() {
-  if (!term || keyboardLocked) return;
+  if (!term) return;
   beginKeyboardTransition();
   term.focus();
 }
@@ -312,7 +310,7 @@ function connect() {
       scheduleFit(50);
     }
 
-    if (!keyboardLocked) {
+    if (term) {
       term.focus();
     }
   };
@@ -337,7 +335,7 @@ function connect() {
           }
         }, 50);
       }
-      if (!keyboardLocked) term.focus();
+      term.focus();
     } else if (msg.type === 'replay' && !term) {
       console.log('[replay] Terminal not ready, queueing replay');
       _pendingReplay = msg.content;
@@ -656,7 +654,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Re-focus terminal when page becomes visible (tab switch, screen unlock)
   document.addEventListener('visibilitychange', () => {
     if (!document.hidden) {
-      if (term && !keyboardLocked) {
+      if (term) {
         setTimeout(() => term.focus(), 100);
       }
       // Reconnect if WebSocket is not open when page becomes visible
@@ -736,7 +734,7 @@ function softReset() {
   if (!ws || ws.readyState !== WebSocket.OPEN || !term) return;
   term.reset();
   scheduleFit();
-  if (!keyboardLocked) term.focus();
+  term.focus();
   // Force TUI redraw by triggering a resize (SIGWINCH)
   const cols = term.cols;
   const rows = term.rows;
@@ -753,7 +751,7 @@ function hardReset() {
   if (term) {
     term.reset();
     term.write('Restarting Copilot CLI...\r\n');
-    if (!keyboardLocked) term.focus();
+    term.focus();
   }
 }
 
