@@ -702,7 +702,7 @@ document.addEventListener('DOMContentLoaded', () => {
       // Don't steal focus from buttons, panels, or inputs
       const tag = e.target.tagName;
       if (tag === 'BUTTON' || tag === 'SELECT' || tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'A') return;
-      if (e.target.closest('.toolbar, .voice-bar, .preview-panel, .capture-panel, .capture-modal')) return;
+      if (e.target.closest('.shortcut-bar, .voice-bar, .preview-panel, .capture-panel, .capture-modal')) return;
       const touch = e.changedTouches?.[0];
       if (term && touch && shouldShowKeyboard(touch.clientY)) focusTerminal();
     }, { passive: true });

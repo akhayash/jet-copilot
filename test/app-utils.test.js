@@ -9,6 +9,7 @@ test('getShortcutContent maps special shortcut keys', () => {
   assert.equal(getShortcutContent('up'), '\x1b[A');
   assert.equal(getShortcutContent('down'), '\x1b[B');
   assert.equal(getShortcutContent('enter'), '\r');
+  assert.equal(getShortcutContent('enqueue'), '\x11');
 });
 
 test('getShortcutContent returns plain text keys unchanged', () => {

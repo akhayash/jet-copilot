@@ -105,7 +105,9 @@ Full interactive terminal via [xterm.js](https://xtermjs.org/) v6 with clickable
 
 - **Reconnect Replay**: If the connection drops, the terminal automatically reconnects and replays up to 100 KB of recent output so you never lose context
 
-#### Shortcut Buttons (header)
+#### Shortcut Bar (bottom)
+
+Key commands are always accessible at the bottom of the terminal for easy thumb access on mobile:
 
 | Button | Action |
 |--------|--------|
@@ -113,19 +115,22 @@ Full interactive terminal via [xterm.js](https://xtermjs.org/) v6 with clickable
 | **Mode** | Switch Copilot CLI modes (sends Shift+Tab) |
 | **↑ ↓** | Navigate menus and selection lists |
 | **Enter** | Confirm selection |
+| **Enqueue** | Queue input for Copilot CLI (sends Ctrl+Q) |
 | **Reset** | **Short press** — soft reset (clear screen, redraw TUI). **Long press (1 s+)** — hard restart the Copilot CLI process (confirmation dialog) |
+| **KB** | Toggle keyboard lock (prevent keyboard from appearing) |
 
-#### Floating Toolbar
+#### Header Tools
 
-Five action buttons are always accessible at the bottom of the terminal:
+Icon-only tool buttons in the header provide quick access to less-frequent actions:
 
-| Button | Feature | Details |
-|--------|---------|---------|
-| 🔗 **Preview** | Manage local-service previews | Open a preview by port number; list / stop active previews (same as Dashboard preview) |
+| Icon | Feature | Details |
+|------|---------|---------|
+| 🌐 **Preview** | Manage local-service previews | Open a preview by port number; list / stop active previews (same as Dashboard preview) |
 | 📎 **Upload** | Upload an image to the session | Select an image from your device (max 10 MB). The file is saved under `.copilot-uploads` in the session directory and the path is sent to Copilot CLI as `@filepath` |
 | 📋 **Paste** | Paste from clipboard | Reads text or image from the clipboard. Text is sent directly to the terminal; images are automatically uploaded. Falls back to the text-input panel if clipboard access is denied |
-| ⌨️ **Voice / Text** | Multiline text input | Opens a text area with speech-to-text support. Press **Enter** to add a new line; press **Ctrl+Enter** (Cmd+Enter on Mac) to send. The text area auto-expands as you type |
+| ⌨️ **Text** | Multiline text input | Opens a text area with speech-to-text support. Press **Enter** to add a new line; press **Ctrl+Enter** (Cmd+Enter on Mac) to send |
 | 📸 **Capture** | Window screenshot | Capture any window on the server machine (see [Window Capture](#window-capture) below) |
+| 💬 **History** | Conversation history | View the current session's conversation history |
 
 #### Window Capture
 
@@ -143,8 +148,8 @@ Window capture is also available on the Dashboard under the Capture section.
 
 Preview web services you're developing with Copilot CLI directly on your device.
 
-1. Enter a port number in the Dashboard's Quick Preview section **or** from the 🔗 Preview button inside a terminal session
-2. Tap "Open" / "▶ Open" → An additional Dev Tunnel starts
+1. Enter a port number in the Dashboard's Quick Preview section **or** from the Preview button in the terminal header
+2. Tap "Open" → An additional Dev Tunnel starts
 3. Open the displayed URL on your device
 4. Active previews refresh every 5 seconds; tap **Stop** to tear down the tunnel
 

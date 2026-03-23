@@ -18,46 +18,26 @@
           <span id="session-context" class="session-context"></span>
           <span id="session-label" class="session-label"></span>
         </div>
-        <div class="header-shortcuts" id="shortcuts">
-          <button class="shortcut-btn" data-key="esc">ESC</button>
-          <button class="shortcut-btn" data-key="mode">Mode</button>
-          <button class="shortcut-btn" data-key="up">↑</button>
-          <button class="shortcut-btn" data-key="down">↓</button>
-          <button class="shortcut-btn" data-key="enter">Enter</button>
-          <button class="shortcut-btn reset-btn" data-key="reset">Reset</button>
+        <div class="header-tools">
+          <button id="preview-toggle" class="header-tool-btn" onclick="togglePreviewInput()" title="Preview"><i data-lucide="globe"></i></button>
+          <button id="image-toggle" class="header-tool-btn" onclick="toggleImageUpload()" title="Upload"><i data-lucide="paperclip"></i></button>
+          <button id="paste-toggle" class="header-tool-btn" onclick="pasteFromClipboard()" title="Paste"><i data-lucide="clipboard"></i></button>
+          <button id="voice-toggle" class="header-tool-btn" onclick="toggleVoiceInput()" title="Text"><i data-lucide="keyboard"></i></button>
+          <button id="capture-toggle" class="header-tool-btn" onclick="toggleCapturePanel()" title="Capture"><i data-lucide="camera"></i></button>
+          <button id="history-toggle" class="header-tool-btn" onclick="toggleHistoryPanel()" title="History"><i data-lucide="message-square"></i></button>
         </div>
         <span id="status-dot" class="status-dot offline"></span>
       </header>
       <div id="terminal-container"></div>
-      <div class="toolbar">
-        <button id="preview-toggle" class="toolbar-btn" onclick="togglePreviewInput()">
-          <span class="toolbar-icon"><i data-lucide="globe"></i></span>
-          <span class="toolbar-label">Preview</span>
-        </button>
-        <button id="image-toggle" class="toolbar-btn" onclick="toggleImageUpload()">
-          <span class="toolbar-icon"><i data-lucide="paperclip"></i></span>
-          <span class="toolbar-label">Upload</span>
-        </button>
-        <button id="paste-toggle" class="toolbar-btn" onclick="pasteFromClipboard()">
-          <span class="toolbar-icon"><i data-lucide="clipboard"></i></span>
-          <span class="toolbar-label">Paste</span>
-        </button>
-        <button id="voice-toggle" class="toolbar-btn" onclick="toggleVoiceInput()">
-          <span class="toolbar-icon"><i data-lucide="keyboard"></i></span>
-          <span class="toolbar-label">Text</span>
-        </button>
-        <button id="capture-toggle" class="toolbar-btn" onclick="toggleCapturePanel()">
-          <span class="toolbar-icon"><i data-lucide="camera"></i></span>
-          <span class="toolbar-label">Capture</span>
-        </button>
-        <button id="history-toggle" class="toolbar-btn" onclick="toggleHistoryPanel()">
-          <span class="toolbar-icon"><i data-lucide="message-square"></i></span>
-          <span class="toolbar-label">History</span>
-        </button>
-        <button id="kb-toggle" class="toolbar-btn" onclick="toggleKeyboard()">
-          <span class="toolbar-icon"><i data-lucide="lock"></i></span>
-          <span class="toolbar-label">KB</span>
-        </button>
+      <div class="shortcut-bar" id="shortcuts">
+        <button class="shortcut-btn" data-key="esc">ESC</button>
+        <button class="shortcut-btn" data-key="mode">Mode</button>
+        <button class="shortcut-btn" data-key="up">↑</button>
+        <button class="shortcut-btn" data-key="down">↓</button>
+        <button class="shortcut-btn" data-key="enter">Enter</button>
+        <button class="shortcut-btn" data-key="enqueue">Enqueue</button>
+        <button class="shortcut-btn reset-btn" data-key="reset">Reset</button>
+        <button id="kb-toggle" class="shortcut-btn" onclick="toggleKeyboard()"><i data-lucide="lock" class="icon-inline"></i> KB</button>
       </div>
       <div id="preview-panel" class="preview-panel">
         <div class="preview-panel-header">

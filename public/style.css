@@ -167,21 +167,62 @@ header h1 { font-size: 1.1rem; flex: 1; }
   white-space: nowrap;
 }
 
-.header-shortcuts {
+.header-tools {
+  display: flex;
+  gap: 2px;
+}
+
+.header-tool-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.header-tool-btn .lucide {
+  width: 16px;
+  height: 16px;
+}
+
+.header-tool-btn:active {
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--text);
+}
+
+.header-tool-btn.active {
+  color: var(--accent);
+}
+
+.shortcut-bar {
   display: flex;
   gap: 4px;
+  padding: 6px 8px;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+  justify-content: center;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .shortcut-btn {
-  padding: 4px 10px;
+  padding: 8px 12px;
   border: 1px solid var(--border);
-  border-radius: 6px;
+  border-radius: 8px;
   background: rgba(255, 255, 255, 0.06);
   color: var(--text-muted);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   cursor: pointer;
   white-space: nowrap;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .shortcut-btn:active {
@@ -533,59 +574,10 @@ header h1 { font-size: 1.1rem; flex: 1; }
 
 .hidden { display: none !important; }
 
-/* Toolbar */
-.toolbar {
-  display: flex;
-  justify-content: space-around;
-  align-items: center;
-  padding: 4px 8px;
-  background: var(--surface);
-  border-top: 1px solid var(--border);
-  flex-shrink: 0;
-}
-
-.toolbar-btn {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-  padding: 6px 0;
-  flex: 1;
-  border: none;
-  border-radius: 8px;
-  background: transparent;
-  color: var(--text-muted);
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
-}
-
-.toolbar-icon {
-  font-size: 18px;
-  line-height: 1;
-}
-
-.toolbar-icon .lucide {
-  width: 18px;
-  height: 18px;
-}
-
-.toolbar-label {
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-}
-
-.toolbar-btn:active {
-  background: rgba(255, 255, 255, 0.08);
-  color: var(--text);
-}
-
-.toolbar-btn.active {
-  color: var(--accent);
-}
-
+/* KB toggle active state */
 #kb-toggle.active {
   color: var(--danger);
+  border-color: var(--danger);
 }
 
 .voice-bar {
