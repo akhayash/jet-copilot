@@ -55,10 +55,10 @@ function adjustScreenHeight() {
   const screen = document.getElementById('terminal-screen');
   if (!screen) return;
   if (window.visualViewport) {
-    const vv = window.visualViewport;
-    screen.style.height = `${vv.height}px`;
-    // Compensate for iOS Safari scroll offset when address bar hides/shows
+    screen.style.height = `${window.visualViewport.height}px`;
     window.scrollTo(0, 0);
+  } else {
+    screen.style.height = `${window.innerHeight}px`;
   }
 }
 
@@ -251,9 +251,10 @@ function connect() {
       term.open(container);
       xtermTextarea = container.querySelector('.xterm-helper-textarea');
       scheduleFit();
-      scheduleFit(150);
+      // Re-fit after layout settles and fonts load
+      setTimeout(() => scheduleFit(), 150);
       if (document.fonts?.ready) {
-        document.fonts.ready.then(() => scheduleFit(50)).catch(() => {});
+        document.fonts.ready.then(() => scheduleFit()).catch(() => {});
       }
 
       // Workaround: xterm.js v6.0.0 touch scrolling is broken (#5489)
@@ -285,13 +286,18 @@ function connect() {
           }
         });
         adjustScreenHeight();
+      } else {
+        adjustScreenHeight();
       }
 
       window.addEventListener('orientationchange', () => {
         scheduleFit(300);
       });
 
-      window.addEventListener('resize', () => scheduleFit(50));
+      window.addEventListener('resize', () => {
+        adjustScreenHeight();
+        scheduleFit(50);
+      });
 
       // Play queued replay that arrived before terminal was ready
       if (_pendingReplay) {
