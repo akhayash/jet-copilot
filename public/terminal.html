@@ -25,19 +25,26 @@
           <button id="voice-toggle" class="header-tool-btn" onclick="toggleVoiceInput()" title="Text"><i data-lucide="keyboard"></i></button>
           <button id="capture-toggle" class="header-tool-btn" onclick="toggleCapturePanel()" title="Capture"><i data-lucide="camera"></i></button>
           <button id="history-toggle" class="header-tool-btn" onclick="toggleHistoryPanel()" title="History"><i data-lucide="message-square"></i></button>
+          <button class="header-tool-btn reset-btn" data-key="reset" title="Reset"><i data-lucide="rotate-ccw"></i></button>
         </div>
         <span id="status-dot" class="status-dot offline"></span>
       </header>
       <div id="terminal-container"></div>
       <div class="shortcut-bar" id="shortcuts">
-        <button class="shortcut-btn" data-key="esc">ESC</button>
-        <button class="shortcut-btn" data-key="mode">Mode</button>
-        <button class="shortcut-btn" data-key="up">↑</button>
-        <button class="shortcut-btn" data-key="down">↓</button>
-        <button class="shortcut-btn" data-key="enter">Enter</button>
-        <button class="shortcut-btn" data-key="enqueue">Enqueue</button>
-        <button class="shortcut-btn reset-btn" data-key="reset">Reset</button>
-        <button id="kb-toggle" class="shortcut-btn" onclick="toggleKeyboard()"><i data-lucide="lock" class="icon-inline"></i> KB</button>
+        <div class="shortcut-left">
+          <button class="shortcut-btn" data-key="left">←</button>
+          <button class="shortcut-btn" data-key="up">↑</button>
+          <button class="shortcut-btn" data-key="down">↓</button>
+          <button class="shortcut-btn" data-key="right">→</button>
+        </div>
+        <div class="shortcut-center">
+          <button class="shortcut-btn" data-key="esc">ESC</button>
+          <button class="shortcut-btn" data-key="mode">Mode</button>
+          <button class="shortcut-btn" data-key="enqueue">Enqueue</button>
+        </div>
+        <div class="shortcut-right">
+          <button class="shortcut-btn shortcut-enter" data-key="enter"><i data-lucide="corner-down-left"></i></button>
+        </div>
       </div>
       <div id="preview-panel" class="preview-panel">
         <div class="preview-panel-header">
