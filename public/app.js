@@ -425,6 +425,7 @@ function closeAllPanels() {
     { bar: 'image-bar', btn: 'image-toggle' },
     { bar: 'preview-panel', btn: 'preview-toggle' },
     { bar: 'capture-panel', btn: 'capture-toggle' },
+    { bar: 'history-panel', btn: 'history-toggle' },
   ];
   ids.forEach(({ bar, btn }) => {
     const barEl = document.getElementById(bar);
@@ -770,6 +771,53 @@ function toggleCapturePanel() {
   const wasHidden = !document.getElementById('capture-panel')?.classList.contains('panel-open');
   toggleBar('capture-panel', 'capture-toggle');
   if (wasHidden) loadCaptureWindows();
+}
+
+function toggleHistoryPanel() {
+  const wasHidden = !document.getElementById('history-panel')?.classList.contains('panel-open');
+  toggleBar('history-panel', 'history-toggle');
+  if (wasHidden) loadHistory();
+}
+
+async function loadHistory() {
+  const container = document.getElementById('history-content');
+  if (!container) return;
+  container.innerHTML = '<div class="history-empty">Loading...</div>';
+
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const sessionId = params.get('session');
+    if (!sessionId) return;
+
+    const sessionRes = await fetch(`/api/sessions/${encodeURIComponent(sessionId)}`);
+    if (!sessionRes.ok) return;
+    const session = await sessionRes.json();
+    if (!session.copilotSessionId) {
+      container.innerHTML = '<div class="history-empty">No conversation history</div>';
+      return;
+    }
+
+    const histRes = await fetch(`/api/copilot-sessions/${encodeURIComponent(session.copilotSessionId)}/history?maxTurns=50`);
+    if (!histRes.ok) return;
+    const history = await histRes.json();
+
+    if (!history.length) {
+      container.innerHTML = '<div class="history-empty">No conversation history</div>';
+      return;
+    }
+
+    const renderMd = typeof window.marked !== 'undefined' ? (md) => window.marked.parse(md) : (md) => AppUtils.escapeHtml(md).replace(/\n/g, '<br>');
+
+    container.innerHTML = history.map((turn) => {
+      if (turn.role === 'user') {
+        const firstLine = turn.content.split('\n')[0].substring(0, 300);
+        return `<div class="history-turn-user">&gt; ${AppUtils.escapeHtml(firstLine)}</div>`;
+      }
+      return `<div class="history-turn-assistant">${renderMd(turn.content)}</div>`;
+    }).join('');
+  } catch {
+    container.innerHTML = '<div class="history-empty">Failed to load history</div>';
+  }
 }
 
 async function loadCaptureWindows() {

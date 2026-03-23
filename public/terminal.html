@@ -50,6 +50,10 @@
           <span class="toolbar-icon"><i data-lucide="camera"></i></span>
           <span class="toolbar-label">Capture</span>
         </button>
+        <button id="history-toggle" class="toolbar-btn" onclick="toggleHistoryPanel()">
+          <span class="toolbar-icon"><i data-lucide="message-square"></i></span>
+          <span class="toolbar-label">History</span>
+        </button>
         <button id="kb-toggle" class="toolbar-btn" onclick="toggleKeyboard()">
           <span class="toolbar-icon"><i data-lucide="lock"></i></span>
           <span class="toolbar-label">KB</span>
@@ -99,6 +103,15 @@
           <button class="preview-open-btn" onclick="captureWindow()"><i data-lucide="camera" class="icon-inline"></i> Capture</button>
         </div>
       </div>
+      <div id="history-panel" class="history-panel">
+        <div class="preview-panel-header">
+          <div>
+            <div class="preview-panel-title"><i data-lucide="message-square" class="icon-inline"></i> Conversation History</div>
+          </div>
+          <button class="voice-close" onclick="toggleHistoryPanel()"><i data-lucide="x"></i></button>
+        </div>
+        <div id="history-content" class="history-content">Loading...</div>
+      </div>
       <div id="capture-modal" class="capture-modal hidden" onclick="closeCaptureModal(event)">
         <div class="capture-modal-content" onclick="event.stopPropagation()">
           <img id="capture-modal-img" class="capture-modal-img" src="" alt="Captured window">
@@ -116,6 +129,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@xterm/xterm@6.0.0/lib/xterm.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@xterm/addon-fit@0.11.0/lib/addon-fit.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@xterm/addon-web-links@0.12.0/lib/addon-web-links.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked@15.0.7/marked.min.js"></script>
   <script src="app-utils.js"></script>
   <script src="app.js"></script>
   <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
