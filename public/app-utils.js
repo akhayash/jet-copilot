@@ -15,6 +15,7 @@
       up: ESC + '[A',
       down: ESC + '[B',
       enter: '\r',
+      enqueue: '\x11',
     };
 
     return keys[key] || key;
