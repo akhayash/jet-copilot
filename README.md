@@ -60,10 +60,12 @@ devtunnel user login -g    # GitHub account
 ### 1. Start the Server
 
 ```bash
-node server/index.js
-# or
-npm start
-# or with options
+npx jet-copilot
+```
+
+With options:
+
+```bash
 npx jet-copilot --port 8080 --tunnel-id my-tunnel
 ```
 
@@ -74,6 +76,8 @@ npx jet-copilot --port 8080 --tunnel-id my-tunnel
 | `--port` | `-p` | Server port | `4117` |
 | `--tunnel-id` | `-t` | Persistent Dev Tunnel ID | _(none)_ |
 | `--help` | `-h` | Show help | |
+
+> For local development: `npm start` or `node server/index.js`
 
 The terminal will display:
 - 🚀 Server URL (localhost)
