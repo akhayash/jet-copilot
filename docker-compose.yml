@@ -12,8 +12,8 @@ services:
       - DOTNET_BUNDLE_EXTRACT_BASE_DIR=/tmp/dotnet-bundle
       - GH_TOKEN=${GH_TOKEN:-}
     volumes:
-      # Working directory for Copilot sessions
-      - ~/workspace:/workspace
+      # Working directory for Copilot sessions (set WORKSPACE in .env)
+      - ${WORKSPACE:-~/workspace}:/workspace
       # Copilot CLI auth + session history (for --resume)
       - ~/.copilot:/home/jetuser/.copilot
       # Dev Tunnels auth (devtunnel stores data in ~/DevTunnels)
