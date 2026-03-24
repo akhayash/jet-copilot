@@ -42,7 +42,7 @@ COPY --from=builder /app .
 # Ensure jetuser owns the app
 RUN chown -R jetuser:jetuser /app
 
-EXPOSE 3000
+EXPOSE 4117
 
 WORKDIR /workspace
 CMD ["node", "/app/server/index.js"]
