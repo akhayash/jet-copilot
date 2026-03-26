@@ -33,6 +33,19 @@ function scanCopilotSessions(cwd, {
     const eventsPath = pathModule.join(sessionDir, entry.name, 'events.jsonl');
     if (!fsModule.existsSync(eventsPath)) continue;
 
+    // Skip short-lived sessions (fewer than 2 user messages)
+    try {
+      const eventsContent = fsModule.readFileSync(eventsPath, 'utf-8');
+      let userMessageCount = 0;
+      for (const line of eventsContent.split('\n')) {
+        if (line.includes('"user.message"')) userMessageCount++;
+        if (userMessageCount >= 2) break;
+      }
+      if (userMessageCount < 2) continue;
+    } catch {
+      continue;
+    }
+
     try {
       const content = fsModule.readFileSync(workspacePath, 'utf-8');
       const data = yaml.parse(content);
