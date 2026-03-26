@@ -102,20 +102,21 @@ The terminal will display:
 - **Status indicators**: 🟢 active / ⚫ ended, with connected-client count badge
 - **Uptime display**: Shows server uptime in the status bar
 - **Version & Update**: Footer shows current version; tap the 🔄 Update button to pull the latest code and restart
+- **Copilot History**: Shows past Copilot CLI sessions for the selected directory. Short-lived sessions (fewer than 2 user messages) are automatically filtered out
 
 ### 4. Terminal Features
 
 Full interactive terminal via [xterm.js](https://xtermjs.org/) v6 with clickable URLs.
 
-- **Reconnect Replay**: If the connection drops, the terminal automatically reconnects and replays up to 100 KB of recent output so you never lose context
+- **Reconnect Replay**: If the connection drops, the terminal automatically reconnects and replays up to 300 KB of recent output so you never lose context
 
 #### Shortcut Bar (bottom)
 
 Gamepad-style layout with three groups for easy thumb access on mobile:
 
 ```
-[← ↑ ↓ →]     [ESC Mode Enqueue]     [ ↵ ]
-  D-pad            Commands          Enter
+[← ↑ ↓ →]     [ESC Mode Enq]     [ ↵ ]
+  D-pad          Commands        Enter
 ```
 
 | Group | Buttons | Action |
@@ -123,7 +124,7 @@ Gamepad-style layout with three groups for easy thumb access on mobile:
 | **D-pad** (left) | **← ↑ ↓ →** | Navigate menus and selection lists |
 | **Commands** (center) | **ESC** | Cancel Copilot operations |
 | | **Mode** | Switch Copilot CLI modes (sends Shift+Tab) |
-| | **Enqueue** | Queue input for Copilot CLI (sends Ctrl+Q) |
+| | **Enq** | Queue input for Copilot CLI (sends Ctrl+Q) |
 | **Action** (right) | **↵ Enter** | Confirm selection (large accent button) |
 
 #### Header Tools
@@ -137,8 +138,11 @@ Icon-only tool buttons in the header provide quick access to less-frequent actio
 | 📋 **Paste** | Paste from clipboard | Reads text or image from the clipboard. Text is sent directly to the terminal; images are automatically uploaded. Falls back to the text-input panel if clipboard access is denied |
 | ⌨️ **Text** | Multiline text input | Opens a text area with speech-to-text support. Press **Enter** to add a new line; press **Ctrl+Enter** (Cmd+Enter on Mac) to send |
 | 📸 **Capture** | Window screenshot | Capture any window on the server machine (see [Window Capture](#window-capture) below) |
-| 💬 **History** | Conversation history | View the current session's conversation history |
 | 🔄 **Reset** | **Short press** — soft reset. **Long press (1 s+)** — hard restart Copilot CLI |
+
+#### Floating History Button
+
+A 💬 button floats at the bottom-right corner of the terminal for quick access to the current session's conversation history.
 
 #### Window Capture
 
@@ -175,6 +179,7 @@ Preview web services you're developing with Copilot CLI directly on your device.
 | GET | `/api/browse` | Browse directories |
 | POST | `/api/mkdir` | Create a directory |
 | GET | `/api/copilot-sessions` | List Copilot CLI session history |
+| GET | `/api/copilot-sessions/:id/history` | Get conversation history for a session |
 | POST | `/api/upload` | Upload an image to the session cwd |
 | GET | `/api/preview` | List active preview tunnels |
 | POST | `/api/preview` | Start a preview tunnel for a port |
