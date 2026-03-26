@@ -17,8 +17,13 @@ function writeWorkspaceYaml(sessionDir, id, data) {
     .map(([k, v]) => `${k}: ${v === null ? '' : v}`)
     .join('\n');
   fs.writeFileSync(path.join(dir, 'workspace.yaml'), lines);
-  // Create events.jsonl to mark session as having transcript data
-  fs.writeFileSync(path.join(dir, 'events.jsonl'), '');
+  // Create events.jsonl with enough user messages to pass the short-session filter
+  const events = [
+    '{"type":"user.message","data":{"content":"hello"}}',
+    '{"type":"assistant.message","data":{"content":"hi"}}',
+    '{"type":"user.message","data":{"content":"thanks"}}',
+  ].join('\n');
+  fs.writeFileSync(path.join(dir, 'events.jsonl'), events);
 }
 
 test('scanCopilotSessions finds sessions matching cwd', () => {
