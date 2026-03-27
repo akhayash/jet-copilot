@@ -43,9 +43,13 @@ function scanCopilotSessions(cwd, {
         if (userMessageCount >= 2) break;
       }
       if (userMessageCount < 2) continue;
-      eventsMtime = fsModule.statSync(eventsPath).mtime.toISOString();
     } catch {
       continue;
+    }
+    try {
+      eventsMtime = fsModule.statSync(eventsPath).mtime.toISOString();
+    } catch {
+      // Fall back to workspace.yaml updated_at
     }
 
     try {
