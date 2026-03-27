@@ -10,7 +10,7 @@ function createTempDir() {
   return fs.mkdtempSync(path.join(os.tmpdir(), 'jet-copilot-scan-'));
 }
 
-function writeWorkspaceYaml(sessionDir, id, data) {
+function writeWorkspaceYaml(sessionDir, id, data, { eventsMtime } = {}) {
   const dir = path.join(sessionDir, id);
   fs.mkdirSync(dir, { recursive: true });
   const lines = Object.entries(data)
@@ -23,7 +23,11 @@ function writeWorkspaceYaml(sessionDir, id, data) {
     '{"type":"assistant.message","data":{"content":"hi"}}',
     '{"type":"user.message","data":{"content":"thanks"}}',
   ].join('\n');
-  fs.writeFileSync(path.join(dir, 'events.jsonl'), events);
+  const eventsPath = path.join(dir, 'events.jsonl');
+  fs.writeFileSync(eventsPath, events);
+  if (eventsMtime) {
+    fs.utimesSync(eventsPath, eventsMtime, eventsMtime);
+  }
 }
 
 test('scanCopilotSessions finds sessions matching cwd', () => {
@@ -110,7 +114,7 @@ test('scanCopilotSessions sorts by most recent first', () => {
     summary: 'Old',
     created_at: '2026-03-01T10:00:00Z',
     updated_at: '2026-03-01T10:00:00Z',
-  });
+  }, { eventsMtime: new Date('2026-03-01T10:00:00Z') });
 
   writeWorkspaceYaml(sessionDir, 'new-one', {
     id: 'new-one',
@@ -118,7 +122,7 @@ test('scanCopilotSessions sorts by most recent first', () => {
     summary: 'New',
     created_at: '2026-03-10T10:00:00Z',
     updated_at: '2026-03-10T10:00:00Z',
-  });
+  }, { eventsMtime: new Date('2026-03-10T10:00:00Z') });
 
   try {
     const results = scanCopilotSessions(cwd, { sessionDir });
@@ -164,14 +168,14 @@ test('scanCopilotSessions returns all sessions when cwd is omitted', () => {
     cwd: 'C:\\Repos\\video-odd',
     summary: 'Video odd session',
     updated_at: '2026-03-12T20:44:45.149Z',
-  });
+  }, { eventsMtime: new Date('2026-03-12T20:44:45Z') });
 
   writeWorkspaceYaml(sessionDir, 'jet-copilot', {
     id: 'jet-copilot',
     cwd: 'C:\\Repos\\jet-copilot',
     summary: 'Jet session',
     updated_at: '2026-03-12T20:00:00.000Z',
-  });
+  }, { eventsMtime: new Date('2026-03-12T20:00:00Z') });
 
   try {
     const results = scanCopilotSessions(undefined, { sessionDir });
