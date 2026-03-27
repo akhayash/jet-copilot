@@ -303,10 +303,7 @@ function formatRelativeTime(iso) {
 
 async function loadCopilotSessions() {
   try {
-    const cwdInput = document.getElementById('cwd-input');
-    const cwd = cwdInput.value.trim() || undefined;
-    const query = cwd ? `?cwd=${encodeURIComponent(cwd)}` : '';
-    const res = await fetch(`/api/copilot-sessions${query}`);
+    const res = await fetch('/api/copilot-sessions');
     const sessions = await res.json();
 
     const section = document.getElementById('copilot-sessions-section');

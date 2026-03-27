@@ -42,7 +42,7 @@ function scanCopilotSessions(cwd, {
         if (line.includes('"user.message"')) userMessageCount++;
         if (userMessageCount >= 2) break;
       }
-      if (userMessageCount < 2) continue;
+      if (userMessageCount < 1) continue;
     } catch {
       continue;
     }
