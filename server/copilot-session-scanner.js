@@ -34,6 +34,7 @@ function scanCopilotSessions(cwd, {
     if (!fsModule.existsSync(eventsPath)) continue;
 
     // Skip short-lived sessions (fewer than 2 user messages)
+    let eventsMtime = null;
     try {
       const eventsContent = fsModule.readFileSync(eventsPath, 'utf-8');
       let userMessageCount = 0;
@@ -42,6 +43,7 @@ function scanCopilotSessions(cwd, {
         if (userMessageCount >= 2) break;
       }
       if (userMessageCount < 2) continue;
+      eventsMtime = fsModule.statSync(eventsPath).mtime.toISOString();
     } catch {
       continue;
     }
@@ -71,7 +73,7 @@ function scanCopilotSessions(cwd, {
         branch: data.branch || null,
         summary: data.summary || null,
         createdAt: data.created_at || null,
-        updatedAt: data.updated_at || null,
+        updatedAt: eventsMtime || data.updated_at || null,
         folderName,
         repoName,
         repoRoot,

@@ -319,12 +319,18 @@ async function loadCopilotSessions() {
 
     section.classList.remove('hidden');
 
-    // Group sessions by repository/folder name
+    // Group sessions by repository/folder name (all sessions, no pre-slicing)
     const groups = new Map();
-    for (const s of sessions.slice(0, 50)) {
+    for (const s of sessions) {
       const groupKey = s.displayName || s.folderName || 'Other';
       if (!groups.has(groupKey)) groups.set(groupKey, []);
       groups.get(groupKey).push(s);
+    }
+
+    // Limit each group to 10 most recent sessions
+    const MAX_PER_GROUP = 10;
+    for (const [key, list] of groups) {
+      if (list.length > MAX_PER_GROUP) groups.set(key, list.slice(0, MAX_PER_GROUP));
     }
 
     let html = '';
