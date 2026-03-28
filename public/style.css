@@ -558,6 +558,12 @@ header h1 { font-size: 1.1rem; flex: 1; }
   margin-left: auto;
 }
 
+.session-not-resumable {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
 .session-cwd {
   font-size: 12px;
   color: var(--text-muted);

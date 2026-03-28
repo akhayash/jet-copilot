@@ -391,7 +391,9 @@ function renderCopilotSessions(sessions) {
           ${cwdLabel}
           ${summary}
           <div class="session-actions">
-            <button class="connect-btn" onclick="resumeCopilotSession('${AppUtils.escapeHtml(s.copilotSessionId)}', '${escapeJsString(s.cwd || '')}')">Resume <i data-lucide="arrow-right" class="icon-inline"></i></button>
+            ${s.resumable !== false
+    ? `<button class="connect-btn" onclick="resumeCopilotSession('${AppUtils.escapeHtml(s.copilotSessionId)}', '${escapeJsString(s.cwd || '')}')">Resume <i data-lucide="arrow-right" class="icon-inline"></i></button>`
+    : '<span class="session-not-resumable">View only</span>'}
           </div>
         </div>
       `;
