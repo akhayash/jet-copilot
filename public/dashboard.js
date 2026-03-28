@@ -124,7 +124,7 @@ function renderSessions(sectionId, containerId, sessions, showConnect) {
     const clients = s.clientCount > 0 ? `<span class="client-badge">${s.clientCount} connected</span>` : '';
     const nameLabels = renderSessionNameLabels(s);
     const cwdLabel = renderSessionCwd(s);
-    const msgCount = s.messageCount != null ? `<span class="session-msg-count">${s.messageCount} turns</span>` : '';
+    const msgCount = s.messageCount > 0 ? `<span class="session-msg-count">${s.messageCount} turns</span>` : '';
     const filterText = [s.id, s.repoName, s.folderName, s.cwd].filter(Boolean).join(' ').toLowerCase();
 
     return `

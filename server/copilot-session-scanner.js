@@ -19,6 +19,8 @@ function extractSessionMeta(eventsContent) {
   const messageCount = (eventsContent.match(/"user\.message"/g) || []).length;
 
   // Only parse lines that contain relevant event types
+  let hookCwd = null;
+
   for (const line of eventsContent.split('\n')) {
     if (!line.trim()) continue;
 
@@ -26,7 +28,8 @@ function extractSessionMeta(eventsContent) {
     if (!line.includes('"session.start"') &&
         !line.includes('"session.resume"') &&
         !line.includes('"session.context_changed"') &&
-        !line.includes('"session.task_complete"')) continue;
+        !line.includes('"session.task_complete"') &&
+        !line.includes('"hook.start"')) continue;
 
     try {
       const event = JSON.parse(line);
@@ -50,6 +53,8 @@ function extractSessionMeta(eventsContent) {
         if (cwd) contextFound = true;
       } else if (event.type === 'session.task_complete' && !summary) {
         summary = d?.summary || null;
+      } else if (event.type === 'hook.start' && !hookCwd) {
+        hookCwd = d?.input?.cwd || null;
       }
     } catch {
       // Skip malformed lines
@@ -59,21 +64,7 @@ function extractSessionMeta(eventsContent) {
     if (contextFound && summary) break;
   }
 
-  // Fallback: extract cwd from hook.start if no metadata events found
-  if (!cwd) {
-    for (const line of eventsContent.split('\n')) {
-      if (!line.includes('"hook.start"')) continue;
-      try {
-        const event = JSON.parse(line);
-        if (event.type === 'hook.start' && event.data?.input?.cwd) {
-          cwd = event.data.input.cwd;
-          break;
-        }
-      } catch {
-        // Skip malformed lines
-      }
-    }
-  }
+  if (!cwd) cwd = hookCwd;
 
   return { cwd, gitRoot, repository, branch, summary, createdAt, messageCount };
 }
