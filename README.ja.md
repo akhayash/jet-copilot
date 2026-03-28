@@ -206,7 +206,6 @@ jet-copilot/
 │   ├── session-manager.js    # セッション管理（出力リプレイバッファ付き）
 │   ├── session-context.js    # リポジトリルート検出（セッションコンテキスト）
 │   ├── copilot-session-scanner.js # Copilot CLIセッション履歴スキャン
-│   ├── yaml-lite.js          # workspace.yaml用ミニYAMLパーサー
 │   ├── preview-manager.js    # プレビュートンネル管理
 │   ├── window-capture.js     # クロスプラットフォーム ウィンドウスクリーンショット
 │   ├── tunnel.js             # Dev Tunnel自動起動 + QRコード表示

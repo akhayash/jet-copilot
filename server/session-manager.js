@@ -70,9 +70,13 @@ class SessionManager {
       copilotSessionId: copilotSessionId || crypto.randomUUID(),
       startedAt: new Date().toISOString(),
       endedAt: null,
+      messageCount: 0,
       clients: new Set(),
       runner: null,
       outputBuffer: '',
+      replayCount: 0,
+      lastReplayAt: null,
+      lastReplaySize: 0,
     };
     this._sessions.set(id, session);
     return session;
@@ -95,7 +99,14 @@ class SessionManager {
       copilotSessionId: session.copilotSessionId,
       startedAt: session.startedAt,
       endedAt: session.endedAt,
+      messageCount: session.messageCount,
       clientCount: session.clients.size,
+      outputBufferSize: session.outputBuffer.length,
+      hasRunner: !!session.runner,
+      hasPty: !!(session.runner && session.runner._pty),
+      replayCount: session.replayCount,
+      lastReplayAt: session.lastReplayAt,
+      lastReplaySize: session.lastReplaySize,
     };
   }
 
@@ -140,6 +151,14 @@ class SessionManager {
     const session = this._sessions.get(id);
     if (!session) return '';
     return stripAltScreen(session.outputBuffer);
+  }
+
+  recordReplay(id, size) {
+    const session = this._sessions.get(id);
+    if (!session) return;
+    session.replayCount++;
+    session.lastReplayAt = new Date().toISOString();
+    session.lastReplaySize = size;
   }
 
   getStatus() {

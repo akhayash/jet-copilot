@@ -4,27 +4,35 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 
-const { scanCopilotSessions, getSessionHistory } = require('../server/copilot-session-scanner');
+const { scanCopilotSessions, getSessionHistory, cleanStaleLocks } = require('../server/copilot-session-scanner');
 
 function createTempDir() {
   return fs.mkdtempSync(path.join(os.tmpdir(), 'jet-copilot-scan-'));
 }
 
-function writeWorkspaceYaml(sessionDir, id, data, { eventsMtime } = {}) {
+function writeSession(sessionDir, id, { cwd, gitRoot, branch, summary, repository } = {}, { eventsMtime, extraEvents = [] } = {}) {
   const dir = path.join(sessionDir, id);
   fs.mkdirSync(dir, { recursive: true });
-  const lines = Object.entries(data)
-    .map(([k, v]) => `${k}: ${v === null ? '' : v}`)
-    .join('\n');
-  fs.writeFileSync(path.join(dir, 'workspace.yaml'), lines);
-  // Create events.jsonl with enough user messages to pass the short-session filter
+
+  const context = {};
+  if (cwd) context.cwd = cwd;
+  if (gitRoot) context.gitRoot = gitRoot;
+  if (branch) context.branch = branch;
+  if (repository) context.repository = repository;
+
   const events = [
-    '{"type":"user.message","data":{"content":"hello"}}',
-    '{"type":"assistant.message","data":{"content":"hi"}}',
-    '{"type":"user.message","data":{"content":"thanks"}}',
-  ].join('\n');
+    JSON.stringify({ type: 'session.start', data: { sessionId: id, startTime: new Date().toISOString(), context } }),
+    JSON.stringify({ type: 'session.context_changed', data: { cwd, gitRoot, branch, repository } }),
+    JSON.stringify({ type: 'user.message', data: { content: 'hello' } }),
+    JSON.stringify({ type: 'assistant.message', data: { content: 'hi' } }),
+    ...extraEvents,
+  ];
+  if (summary) {
+    events.push(JSON.stringify({ type: 'session.task_complete', data: { summary } }));
+  }
+
   const eventsPath = path.join(dir, 'events.jsonl');
-  fs.writeFileSync(eventsPath, events);
+  fs.writeFileSync(eventsPath, events.join('\n'));
   if (eventsMtime) {
     fs.utimesSync(eventsPath, eventsMtime, eventsMtime);
   }
@@ -34,21 +42,12 @@ test('scanCopilotSessions finds sessions matching cwd', () => {
   const sessionDir = createTempDir();
   const cwd = 'C:\\Repos\\my-project';
 
-  writeWorkspaceYaml(sessionDir, 'aaa-111', {
-    id: 'aaa-111',
-    cwd: cwd,
-    branch: 'main',
-    summary: 'Fix bug',
-    created_at: '2026-03-10T10:00:00Z',
-    updated_at: '2026-03-10T11:00:00Z',
+  writeSession(sessionDir, 'aaa-111', {
+    cwd, branch: 'main', summary: 'Fix bug',
   });
 
-  writeWorkspaceYaml(sessionDir, 'bbb-222', {
-    id: 'bbb-222',
-    cwd: 'C:\\Repos\\other-project',
-    branch: 'dev',
-    summary: 'Other work',
-    created_at: '2026-03-10T12:00:00Z',
+  writeSession(sessionDir, 'bbb-222', {
+    cwd: 'C:\\Repos\\other-project', branch: 'dev', summary: 'Other work',
   });
 
   try {
@@ -59,10 +58,6 @@ test('scanCopilotSessions finds sessions matching cwd', () => {
     assert.equal(results[0].branch, 'main');
     assert.equal(results[0].summary, 'Fix bug');
     assert.equal(results[0].folderName, 'my-project');
-    assert.equal(results[0].repoName, null);
-    assert.equal(results[0].repoRoot, null);
-    assert.equal(results[0].inRepo, false);
-    assert.equal(results[0].displayName, 'my-project');
   } finally {
     fs.rmSync(sessionDir, { recursive: true, force: true });
   }
@@ -72,13 +67,11 @@ test('scanCopilotSessions matches on git_root', () => {
   const sessionDir = createTempDir();
   const cwd = 'C:\\Repos\\my-project';
 
-  writeWorkspaceYaml(sessionDir, 'ccc-333', {
-    id: 'ccc-333',
+  writeSession(sessionDir, 'ccc-333', {
     cwd: 'C:\\Repos\\my-project\\packages\\app',
-    git_root: cwd,
+    gitRoot: cwd,
     branch: 'feature',
     summary: 'Nested cwd',
-    created_at: '2026-03-10T10:00:00Z',
   });
 
   try {
@@ -87,10 +80,6 @@ test('scanCopilotSessions matches on git_root', () => {
     assert.equal(results.length, 1);
     assert.equal(results[0].copilotSessionId, 'ccc-333');
     assert.equal(results[0].folderName, 'app');
-    assert.equal(results[0].repoName, 'my-project');
-    assert.equal(results[0].repoRoot, cwd);
-    assert.equal(results[0].inRepo, true);
-    assert.equal(results[0].displayName, 'my-project');
   } finally {
     fs.rmSync(sessionDir, { recursive: true, force: true });
   }
@@ -108,20 +97,12 @@ test('scanCopilotSessions sorts by most recent first', () => {
   const sessionDir = createTempDir();
   const cwd = 'C:\\Repos\\project';
 
-  writeWorkspaceYaml(sessionDir, 'old-one', {
-    id: 'old-one',
-    cwd: cwd,
-    summary: 'Old',
-    created_at: '2026-03-01T10:00:00Z',
-    updated_at: '2026-03-01T10:00:00Z',
+  writeSession(sessionDir, 'old-one', {
+    cwd, summary: 'Old',
   }, { eventsMtime: new Date('2026-03-01T10:00:00Z') });
 
-  writeWorkspaceYaml(sessionDir, 'new-one', {
-    id: 'new-one',
-    cwd: cwd,
-    summary: 'New',
-    created_at: '2026-03-10T10:00:00Z',
-    updated_at: '2026-03-10T10:00:00Z',
+  writeSession(sessionDir, 'new-one', {
+    cwd, summary: 'New',
   }, { eventsMtime: new Date('2026-03-10T10:00:00Z') });
 
   try {
@@ -135,19 +116,13 @@ test('scanCopilotSessions sorts by most recent first', () => {
   }
 });
 
-test('scanCopilotSessions skips sessions without workspace.yaml', () => {
+test('scanCopilotSessions skips sessions without events.jsonl', () => {
   const sessionDir = createTempDir();
   const cwd = 'C:\\Repos\\project';
 
-  // Session with workspace.yaml
-  writeWorkspaceYaml(sessionDir, 'good-one', {
-    id: 'good-one',
-    cwd: cwd,
-    summary: 'Good',
-    created_at: '2026-03-10T10:00:00Z',
-  });
+  writeSession(sessionDir, 'good-one', { cwd, summary: 'Good' });
 
-  // Session without workspace.yaml
+  // Empty dir without events.jsonl
   fs.mkdirSync(path.join(sessionDir, 'bad-one'));
 
   try {
@@ -163,18 +138,12 @@ test('scanCopilotSessions skips sessions without workspace.yaml', () => {
 test('scanCopilotSessions returns all sessions when cwd is omitted', () => {
   const sessionDir = createTempDir();
 
-  writeWorkspaceYaml(sessionDir, 'video-odd', {
-    id: 'video-odd',
-    cwd: 'C:\\Repos\\video-odd',
-    summary: 'Video odd session',
-    updated_at: '2026-03-12T20:44:45.149Z',
+  writeSession(sessionDir, 'video-odd', {
+    cwd: 'C:\\Repos\\video-odd', summary: 'Video odd session',
   }, { eventsMtime: new Date('2026-03-12T20:44:45Z') });
 
-  writeWorkspaceYaml(sessionDir, 'jet-copilot', {
-    id: 'jet-copilot',
-    cwd: 'C:\\Repos\\jet-copilot',
-    summary: 'Jet session',
-    updated_at: '2026-03-12T20:00:00.000Z',
+  writeSession(sessionDir, 'jet-copilot', {
+    cwd: 'C:\\Repos\\jet-copilot', summary: 'Jet session',
   }, { eventsMtime: new Date('2026-03-12T20:00:00Z') });
 
   try {
@@ -192,28 +161,91 @@ test('scanCopilotSessions skips ghost sessions without events.jsonl', () => {
   const sessionDir = createTempDir();
   const cwd = 'C:\\Repos\\project';
 
-  // Real session with events.jsonl
-  writeWorkspaceYaml(sessionDir, 'real-session', {
-    id: 'real-session',
-    cwd: cwd,
-    summary: 'Real work',
-    created_at: '2026-03-10T10:00:00Z',
-  });
+  writeSession(sessionDir, 'real-session', { cwd, summary: 'Real work' });
 
-  // Ghost session: workspace.yaml but no events.jsonl
+  // Ghost session: dir exists but no events.jsonl
   const ghostDir = path.join(sessionDir, 'ghost-session');
   fs.mkdirSync(ghostDir, { recursive: true });
-  fs.writeFileSync(path.join(ghostDir, 'workspace.yaml'), [
-    'id: ghost-session',
-    `cwd: ${cwd}`,
-    'created_at: 2026-03-10T11:00:00Z',
-  ].join('\n'));
 
   try {
     const results = scanCopilotSessions(cwd, { sessionDir });
 
     assert.equal(results.length, 1);
     assert.equal(results[0].copilotSessionId, 'real-session');
+  } finally {
+    fs.rmSync(sessionDir, { recursive: true, force: true });
+  }
+});
+
+test('scanCopilotSessions extracts metadata from session.resume events', () => {
+  const sessionDir = createTempDir();
+  const id = 'resumed-session';
+  const dir = path.join(sessionDir, id);
+  fs.mkdirSync(dir, { recursive: true });
+
+  const events = [
+    JSON.stringify({ type: 'session.resume', data: { resumeTime: '2026-03-27T10:00:00Z', context: { cwd: 'C:\\Repos\\my-project', gitRoot: 'C:\\Repos\\my-project', branch: 'main', repository: 'user/my-project' } } }),
+    JSON.stringify({ type: 'user.message', data: { content: 'hello' } }),
+    JSON.stringify({ type: 'assistant.message', data: { content: 'hi' } }),
+  ];
+  fs.writeFileSync(path.join(dir, 'events.jsonl'), events.join('\n'));
+
+  try {
+    const results = scanCopilotSessions('C:\\Repos\\my-project', { sessionDir });
+
+    assert.equal(results.length, 1);
+    assert.equal(results[0].copilotSessionId, id);
+    assert.equal(results[0].cwd, 'C:\\Repos\\my-project');
+    assert.equal(results[0].branch, 'main');
+    assert.equal(results[0].createdAt, '2026-03-27T10:00:00Z');
+  } finally {
+    fs.rmSync(sessionDir, { recursive: true, force: true });
+  }
+});
+
+test('scanCopilotSessions extracts cwd from hook.start as fallback', () => {
+  const sessionDir = createTempDir();
+  const id = 'hook-only-session';
+  const dir = path.join(sessionDir, id);
+  fs.mkdirSync(dir, { recursive: true });
+
+  const events = [
+    JSON.stringify({ type: 'hook.start', data: { hookInvocationId: 'abc', hookType: 'postToolUse', input: { sessionId: id, cwd: 'C:\\Repos\\video-odd' } } }),
+    JSON.stringify({ type: 'user.message', data: { content: 'hello' } }),
+    JSON.stringify({ type: 'assistant.message', data: { content: 'hi' } }),
+    JSON.stringify({ type: 'session.task_complete', data: { summary: 'Done' } }),
+  ];
+  fs.writeFileSync(path.join(dir, 'events.jsonl'), events.join('\n'));
+
+  try {
+    const results = scanCopilotSessions('C:\\Repos\\video-odd', { sessionDir });
+
+    assert.equal(results.length, 1);
+    assert.equal(results[0].cwd, 'C:\\Repos\\video-odd');
+    assert.equal(results[0].summary, 'Done');
+    assert.equal(results[0].folderName, 'video-odd');
+  } finally {
+    fs.rmSync(sessionDir, { recursive: true, force: true });
+  }
+});
+
+test('scanCopilotSessions includes messageCount', () => {
+  const sessionDir = createTempDir();
+
+  writeSession(sessionDir, 'multi-msg', {
+    cwd: 'C:\\Repos\\test',
+  }, {
+    extraEvents: [
+      JSON.stringify({ type: 'user.message', data: { content: 'q2' } }),
+      JSON.stringify({ type: 'user.message', data: { content: 'q3' } }),
+    ],
+  });
+
+  try {
+    const results = scanCopilotSessions(undefined, { sessionDir });
+
+    assert.equal(results.length, 1);
+    assert.equal(results[0].messageCount, 3);
   } finally {
     fs.rmSync(sessionDir, { recursive: true, force: true });
   }
@@ -279,6 +311,58 @@ test('getSessionHistory returns empty array for missing session', () => {
   try {
     const history = getSessionHistory('nonexistent', { sessionDir });
     assert.deepEqual(history, []);
+  } finally {
+    fs.rmSync(sessionDir, { recursive: true, force: true });
+  }
+});
+
+// --- cleanStaleLocks ---
+
+test('cleanStaleLocks removes lock files for dead PIDs', () => {
+  const sessionDir = createTempDir();
+  const id = 'lock-test';
+  const dir = path.join(sessionDir, id);
+  fs.mkdirSync(dir, { recursive: true });
+
+  // Create a lock file with a PID that doesn't exist
+  fs.writeFileSync(path.join(dir, 'inuse.999999.lock'), '999999');
+  fs.writeFileSync(path.join(dir, 'events.jsonl'), '{}');
+
+  try {
+    const removed = cleanStaleLocks(id, { sessionDir });
+
+    assert.equal(removed, 1);
+    assert.equal(fs.existsSync(path.join(dir, 'inuse.999999.lock')), false);
+    assert.equal(fs.existsSync(path.join(dir, 'events.jsonl')), true);
+  } finally {
+    fs.rmSync(sessionDir, { recursive: true, force: true });
+  }
+});
+
+test('cleanStaleLocks keeps lock files for live PIDs', () => {
+  const sessionDir = createTempDir();
+  const id = 'live-lock-test';
+  const dir = path.join(sessionDir, id);
+  fs.mkdirSync(dir, { recursive: true });
+
+  const livePid = process.pid;
+  fs.writeFileSync(path.join(dir, `inuse.${livePid}.lock`), String(livePid));
+
+  try {
+    const removed = cleanStaleLocks(id, { sessionDir });
+
+    assert.equal(removed, 0);
+    assert.equal(fs.existsSync(path.join(dir, `inuse.${livePid}.lock`)), true);
+  } finally {
+    fs.rmSync(sessionDir, { recursive: true, force: true });
+  }
+});
+
+test('cleanStaleLocks returns 0 for non-existent session', () => {
+  const sessionDir = createTempDir();
+  try {
+    const removed = cleanStaleLocks('nonexistent', { sessionDir });
+    assert.equal(removed, 0);
   } finally {
     fs.rmSync(sessionDir, { recursive: true, force: true });
   }

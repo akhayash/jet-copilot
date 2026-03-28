@@ -56,12 +56,12 @@ test('session create accepts copilotSessionId for resume', async () => {
 
   const response = await request(app)
     .post('/api/sessions')
-    .send({ cwd: 'C:\\repo', copilotSessionId: 'my-uuid-123' })
+    .send({ cwd: 'C:\\repo', copilotSessionId: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890' })
     .expect(200);
 
-  assert.equal(response.body.copilotSessionId, 'my-uuid-123');
+  assert.equal(response.body.copilotSessionId, 'a1b2c3d4-e5f6-7890-abcd-ef1234567890');
   const session = sessions.get(response.body.id);
-  assert.equal(session.copilotSessionId, 'my-uuid-123');
+  assert.equal(session.copilotSessionId, 'a1b2c3d4-e5f6-7890-abcd-ef1234567890');
 });
 
 test('browse API filters hidden directories and node_modules', async () => {
@@ -159,7 +159,7 @@ test('copilot session history API returns conversation turns', async () => {
     getSessionHistoryFn: (_id, _opts) => mockHistory,
   });
 
-  const response = await request(app).get('/api/copilot-sessions/test-id/history').expect(200);
+  const response = await request(app).get('/api/copilot-sessions/a1b2c3d4-e5f6-7890-abcd-ef1234567890/history').expect(200);
 
   assert.deepEqual(response.body, mockHistory);
 });
@@ -175,9 +175,9 @@ test('copilot session history API passes maxTurns', async () => {
     },
   });
 
-  await request(app).get('/api/copilot-sessions/abc/history?maxTurns=5').expect(200);
+  await request(app).get('/api/copilot-sessions/a1b2c3d4-e5f6-7890-abcd-ef1234567890/history?maxTurns=5').expect(200);
 
-  assert.equal(calls[0].id, 'abc');
+  assert.equal(calls[0].id, 'a1b2c3d4-e5f6-7890-abcd-ef1234567890');
   assert.equal(calls[0].maxTurns, 5);
 });
 

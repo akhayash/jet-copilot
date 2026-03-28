@@ -11,7 +11,7 @@ const { SessionManager } = require('./session-manager');
 const { PreviewManager } = require('./preview-manager');
 const { WindowCapture } = require('./window-capture');
 const { startTunnel, getTunnelUrl } = require('./tunnel');
-const { scanCopilotSessions, getSessionHistory } = require('./copilot-session-scanner');
+const { scanCopilotSessions, getSessionHistory, getSessionMessageCount, cleanStaleLocks } = require('./copilot-session-scanner');
 const QRCode = require('qrcode');
 
 loadEnv();
@@ -27,6 +27,8 @@ function isPathSafe(resolved) {
   const blocked = ['/etc', '/proc', '/sys', '/dev', 'C:\\Windows\\System32'];
   return !blocked.some((b) => resolved.toLowerCase().startsWith(b.toLowerCase()));
 }
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function createApp({
   sessions = new SessionManager(),
@@ -75,7 +77,17 @@ function createApp({
   app.post('/api/sessions', (req, res) => {
     const cwd = req.body.cwd || undefined;
     const copilotSessionId = req.body.copilotSessionId || undefined;
+    if (copilotSessionId && !UUID_RE.test(copilotSessionId)) {
+      return res.status(400).json({ error: 'Invalid copilotSessionId format' });
+    }
+    if (copilotSessionId) {
+      const removed = cleanStaleLocks(copilotSessionId);
+      if (removed) console.log(`🧹 Cleaned ${removed} stale lock(s) for session ${copilotSessionId}`);
+    }
     const session = sessions.create(cwd, { copilotSessionId });
+    if (copilotSessionId) {
+      session.messageCount = getSessionMessageCount(copilotSessionId);
+    }
     res.json({ id: session.id, copilotSessionId: session.copilotSessionId });
   });
 
@@ -140,6 +152,7 @@ function createApp({
 
   app.get('/api/copilot-sessions/:id/history', (req, res) => {
     const { id } = req.params;
+    if (!UUID_RE.test(id)) return res.status(400).json({ error: 'Invalid session ID format' });
     const maxTurns = parseInt(req.query.maxTurns, 10) || 10;
     try {
       const history = getSessionHistoryFn(id, { maxTurns });
