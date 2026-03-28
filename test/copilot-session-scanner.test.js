@@ -177,6 +177,32 @@ test('scanCopilotSessions skips ghost sessions without events.jsonl', () => {
   }
 });
 
+test('scanCopilotSessions extracts metadata from session.resume events', () => {
+  const sessionDir = createTempDir();
+  const id = 'resumed-session';
+  const dir = path.join(sessionDir, id);
+  fs.mkdirSync(dir, { recursive: true });
+
+  const events = [
+    JSON.stringify({ type: 'session.resume', data: { resumeTime: '2026-03-27T10:00:00Z', context: { cwd: 'C:\\Repos\\my-project', gitRoot: 'C:\\Repos\\my-project', branch: 'main', repository: 'user/my-project' } } }),
+    JSON.stringify({ type: 'user.message', data: { content: 'hello' } }),
+    JSON.stringify({ type: 'assistant.message', data: { content: 'hi' } }),
+  ];
+  fs.writeFileSync(path.join(dir, 'events.jsonl'), events.join('\n'));
+
+  try {
+    const results = scanCopilotSessions('C:\\Repos\\my-project', { sessionDir });
+
+    assert.equal(results.length, 1);
+    assert.equal(results[0].copilotSessionId, id);
+    assert.equal(results[0].cwd, 'C:\\Repos\\my-project');
+    assert.equal(results[0].branch, 'main');
+    assert.equal(results[0].createdAt, '2026-03-27T10:00:00Z');
+  } finally {
+    fs.rmSync(sessionDir, { recursive: true, force: true });
+  }
+});
+
 test('scanCopilotSessions includes messageCount', () => {
   const sessionDir = createTempDir();
 

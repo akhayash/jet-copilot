@@ -24,6 +24,7 @@ function extractSessionMeta(eventsContent) {
 
     // Skip lines that can't contain metadata events
     if (!line.includes('"session.start"') &&
+        !line.includes('"session.resume"') &&
         !line.includes('"session.context_changed"') &&
         !line.includes('"session.task_complete"')) continue;
 
@@ -31,8 +32,8 @@ function extractSessionMeta(eventsContent) {
       const event = JSON.parse(line);
       const d = event.data;
 
-      if (event.type === 'session.start') {
-        createdAt = d?.startTime || createdAt;
+      if (event.type === 'session.start' || event.type === 'session.resume') {
+        createdAt = createdAt || d?.startTime || d?.resumeTime;
         const ctx = d?.context;
         if (ctx) {
           cwd = cwd || ctx.cwd || null;
