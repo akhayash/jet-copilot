@@ -1,4 +1,14 @@
 const _openGroups = new Set();
+let _sortOrder = 'time';
+let _cachedSessions = [];
+
+function setSortOrder(order) {
+  _sortOrder = order;
+  document.querySelectorAll('.sort-btn').forEach((btn) => {
+    btn.classList.toggle('active', btn.dataset.sort === order);
+  });
+  renderCopilotSessions(_cachedSessions);
+}
 
 function toggleGroup(header) {
   const groupName = header.getAttribute('data-group');
@@ -304,78 +314,92 @@ function formatRelativeTime(iso) {
 async function loadCopilotSessions() {
   try {
     const res = await fetch('/api/copilot-sessions');
-    const sessions = await res.json();
-
-    const section = document.getElementById('copilot-sessions-section');
-    const container = document.getElementById('copilot-sessions');
-
-    if (!sessions.length) {
-      section.classList.add('hidden');
-      return;
-    }
-
-    section.classList.remove('hidden');
-
-    // Group sessions by repository/folder name (all sessions, no pre-slicing)
-    const groups = new Map();
-    for (const s of sessions) {
-      const groupKey = s.displayName || s.folderName || 'Other';
-      if (!groups.has(groupKey)) groups.set(groupKey, []);
-      groups.get(groupKey).push(s);
-    }
-
-    // Limit each group to 10 most recent sessions
-    const MAX_PER_GROUP = 10;
-    for (const [key, list] of groups) {
-      if (list.length > MAX_PER_GROUP) groups.set(key, list.slice(0, MAX_PER_GROUP));
-    }
-
-    let html = '';
-    for (const [groupName, groupSessions] of groups) {
-      const groupId = `copilot-group-${groupName.replace(/[^a-zA-Z0-9-]/g, '_')}`;
-      const isOpen = _openGroups.has(groupName);
-      html += `<div class="session-group-header ${isOpen ? 'open' : ''}" data-group="${AppUtils.escapeHtml(groupName)}" onclick="toggleGroup(this)">
-        <i data-lucide="chevron-right" class="session-group-chevron"></i>
-        <i data-lucide="folder-git-2" class="icon-inline"></i>
-        <span class="session-group-name">${AppUtils.escapeHtml(groupName)}</span>
-        <span class="session-group-count">${groupSessions.length}</span>
-      </div>`;
-      html += `<div class="session-group-body ${isOpen ? 'open' : ''}" id="${groupId}">`;
-      html += groupSessions.map((s) => {
-        const time = formatRelativeTime(s.updatedAt || s.createdAt);
-        const summary = s.summary
-          ? `<div class="session-summary">${AppUtils.escapeHtml(s.summary)}</div>`
-          : '';
-        const branch = s.branch
-          ? `<span class="branch-badge">${AppUtils.escapeHtml(s.branch)}</span>`
-          : '';
-        const cwdLabel = renderSessionCwd(s);
-        const filterText = [s.copilotSessionId.substring(0, 8), groupName, s.folderName, s.branch, s.summary, s.cwd].filter(Boolean).join(' ').toLowerCase();
-
-        return `
-          <div class="session-card" data-filter-text="${AppUtils.escapeHtml(filterText)}">
-            <div class="session-info">
-              <span class="session-id"><i data-lucide="message-square" class="icon-inline"></i> ${AppUtils.escapeHtml(s.copilotSessionId.substring(0, 8))}</span>
-              ${branch}
-              <span class="session-time-inline">${time}</span>
-            </div>
-            ${cwdLabel}
-            ${summary}
-            <div class="session-actions">
-              <button class="connect-btn" onclick="resumeCopilotSession('${AppUtils.escapeHtml(s.copilotSessionId)}', '${escapeJsString(s.cwd || '')}')">Resume <i data-lucide="arrow-right" class="icon-inline"></i></button>
-            </div>
-          </div>
-        `;
-      }).join('');
-      html += '</div>';
-    }
-    container.innerHTML = html;
-    if (typeof lucide !== 'undefined') lucide.createIcons();
-    applyFilter();
-    updateFilterBarVisibility();
+    _cachedSessions = await res.json();
+    renderCopilotSessions(_cachedSessions);
   } catch {
     // Ignore
   }
+}
+
+function renderCopilotSessions(sessions) {
+  const section = document.getElementById('copilot-sessions-section');
+  const container = document.getElementById('copilot-sessions');
+
+  if (!sessions.length) {
+    section.classList.add('hidden');
+    return;
+  }
+
+  section.classList.remove('hidden');
+
+  // Sort sessions based on current sort order
+  const sorted = [...sessions].sort((a, b) => {
+    if (_sortOrder === 'messages') {
+      return (b.messageCount || 0) - (a.messageCount || 0);
+    }
+    const da = a.updatedAt || a.createdAt || '';
+    const db = b.updatedAt || b.createdAt || '';
+    return db.localeCompare(da);
+  });
+
+  // Group sessions by repository/folder name
+  const groups = new Map();
+  for (const s of sorted) {
+    const groupKey = s.displayName || s.folderName || 'Other';
+    if (!groups.has(groupKey)) groups.set(groupKey, []);
+    groups.get(groupKey).push(s);
+  }
+
+  // Limit each group to 10 sessions
+  const MAX_PER_GROUP = 10;
+  for (const [key, list] of groups) {
+    if (list.length > MAX_PER_GROUP) groups.set(key, list.slice(0, MAX_PER_GROUP));
+  }
+
+  let html = '';
+  for (const [groupName, groupSessions] of groups) {
+    const groupId = `copilot-group-${groupName.replace(/[^a-zA-Z0-9-]/g, '_')}`;
+    const isOpen = _openGroups.has(groupName);
+    html += `<div class="session-group-header ${isOpen ? 'open' : ''}" data-group="${AppUtils.escapeHtml(groupName)}" onclick="toggleGroup(this)">
+      <i data-lucide="chevron-right" class="session-group-chevron"></i>
+      <i data-lucide="folder-git-2" class="icon-inline"></i>
+      <span class="session-group-name">${AppUtils.escapeHtml(groupName)}</span>
+      <span class="session-group-count">${groupSessions.length}</span>
+    </div>`;
+    html += `<div class="session-group-body ${isOpen ? 'open' : ''}" id="${groupId}">`;
+    html += groupSessions.map((s) => {
+      const time = formatRelativeTime(s.updatedAt || s.createdAt);
+      const summary = s.summary
+        ? `<div class="session-summary">${AppUtils.escapeHtml(s.summary)}</div>`
+        : '';
+      const branch = s.branch
+        ? `<span class="branch-badge">${AppUtils.escapeHtml(s.branch)}</span>`
+        : '';
+      const cwdLabel = renderSessionCwd(s);
+      const filterText = [s.copilotSessionId.substring(0, 8), groupName, s.folderName, s.branch, s.summary, s.cwd].filter(Boolean).join(' ').toLowerCase();
+
+      return `
+        <div class="session-card" data-filter-text="${AppUtils.escapeHtml(filterText)}">
+          <div class="session-info">
+            <span class="session-id"><i data-lucide="message-square" class="icon-inline"></i> ${AppUtils.escapeHtml(s.copilotSessionId.substring(0, 8))}</span>
+            ${branch}
+            <span class="session-msg-count">${s.messageCount || 0} turns</span>
+            <span class="session-time-inline">${time}</span>
+          </div>
+          ${cwdLabel}
+          ${summary}
+          <div class="session-actions">
+            <button class="connect-btn" onclick="resumeCopilotSession('${AppUtils.escapeHtml(s.copilotSessionId)}', '${escapeJsString(s.cwd || '')}')">Resume <i data-lucide="arrow-right" class="icon-inline"></i></button>
+          </div>
+        </div>
+      `;
+    }).join('');
+    html += '</div>';
+  }
+  container.innerHTML = html;
+  if (typeof lucide !== 'undefined') lucide.createIcons();
+  applyFilter();
+  updateFilterBarVisibility();
 }
 
 async function resumeCopilotSession(copilotSessionId, cwd) {
