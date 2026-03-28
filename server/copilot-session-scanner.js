@@ -59,6 +59,22 @@ function extractSessionMeta(eventsContent) {
     if (contextFound && summary) break;
   }
 
+  // Fallback: extract cwd from hook.start if no metadata events found
+  if (!cwd) {
+    for (const line of eventsContent.split('\n')) {
+      if (!line.includes('"hook.start"')) continue;
+      try {
+        const event = JSON.parse(line);
+        if (event.type === 'hook.start' && event.data?.input?.cwd) {
+          cwd = event.data.input.cwd;
+          break;
+        }
+      } catch {
+        // Skip malformed lines
+      }
+    }
+  }
+
   return { cwd, gitRoot, repository, branch, summary, createdAt, messageCount };
 }
 

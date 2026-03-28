@@ -203,6 +203,32 @@ test('scanCopilotSessions extracts metadata from session.resume events', () => {
   }
 });
 
+test('scanCopilotSessions extracts cwd from hook.start as fallback', () => {
+  const sessionDir = createTempDir();
+  const id = 'hook-only-session';
+  const dir = path.join(sessionDir, id);
+  fs.mkdirSync(dir, { recursive: true });
+
+  const events = [
+    JSON.stringify({ type: 'hook.start', data: { hookInvocationId: 'abc', hookType: 'postToolUse', input: { sessionId: id, cwd: 'C:\\Repos\\video-odd' } } }),
+    JSON.stringify({ type: 'user.message', data: { content: 'hello' } }),
+    JSON.stringify({ type: 'assistant.message', data: { content: 'hi' } }),
+    JSON.stringify({ type: 'session.task_complete', data: { summary: 'Done' } }),
+  ];
+  fs.writeFileSync(path.join(dir, 'events.jsonl'), events.join('\n'));
+
+  try {
+    const results = scanCopilotSessions('C:\\Repos\\video-odd', { sessionDir });
+
+    assert.equal(results.length, 1);
+    assert.equal(results[0].cwd, 'C:\\Repos\\video-odd');
+    assert.equal(results[0].summary, 'Done');
+    assert.equal(results[0].folderName, 'video-odd');
+  } finally {
+    fs.rmSync(sessionDir, { recursive: true, force: true });
+  }
+});
+
 test('scanCopilotSessions includes messageCount', () => {
   const sessionDir = createTempDir();
 
