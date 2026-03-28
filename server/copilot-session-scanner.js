@@ -186,4 +186,43 @@ function getSessionMessageCount(copilotSessionId, {
   }
 }
 
-module.exports = { scanCopilotSessions, getSessionHistory, getSessionMessageCount, DEFAULT_SESSION_DIR };
+function cleanStaleLocks(copilotSessionId, {
+  sessionDir = DEFAULT_SESSION_DIR,
+  fsModule = fs,
+  pathModule = path,
+} = {}) {
+  const sessionPath = pathModule.join(sessionDir, copilotSessionId);
+  let files;
+  try {
+    files = fsModule.readdirSync(sessionPath);
+  } catch {
+    return 0;
+  }
+
+  let removed = 0;
+  for (const file of files) {
+    const match = file.match(/^inuse\.(\d+)\.lock$/);
+    if (!match) continue;
+
+    const lockPid = parseInt(match[1], 10);
+    let alive = false;
+    try {
+      process.kill(lockPid, 0);
+      alive = true;
+    } catch {
+      // Process not found — stale lock
+    }
+
+    if (!alive) {
+      try {
+        fsModule.unlinkSync(pathModule.join(sessionPath, file));
+        removed++;
+      } catch {
+        // Ignore cleanup errors
+      }
+    }
+  }
+  return removed;
+}
+
+module.exports = { scanCopilotSessions, getSessionHistory, getSessionMessageCount, cleanStaleLocks, DEFAULT_SESSION_DIR };

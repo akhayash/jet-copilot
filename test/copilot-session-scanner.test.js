@@ -4,7 +4,7 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 
-const { scanCopilotSessions, getSessionHistory } = require('../server/copilot-session-scanner');
+const { scanCopilotSessions, getSessionHistory, cleanStaleLocks } = require('../server/copilot-session-scanner');
 
 function createTempDir() {
   return fs.mkdtempSync(path.join(os.tmpdir(), 'jet-copilot-scan-'));
@@ -285,6 +285,58 @@ test('getSessionHistory returns empty array for missing session', () => {
   try {
     const history = getSessionHistory('nonexistent', { sessionDir });
     assert.deepEqual(history, []);
+  } finally {
+    fs.rmSync(sessionDir, { recursive: true, force: true });
+  }
+});
+
+// --- cleanStaleLocks ---
+
+test('cleanStaleLocks removes lock files for dead PIDs', () => {
+  const sessionDir = createTempDir();
+  const id = 'lock-test';
+  const dir = path.join(sessionDir, id);
+  fs.mkdirSync(dir, { recursive: true });
+
+  // Create a lock file with a PID that doesn't exist
+  fs.writeFileSync(path.join(dir, 'inuse.999999.lock'), '999999');
+  fs.writeFileSync(path.join(dir, 'events.jsonl'), '{}');
+
+  try {
+    const removed = cleanStaleLocks(id, { sessionDir });
+
+    assert.equal(removed, 1);
+    assert.equal(fs.existsSync(path.join(dir, 'inuse.999999.lock')), false);
+    assert.equal(fs.existsSync(path.join(dir, 'events.jsonl')), true);
+  } finally {
+    fs.rmSync(sessionDir, { recursive: true, force: true });
+  }
+});
+
+test('cleanStaleLocks keeps lock files for live PIDs', () => {
+  const sessionDir = createTempDir();
+  const id = 'live-lock-test';
+  const dir = path.join(sessionDir, id);
+  fs.mkdirSync(dir, { recursive: true });
+
+  const livePid = process.pid;
+  fs.writeFileSync(path.join(dir, `inuse.${livePid}.lock`), String(livePid));
+
+  try {
+    const removed = cleanStaleLocks(id, { sessionDir });
+
+    assert.equal(removed, 0);
+    assert.equal(fs.existsSync(path.join(dir, `inuse.${livePid}.lock`)), true);
+  } finally {
+    fs.rmSync(sessionDir, { recursive: true, force: true });
+  }
+});
+
+test('cleanStaleLocks returns 0 for non-existent session', () => {
+  const sessionDir = createTempDir();
+  try {
+    const removed = cleanStaleLocks('nonexistent', { sessionDir });
+    assert.equal(removed, 0);
   } finally {
     fs.rmSync(sessionDir, { recursive: true, force: true });
   }

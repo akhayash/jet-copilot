@@ -11,7 +11,7 @@ const { SessionManager } = require('./session-manager');
 const { PreviewManager } = require('./preview-manager');
 const { WindowCapture } = require('./window-capture');
 const { startTunnel, getTunnelUrl } = require('./tunnel');
-const { scanCopilotSessions, getSessionHistory, getSessionMessageCount } = require('./copilot-session-scanner');
+const { scanCopilotSessions, getSessionHistory, getSessionMessageCount, cleanStaleLocks } = require('./copilot-session-scanner');
 const QRCode = require('qrcode');
 
 loadEnv();
@@ -75,6 +75,10 @@ function createApp({
   app.post('/api/sessions', (req, res) => {
     const cwd = req.body.cwd || undefined;
     const copilotSessionId = req.body.copilotSessionId || undefined;
+    if (copilotSessionId) {
+      const removed = cleanStaleLocks(copilotSessionId);
+      if (removed) console.log(`🧹 Cleaned ${removed} stale lock(s) for session ${copilotSessionId}`);
+    }
     const session = sessions.create(cwd, { copilotSessionId });
     if (copilotSessionId) {
       session.messageCount = getSessionMessageCount(copilotSessionId);
