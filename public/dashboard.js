@@ -112,8 +112,8 @@ function renderSessions(sectionId, containerId, sessions, showConnect) {
 
   section.classList.remove('hidden');
   container.innerHTML = sessions.map((s) => {
-    const time = formatTime(s.startedAt);
-    const endTime = s.endedAt ? ` – ${formatTime(s.endedAt)}` : '';
+    const time = formatRelativeTime(s.startedAt);
+    const endTime = s.endedAt ? ` – ${formatRelativeTime(s.endedAt)}` : '';
     const statusIcon = s.status === 'active' ? '<i data-lucide="circle" class="icon-status icon-active"></i>' : '<i data-lucide="circle" class="icon-status icon-ended"></i>';
     const connectBtn = showConnect
       ? `<div class="session-actions">
@@ -124,6 +124,7 @@ function renderSessions(sectionId, containerId, sessions, showConnect) {
     const clients = s.clientCount > 0 ? `<span class="client-badge">${s.clientCount} connected</span>` : '';
     const nameLabels = renderSessionNameLabels(s);
     const cwdLabel = renderSessionCwd(s);
+    const msgCount = s.messageCount != null ? `<span class="session-msg-count">${s.messageCount} turns</span>` : '';
     const filterText = [s.id, s.repoName, s.folderName, s.cwd].filter(Boolean).join(' ').toLowerCase();
 
     return `
@@ -132,9 +133,10 @@ function renderSessions(sectionId, containerId, sessions, showConnect) {
           <span class="session-id">${statusIcon} #${s.id}</span>
           ${nameLabels}
           ${clients}
+          ${msgCount}
+          <span class="session-time-inline">${time}${endTime}</span>
         </div>
         ${cwdLabel}
-        <div class="session-time">${time}${endTime}</div>
         ${connectBtn}
       </div>
     `;

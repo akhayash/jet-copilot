@@ -11,7 +11,7 @@ const { SessionManager } = require('./session-manager');
 const { PreviewManager } = require('./preview-manager');
 const { WindowCapture } = require('./window-capture');
 const { startTunnel, getTunnelUrl } = require('./tunnel');
-const { scanCopilotSessions, getSessionHistory } = require('./copilot-session-scanner');
+const { scanCopilotSessions, getSessionHistory, getSessionMessageCount } = require('./copilot-session-scanner');
 const QRCode = require('qrcode');
 
 loadEnv();
@@ -76,6 +76,9 @@ function createApp({
     const cwd = req.body.cwd || undefined;
     const copilotSessionId = req.body.copilotSessionId || undefined;
     const session = sessions.create(cwd, { copilotSessionId });
+    if (copilotSessionId) {
+      session.messageCount = getSessionMessageCount(copilotSessionId);
+    }
     res.json({ id: session.id, copilotSessionId: session.copilotSessionId });
   });
 

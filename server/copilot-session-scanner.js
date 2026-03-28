@@ -172,4 +172,18 @@ function getSessionHistory(copilotSessionId, {
   return turns.slice(-maxTurns);
 }
 
-module.exports = { scanCopilotSessions, getSessionHistory, DEFAULT_SESSION_DIR };
+function getSessionMessageCount(copilotSessionId, {
+  sessionDir = DEFAULT_SESSION_DIR,
+  fsModule = fs,
+  pathModule = path,
+} = {}) {
+  const eventsPath = pathModule.join(sessionDir, copilotSessionId, 'events.jsonl');
+  try {
+    const content = fsModule.readFileSync(eventsPath, 'utf-8');
+    return (content.match(/"user\.message"/g) || []).length;
+  } catch {
+    return 0;
+  }
+}
+
+module.exports = { scanCopilotSessions, getSessionHistory, getSessionMessageCount, DEFAULT_SESSION_DIR };
