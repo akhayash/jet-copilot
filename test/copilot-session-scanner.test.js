@@ -368,6 +368,44 @@ test('cleanStaleLocks returns 0 for non-existent session', () => {
   }
 });
 
+test('cleanStaleLocks with force removes lock for dead PID', () => {
+  const sessionDir = createTempDir();
+  const id = 'force-dead-test';
+  const dir = path.join(sessionDir, id);
+  fs.mkdirSync(dir, { recursive: true });
+
+  fs.writeFileSync(path.join(dir, 'inuse.999999.lock'), '999999');
+
+  try {
+    const removed = cleanStaleLocks(id, { sessionDir, force: true });
+
+    assert.equal(removed, 1);
+    assert.equal(fs.existsSync(path.join(dir, 'inuse.999999.lock')), false);
+  } finally {
+    fs.rmSync(sessionDir, { recursive: true, force: true });
+  }
+});
+
+test('cleanStaleLocks skips PID 0 lock files', () => {
+  const sessionDir = createTempDir();
+  const id = 'pid-zero-test';
+  const dir = path.join(sessionDir, id);
+  fs.mkdirSync(dir, { recursive: true });
+
+  fs.writeFileSync(path.join(dir, 'inuse.0.lock'), '0');
+  fs.writeFileSync(path.join(dir, 'inuse.999999.lock'), '999999');
+
+  try {
+    const removed = cleanStaleLocks(id, { sessionDir, force: true });
+
+    assert.equal(removed, 1);
+    assert.equal(fs.existsSync(path.join(dir, 'inuse.0.lock')), true);
+    assert.equal(fs.existsSync(path.join(dir, 'inuse.999999.lock')), false);
+  } finally {
+    fs.rmSync(sessionDir, { recursive: true, force: true });
+  }
+});
+
 // --- adoptSession ---
 
 test('adoptSession prepends session.start to events.jsonl', () => {

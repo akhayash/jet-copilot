@@ -201,6 +201,7 @@ function cleanStaleLocks(copilotSessionId, {
   sessionDir = DEFAULT_SESSION_DIR,
   fsModule = fs,
   pathModule = path,
+  force = false,
 } = {}) {
   const sessionPath = pathModule.join(sessionDir, copilotSessionId);
   let files;
@@ -216,6 +217,8 @@ function cleanStaleLocks(copilotSessionId, {
     if (!match) continue;
 
     const lockPid = parseInt(match[1], 10);
+    if (lockPid <= 0) continue;
+
     let alive = false;
     try {
       process.kill(lockPid, 0);
@@ -224,7 +227,24 @@ function cleanStaleLocks(copilotSessionId, {
       // Process not found — stale lock
     }
 
-    if (!alive) {
+    if (alive && force) {
+      try {
+        process.kill(lockPid);
+        // Wait for process to exit (max 3 seconds)
+        for (let i = 0; i < 30; i++) {
+          try {
+            process.kill(lockPid, 0);
+          } catch {
+            break;
+          }
+          Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 100);
+        }
+      } catch {
+        // Ignore kill errors
+      }
+    }
+
+    if (!alive || force) {
       try {
         fsModule.unlinkSync(pathModule.join(sessionPath, file));
         removed++;
