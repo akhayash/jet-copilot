@@ -4,7 +4,7 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 
-const { scanCopilotSessions, getSessionHistory, cleanStaleLocks } = require('../server/copilot-session-scanner');
+const { scanCopilotSessions, getSessionHistory, cleanStaleLocks, adoptSession } = require('../server/copilot-session-scanner');
 
 function createTempDir() {
   return fs.mkdtempSync(path.join(os.tmpdir(), 'jet-copilot-scan-'));
@@ -363,6 +363,71 @@ test('cleanStaleLocks returns 0 for non-existent session', () => {
   try {
     const removed = cleanStaleLocks('nonexistent', { sessionDir });
     assert.equal(removed, 0);
+  } finally {
+    fs.rmSync(sessionDir, { recursive: true, force: true });
+  }
+});
+
+// --- adoptSession ---
+
+test('adoptSession prepends session.start to events.jsonl', () => {
+  const sessionDir = createTempDir();
+  const id = 'adopt-test-1111-2222-3333-444444444444';
+  const dir = path.join(sessionDir, id);
+  fs.mkdirSync(dir, { recursive: true });
+
+  const events = [
+    JSON.stringify({ type: 'hook.start', data: { input: { cwd: 'C:\\Repos\\test' } }, id: 'evt-1', timestamp: '2026-03-27T10:00:00Z' }),
+    JSON.stringify({ type: 'user.message', data: { content: 'hello' }, id: 'evt-2', timestamp: '2026-03-27T10:01:00Z' }),
+    JSON.stringify({ type: 'session.context_changed', data: { cwd: 'C:\\Repos\\test', gitRoot: 'C:\\Repos\\test', branch: 'main', repository: 'user/test' }, id: 'evt-3', timestamp: '2026-03-27T10:02:00Z' }),
+  ];
+  fs.writeFileSync(path.join(dir, 'events.jsonl'), events.join('\n'));
+
+  try {
+    const result = adoptSession(id, { sessionDir });
+
+    assert.equal(result.adopted, true);
+    assert.ok(fs.existsSync(path.join(dir, 'events.jsonl.bak')));
+
+    const newContent = fs.readFileSync(path.join(dir, 'events.jsonl'), 'utf-8');
+    const firstLine = JSON.parse(newContent.split('\n')[0]);
+    assert.equal(firstLine.type, 'session.start');
+    assert.equal(firstLine.data.sessionId, id);
+    assert.equal(firstLine.data.version, 1);
+    assert.equal(firstLine.data.producer, 'copilot-agent');
+    assert.equal(firstLine.data.context.cwd, 'C:\\Repos\\test');
+    assert.equal(firstLine.data.context.branch, 'main');
+  } finally {
+    fs.rmSync(sessionDir, { recursive: true, force: true });
+  }
+});
+
+test('adoptSession returns alreadyAdopted for sessions with session.start', () => {
+  const sessionDir = createTempDir();
+  const id = 'already-ok-1111-2222-3333-444444444444';
+  const dir = path.join(sessionDir, id);
+  fs.mkdirSync(dir, { recursive: true });
+
+  const events = [
+    JSON.stringify({ type: 'session.start', data: { sessionId: id, version: 1, producer: 'copilot-agent', copilotVersion: '1.0.11', startTime: '2026-03-27T10:00:00Z' } }),
+    JSON.stringify({ type: 'user.message', data: { content: 'hello' } }),
+  ];
+  fs.writeFileSync(path.join(dir, 'events.jsonl'), events.join('\n'));
+
+  try {
+    const result = adoptSession(id, { sessionDir });
+
+    assert.equal(result.alreadyAdopted, true);
+    assert.equal(fs.existsSync(path.join(dir, 'events.jsonl.bak')), false);
+  } finally {
+    fs.rmSync(sessionDir, { recursive: true, force: true });
+  }
+});
+
+test('adoptSession throws for non-existent session', () => {
+  const sessionDir = createTempDir();
+  try {
+    assert.throws(() => adoptSession('nonexistent', { sessionDir }), { message: 'Session not found' });
   } finally {
     fs.rmSync(sessionDir, { recursive: true, force: true });
   }

@@ -11,7 +11,7 @@ const { SessionManager } = require('./session-manager');
 const { PreviewManager } = require('./preview-manager');
 const { WindowCapture } = require('./window-capture');
 const { startTunnel, getTunnelUrl } = require('./tunnel');
-const { scanCopilotSessions, getSessionHistory, getSessionMessageCount, cleanStaleLocks } = require('./copilot-session-scanner');
+const { scanCopilotSessions, getSessionHistory, getSessionMessageCount, cleanStaleLocks, adoptSession } = require('./copilot-session-scanner');
 const QRCode = require('qrcode');
 
 loadEnv();
@@ -158,6 +158,23 @@ function createApp({
       const history = getSessionHistoryFn(id, { maxTurns });
       res.json(history);
     } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.post('/api/copilot-sessions/:id/adopt', (req, res) => {
+    const { id } = req.params;
+    if (!UUID_RE.test(id)) return res.status(400).json({ error: 'Invalid session ID format' });
+    try {
+      cleanStaleLocks(id);
+      const result = adoptSession(id);
+      if (result.alreadyAdopted) {
+        return res.json({ status: 'already_resumable' });
+      }
+      console.log(`🔄 Adopted session ${id}`);
+      res.json({ status: 'adopted' });
+    } catch (err) {
+      console.error('[adopt]', err.message);
       res.status(500).json({ error: err.message });
     }
   });

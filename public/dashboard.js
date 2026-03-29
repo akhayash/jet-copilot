@@ -393,7 +393,7 @@ function renderCopilotSessions(sessions) {
           <div class="session-actions">
             ${s.resumable !== false
     ? `<button class="connect-btn" onclick="resumeCopilotSession('${AppUtils.escapeHtml(s.copilotSessionId)}', '${escapeJsString(s.cwd || '')}')">Resume <i data-lucide="arrow-right" class="icon-inline"></i></button>`
-    : '<span class="session-not-resumable">View only</span>'}
+    : `<button class="adopt-btn" onclick="adoptCopilotSession('${AppUtils.escapeHtml(s.copilotSessionId)}', '${escapeJsString(s.cwd || '')}')">Adopt <i data-lucide="download" class="icon-inline"></i></button>`}
           </div>
         </div>
       `;
@@ -419,6 +419,25 @@ async function resumeCopilotSession(copilotSessionId, cwd) {
     window.location.href = `/terminal?session=${id}`;
   } catch (err) {
     alert('Failed to resume session: ' + err.message);
+  }
+}
+
+async function adoptCopilotSession(copilotSessionId, cwd) {
+  try {
+    const res = await fetch(`/api/copilot-sessions/${encodeURIComponent(copilotSessionId)}/adopt`, {
+      method: 'POST',
+    });
+    if (!res.ok) {
+      const text = await res.text();
+      let msg;
+      try { msg = JSON.parse(text).error; } catch { msg = `Server error (${res.status})`; }
+      alert('Failed to adopt: ' + msg);
+      return;
+    }
+    await res.json();
+    resumeCopilotSession(copilotSessionId, cwd);
+  } catch (err) {
+    alert('Failed to adopt session: ' + err.message);
   }
 }
 

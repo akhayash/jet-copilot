@@ -236,4 +236,65 @@ function cleanStaleLocks(copilotSessionId, {
   return removed;
 }
 
-module.exports = { scanCopilotSessions, getSessionHistory, getSessionMessageCount, cleanStaleLocks, DEFAULT_SESSION_DIR };
+function adoptSession(copilotSessionId, {
+  sessionDir = DEFAULT_SESSION_DIR,
+  fsModule = fs,
+  pathModule = path,
+  copilotVersion = '1.0.11',
+} = {}) {
+  const sessionPath = pathModule.join(sessionDir, copilotSessionId);
+  const eventsPath = pathModule.join(sessionPath, 'events.jsonl');
+
+  if (!fsModule.existsSync(eventsPath)) {
+    throw new Error('Session not found');
+  }
+
+  const content = fsModule.readFileSync(eventsPath, 'utf-8');
+  const lines = content.split('\n').filter((l) => l.trim());
+  if (lines.length === 0) {
+    throw new Error('Session has no events');
+  }
+
+  // Check if already has session.start
+  const first = JSON.parse(lines[0]);
+  if (first.type === 'session.start') {
+    return { alreadyAdopted: true };
+  }
+
+  // Extract context from events
+  const meta = extractSessionMeta(content);
+  const context = {};
+  if (meta.cwd) context.cwd = meta.cwd;
+  if (meta.gitRoot) context.gitRoot = meta.gitRoot;
+  if (meta.branch) context.branch = meta.branch;
+  if (meta.repository) context.repository = meta.repository;
+  context.hostType = 'github';
+
+  const startEvent = {
+    type: 'session.start',
+    data: {
+      sessionId: copilotSessionId,
+      version: 1,
+      producer: 'copilot-agent',
+      copilotVersion,
+      startTime: meta.createdAt || first.timestamp || new Date().toISOString(),
+      selectedModel: 'claude-sonnet-4.6',
+      context: Object.keys(context).length > 0 ? context : undefined,
+    },
+    id: `adopted-${copilotSessionId.substring(0, 8)}`,
+    timestamp: meta.createdAt || first.timestamp || new Date().toISOString(),
+    parentId: null,
+  };
+
+  // Backup original
+  const backupPath = eventsPath + '.bak';
+  fsModule.copyFileSync(eventsPath, backupPath);
+
+  // Prepend session.start
+  const newContent = JSON.stringify(startEvent) + '\n' + content;
+  fsModule.writeFileSync(eventsPath, newContent);
+
+  return { adopted: true, backupPath };
+}
+
+module.exports = { scanCopilotSessions, getSessionHistory, getSessionMessageCount, cleanStaleLocks, adoptSession, DEFAULT_SESSION_DIR };
