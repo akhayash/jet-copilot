@@ -81,8 +81,8 @@ function createApp({
       return res.status(400).json({ error: 'Invalid copilotSessionId format' });
     }
     if (copilotSessionId) {
-      const removed = cleanStaleLocks(copilotSessionId);
-      if (removed) console.log(`🧹 Cleaned ${removed} stale lock(s) for session ${copilotSessionId}`);
+      const removed = cleanStaleLocks(copilotSessionId, { force: true });
+      if (removed) console.log(`🔄 Took over session ${copilotSessionId} (killed ${removed} existing process${removed > 1 ? 'es' : ''})`);
     }
     const session = sessions.create(cwd, { copilotSessionId });
     if (copilotSessionId) {
@@ -166,7 +166,7 @@ function createApp({
     const { id } = req.params;
     if (!UUID_RE.test(id)) return res.status(400).json({ error: 'Invalid session ID format' });
     try {
-      cleanStaleLocks(id);
+      cleanStaleLocks(id, { force: true });
       const result = adoptSession(id);
       if (result.alreadyAdopted) {
         return res.json({ status: 'already_resumable' });
