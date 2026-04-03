@@ -4,7 +4,7 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 
-const { scanCopilotSessions, getSessionHistory, cleanStaleLocks, adoptSession } = require('../server/copilot-session-scanner');
+const { scanCopilotSessions, getSessionHistory, cleanStaleLocks, adoptSession, detectCopilotVersion, resetCachedVersion } = require('../server/copilot-session-scanner');
 
 function createTempDir() {
   return fs.mkdtempSync(path.join(os.tmpdir(), 'jet-copilot-scan-'));
@@ -422,7 +422,7 @@ test('adoptSession prepends session.start to events.jsonl', () => {
   fs.writeFileSync(path.join(dir, 'events.jsonl'), events.join('\n'));
 
   try {
-    const result = adoptSession(id, { sessionDir });
+    const result = adoptSession(id, { sessionDir, copilotVersion: '1.0.16' });
 
     assert.equal(result.adopted, true);
     assert.ok(fs.existsSync(path.join(dir, 'events.jsonl.bak')));
@@ -433,8 +433,20 @@ test('adoptSession prepends session.start to events.jsonl', () => {
     assert.equal(firstLine.data.sessionId, id);
     assert.equal(firstLine.data.version, 1);
     assert.equal(firstLine.data.producer, 'copilot-agent');
+    assert.equal(firstLine.data.copilotVersion, '1.0.16');
     assert.equal(firstLine.data.context.cwd, 'C:\\Repos\\test');
     assert.equal(firstLine.data.context.branch, 'main');
+    // hostType should NOT be in context (removed per bKt schema)
+    assert.equal(firstLine.data.context.hostType, undefined);
+
+    // workspace.yaml should be generated
+    const wsPath = path.join(dir, 'workspace.yaml');
+    assert.ok(fs.existsSync(wsPath), 'workspace.yaml should exist');
+    const wsContent = fs.readFileSync(wsPath, 'utf-8');
+    assert.match(wsContent, /^id: adopt-test-1111-2222-3333-444444444444$/m);
+    assert.match(wsContent, /^cwd: C:\\Repos\\test$/m);
+    assert.match(wsContent, /^branch: main$/m);
+    assert.match(wsContent, /^summary_count: 0$/m);
   } finally {
     fs.rmSync(sessionDir, { recursive: true, force: true });
   }
@@ -466,6 +478,82 @@ test('adoptSession throws for non-existent session', () => {
   const sessionDir = createTempDir();
   try {
     assert.throws(() => adoptSession('nonexistent', { sessionDir }), { message: 'Session not found' });
+  } finally {
+    fs.rmSync(sessionDir, { recursive: true, force: true });
+  }
+});
+
+test('adoptSession does not overwrite existing workspace.yaml', () => {
+  const sessionDir = createTempDir();
+  const id = 'ws-exist-1111-2222-3333-444444444444';
+  const dir = path.join(sessionDir, id);
+  fs.mkdirSync(dir, { recursive: true });
+
+  const events = [
+    JSON.stringify({ type: 'hook.start', data: { input: { cwd: '/test' } }, id: 'e1', timestamp: '2026-01-01T00:00:00Z' }),
+    JSON.stringify({ type: 'user.message', data: { content: 'hi' }, id: 'e2', timestamp: '2026-01-01T00:01:00Z' }),
+  ];
+  fs.writeFileSync(path.join(dir, 'events.jsonl'), events.join('\n'));
+  fs.writeFileSync(path.join(dir, 'workspace.yaml'), 'id: original\n');
+
+  try {
+    adoptSession(id, { sessionDir, copilotVersion: '1.0.16' });
+    const wsContent = fs.readFileSync(path.join(dir, 'workspace.yaml'), 'utf-8');
+    assert.equal(wsContent, 'id: original\n');
+  } finally {
+    fs.rmSync(sessionDir, { recursive: true, force: true });
+  }
+});
+
+test('detectCopilotVersion parses version from execSync output', () => {
+  resetCachedVersion();
+  try {
+    const version = detectCopilotVersion({
+      execSyncFn: () => 'GitHub Copilot CLI 1.0.16\nRun \'copilot update\' to check for updates.\n',
+    });
+    assert.equal(version, '1.0.16');
+  } finally {
+    resetCachedVersion();
+  }
+});
+
+test('detectCopilotVersion returns unknown on failure', () => {
+  resetCachedVersion();
+  try {
+    const version = detectCopilotVersion({
+      execSyncFn: () => { throw new Error('not found'); },
+    });
+    assert.equal(version, 'unknown');
+  } finally {
+    resetCachedVersion();
+  }
+});
+
+test('scanCopilotSessions marks hook-only sessions', () => {
+  const sessionDir = createTempDir();
+  const hookOnlyId = 'hookonly-1111-2222-3333-444444444444';
+  const normalId = 'normal0-1111-2222-3333-444444444444';
+
+  const hookDir = path.join(sessionDir, hookOnlyId);
+  fs.mkdirSync(hookDir, { recursive: true });
+  fs.writeFileSync(path.join(hookDir, 'events.jsonl'), [
+    JSON.stringify({ type: 'hook.start', data: { input: { cwd: '/test' } } }),
+    JSON.stringify({ type: 'user.message', data: { content: 'hi' } }),
+  ].join('\n'));
+
+  writeSession(sessionDir, normalId, { cwd: '/test' });
+
+  try {
+    const results = scanCopilotSessions(null, { sessionDir });
+    const hookSession = results.find((s) => s.copilotSessionId === hookOnlyId);
+    const normalSession = results.find((s) => s.copilotSessionId === normalId);
+
+    assert.ok(hookSession, 'hook-only session should be in results');
+    assert.equal(hookSession.hookOnly, true);
+    assert.equal(hookSession.resumable, false);
+
+    assert.ok(normalSession, 'normal session should be in results');
+    assert.equal(normalSession.hookOnly, false);
   } finally {
     fs.rmSync(sessionDir, { recursive: true, force: true });
   }
