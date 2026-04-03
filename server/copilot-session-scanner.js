@@ -146,7 +146,8 @@ function scanCopilotSessions(cwd, {
     const repoName = repoRoot ? resolveFolderName(repoRoot, pathModule) : null;
 
     const workspacePath = pathModule.join(sessionDir, entry.name, 'workspace.yaml');
-    const resumable = fsModule.existsSync(workspacePath);
+    const hasWorkspace = fsModule.existsSync(workspacePath);
+    const resumable = meta.hasSessionEvent;
 
     results.push({
       copilotSessionId: entry.name,
@@ -159,7 +160,7 @@ function scanCopilotSessions(cwd, {
       updatedAt: eventsMtime || meta.createdAt,
       messageCount: meta.messageCount,
       resumable,
-      hookOnly: !meta.hasSessionEvent && !resumable,
+      hookOnly: !meta.hasSessionEvent && !hasWorkspace,
       folderName,
       repoName,
       repoRoot,

@@ -558,3 +558,26 @@ test('scanCopilotSessions marks hook-only sessions', () => {
     fs.rmSync(sessionDir, { recursive: true, force: true });
   }
 });
+
+test('scanCopilotSessions marks sessions with workspace but no session.start as non-resumable', () => {
+  const sessionDir = createTempDir();
+  const id = 'broken0-1111-2222-3333-444444444444';
+  const dir = path.join(sessionDir, id);
+  fs.mkdirSync(dir, { recursive: true });
+
+  fs.writeFileSync(path.join(dir, 'workspace.yaml'), 'id: test\ncwd: /test\n');
+  fs.writeFileSync(path.join(dir, 'events.jsonl'), [
+    JSON.stringify({ type: 'user.message', data: { content: 'hi' } }),
+  ].join('\n'));
+
+  try {
+    const results = scanCopilotSessions(null, { sessionDir });
+    const session = results.find((s) => s.copilotSessionId === id);
+
+    assert.ok(session, 'broken session should be found');
+    assert.equal(session.resumable, false);
+    assert.equal(session.hookOnly, false);
+  } finally {
+    fs.rmSync(sessionDir, { recursive: true, force: true });
+  }
+});
