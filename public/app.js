@@ -341,7 +341,7 @@ function connect() {
       _pendingReplay = msg.content;
     } else if (msg.type === 'error') {
       console.warn('[server]', msg.content);
-    } else if (msg.type === 'exit' && msg.exitCode !== 0) {
+    } else if (msg.type === 'exit' && msg.exitCode != null && msg.exitCode !== 0) {
       showRestartOverlay(msg.exitCode);
     }
   };
