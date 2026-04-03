@@ -341,6 +341,8 @@ function connect() {
       _pendingReplay = msg.content;
     } else if (msg.type === 'error') {
       console.warn('[server]', msg.content);
+    } else if (msg.type === 'exit' && msg.exitCode !== 0) {
+      showRestartOverlay(msg.exitCode);
     }
   };
 
@@ -748,11 +750,35 @@ function hardReset() {
   if (!ws || ws.readyState !== WebSocket.OPEN) return;
   if (!confirm('Restart Copilot CLI?')) return;
   ws.send(JSON.stringify({ type: 'restart' }));
+  hideRestartOverlay();
   if (term) {
     term.reset();
     term.write('Restarting Copilot CLI...\r\n');
     term.focus();
   }
+}
+
+function showRestartOverlay(exitCode) {
+  let overlay = document.getElementById('restart-overlay');
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.id = 'restart-overlay';
+    overlay.innerHTML = `
+      <div class="restart-overlay-content">
+        <span id="restart-overlay-msg"></span>
+        <button onclick="hardReset()">Restart</button>
+        <button onclick="hideRestartOverlay()" class="restart-dismiss">Dismiss</button>
+      </div>`;
+    document.body.appendChild(overlay);
+  }
+  document.getElementById('restart-overlay-msg').textContent =
+    `Copilot exited with code ${exitCode}`;
+  overlay.classList.add('visible');
+}
+
+function hideRestartOverlay() {
+  const overlay = document.getElementById('restart-overlay');
+  if (overlay) overlay.classList.remove('visible');
 }
 
 // Window capture

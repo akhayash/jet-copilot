@@ -1,9 +1,31 @@
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
+const { execSync } = require('child_process');
 const { getSessionContext, resolveFolderName } = require('./session-context');
 
 const DEFAULT_SESSION_DIR = path.join(os.homedir(), '.copilot', 'session-state');
+
+let _cachedCopilotVersion = null;
+
+function detectCopilotVersion({ execSyncFn = execSync } = {}) {
+  if (_cachedCopilotVersion) return _cachedCopilotVersion;
+  try {
+    const output = execSyncFn('copilot --version', { encoding: 'utf-8', timeout: 5000 });
+    const match = output.match(/(\d+\.\d+\.\d+)/);
+    if (match) {
+      _cachedCopilotVersion = match[1];
+      return _cachedCopilotVersion;
+    }
+  } catch {
+    // Fall through
+  }
+  return 'unknown';
+}
+
+function resetCachedVersion() {
+  _cachedCopilotVersion = null;
+}
 
 // Extract session metadata from events.jsonl (the sole data source)
 function extractSessionMeta(eventsContent) {
@@ -14,6 +36,7 @@ function extractSessionMeta(eventsContent) {
   let summary = null;
   let createdAt = null;
   let contextFound = false;
+  let hasSessionEvent = false;
 
   // Fast message count via string matching (avoids JSON.parse per line)
   const messageCount = (eventsContent.match(/"user\.message"/g) || []).length;
@@ -36,6 +59,7 @@ function extractSessionMeta(eventsContent) {
       const d = event.data;
 
       if (event.type === 'session.start' || event.type === 'session.resume') {
+        hasSessionEvent = true;
         createdAt = createdAt || d?.startTime || d?.resumeTime;
         const ctx = d?.context;
         if (ctx) {
@@ -66,7 +90,7 @@ function extractSessionMeta(eventsContent) {
 
   if (!cwd) cwd = hookCwd;
 
-  return { cwd, gitRoot, repository, branch, summary, createdAt, messageCount };
+  return { cwd, gitRoot, repository, branch, summary, createdAt, messageCount, hasSessionEvent };
 }
 
 function scanCopilotSessions(cwd, {
@@ -135,6 +159,7 @@ function scanCopilotSessions(cwd, {
       updatedAt: eventsMtime || meta.createdAt,
       messageCount: meta.messageCount,
       resumable,
+      hookOnly: !meta.hasSessionEvent && !resumable,
       folderName,
       repoName,
       repoRoot,
@@ -260,7 +285,8 @@ function adoptSession(copilotSessionId, {
   sessionDir = DEFAULT_SESSION_DIR,
   fsModule = fs,
   pathModule = path,
-  copilotVersion = '1.0.11',
+  copilotVersion,
+  execSyncFn = execSync,
 } = {}) {
   const sessionPath = pathModule.join(sessionDir, copilotSessionId);
   const eventsPath = pathModule.join(sessionPath, 'events.jsonl');
@@ -281,6 +307,8 @@ function adoptSession(copilotSessionId, {
     return { alreadyAdopted: true };
   }
 
+  const resolvedVersion = copilotVersion || detectCopilotVersion({ execSyncFn });
+
   // Extract context from events
   const meta = extractSessionMeta(content);
   const context = {};
@@ -288,7 +316,8 @@ function adoptSession(copilotSessionId, {
   if (meta.gitRoot) context.gitRoot = meta.gitRoot;
   if (meta.branch) context.branch = meta.branch;
   if (meta.repository) context.repository = meta.repository;
-  context.hostType = 'github';
+
+  const startTime = meta.createdAt || first.timestamp || new Date().toISOString();
 
   const startEvent = {
     type: 'session.start',
@@ -296,13 +325,13 @@ function adoptSession(copilotSessionId, {
       sessionId: copilotSessionId,
       version: 1,
       producer: 'copilot-agent',
-      copilotVersion,
-      startTime: meta.createdAt || first.timestamp || new Date().toISOString(),
+      copilotVersion: resolvedVersion,
+      startTime,
       selectedModel: 'claude-sonnet-4.6',
       context: Object.keys(context).length > 0 ? context : undefined,
     },
     id: `adopted-${copilotSessionId.substring(0, 8)}`,
-    timestamp: meta.createdAt || first.timestamp || new Date().toISOString(),
+    timestamp: startTime,
     parentId: null,
   };
 
@@ -314,7 +343,25 @@ function adoptSession(copilotSessionId, {
   const newContent = JSON.stringify(startEvent) + '\n' + content;
   fsModule.writeFileSync(eventsPath, newContent);
 
+  // Generate workspace.yaml so the session becomes resumable
+  const workspacePath = pathModule.join(sessionPath, 'workspace.yaml');
+  if (!fsModule.existsSync(workspacePath)) {
+    const now = new Date().toISOString();
+    const wsLines = [
+      `id: ${copilotSessionId}`,
+    ];
+    if (meta.cwd) wsLines.push(`cwd: ${meta.cwd}`);
+    if (meta.gitRoot) wsLines.push(`git_root: ${meta.gitRoot}`);
+    if (meta.repository) wsLines.push(`repository: ${meta.repository}`);
+    if (meta.branch) wsLines.push(`branch: ${meta.branch}`);
+    if (meta.summary) wsLines.push(`summary: ${meta.summary}`);
+    wsLines.push(`summary_count: 0`);
+    wsLines.push(`created_at: ${startTime}`);
+    wsLines.push(`updated_at: ${now}`);
+    fsModule.writeFileSync(workspacePath, wsLines.join('\n') + '\n');
+  }
+
   return { adopted: true, backupPath };
 }
 
-module.exports = { scanCopilotSessions, getSessionHistory, getSessionMessageCount, cleanStaleLocks, adoptSession, DEFAULT_SESSION_DIR };
+module.exports = { scanCopilotSessions, getSessionHistory, getSessionMessageCount, cleanStaleLocks, adoptSession, detectCopilotVersion, resetCachedVersion, DEFAULT_SESSION_DIR };

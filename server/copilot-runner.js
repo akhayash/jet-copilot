@@ -4,6 +4,7 @@ class CopilotRunner {
   constructor(onData, ptyModule = pty) {
     this._pty = null;
     this._onData = onData;
+    this._onExit = null;
     this._ptyModule = ptyModule;
   }
 
@@ -26,12 +27,19 @@ class CopilotRunner {
       }
     });
 
-    this._pty.onExit(({ exitCode }) => {
+    this._pty.onExit(({ exitCode, signal }) => {
       if (this._onData) {
         this._onData(`\r\n[Copilot exited with code ${exitCode}]\r\n`);
       }
+      if (this._onExit) {
+        this._onExit({ exitCode, signal });
+      }
       this._pty = null;
     });
+  }
+
+  set onExit(handler) {
+    this._onExit = handler;
   }
 
   write(input) {

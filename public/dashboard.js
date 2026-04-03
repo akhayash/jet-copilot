@@ -393,7 +393,9 @@ function renderCopilotSessions(sessions) {
           <div class="session-actions">
             ${s.resumable !== false
     ? `<button class="connect-btn" onclick="resumeCopilotSession('${AppUtils.escapeHtml(s.copilotSessionId)}', '${escapeJsString(s.cwd || '')}')">Resume <i data-lucide="arrow-right" class="icon-inline"></i></button>`
-    : `<button class="adopt-btn" onclick="adoptCopilotSession('${AppUtils.escapeHtml(s.copilotSessionId)}', '${escapeJsString(s.cwd || '')}')">Adopt <i data-lucide="download" class="icon-inline"></i></button>`}
+    : s.hookOnly
+      ? `<span class="session-hook-only">Hook only</span>`
+      : `<button class="adopt-btn" onclick="adoptCopilotSession('${AppUtils.escapeHtml(s.copilotSessionId)}', '${escapeJsString(s.cwd || '')}')">Adopt <i data-lucide="download" class="icon-inline"></i></button>`}
           </div>
         </div>
       `;

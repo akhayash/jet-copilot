@@ -373,6 +373,13 @@ function attachWebSocketServer(wss, {
           }
         }
       });
+      session.runner.onExit = ({ exitCode, signal }) => {
+        for (const client of session.clients) {
+          if (client.readyState === 1) {
+            client.send(JSON.stringify({ type: 'exit', exitCode, signal }));
+          }
+        }
+      };
       session.runner.start(session.cwd, { args: resumeArgs });
     }
 
