@@ -547,6 +547,14 @@ header h1 { font-size: 1.1rem; flex: 1; }
   margin-bottom: 8px;
 }
 
+.session-meta {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
 .session-msg-count {
   font-size: 11px;
   color: var(--text-muted);
@@ -555,7 +563,6 @@ header h1 { font-size: 1.1rem; flex: 1; }
 .session-time-inline {
   font-size: 11px;
   color: var(--text-muted);
-  margin-left: auto;
 }
 
 .session-not-resumable {
