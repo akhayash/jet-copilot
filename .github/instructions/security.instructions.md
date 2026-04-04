@@ -3,7 +3,7 @@
 ## Input Validation
 
 ### Path Traversal
-- `copilotSessionId` は UUID 形式のみ許可: `UUID_RE = /^[0-9a-f]{8}-...$/i`
+- `copilotSessionId` は UUID 形式のみ許可: `UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i`
 - ファイルパスは `isPathSafe()` で検証（null byte、システムディレクトリ拒否）
 - `path.resolve()` で正規化してからチェック
 
@@ -15,7 +15,21 @@
 ### Request Validation
 - 必須パラメータの早期チェック → `400 { error }`
 - リソース存在確認 → `404 { error }`
-- ファイルアップロードサイズ制限: 10MB（multer）
+
+### Path & File Upload Security
+
+```js
+// server/index.js — isPathSafe(): null byte + システムディレクトリ拒否
+function isPathSafe(resolved) {
+  if (resolved.includes('\0')) return false;
+  const blocked = ['/etc', '/proc', '/sys', '/dev', 'C:\\Windows\\System32'];
+  return !blocked.some(b => resolved.toLowerCase().startsWith(b.toLowerCase()));
+}
+```
+
+- ファイルアップロードサイズ制限: 10MB（`multer`, `server/index.js`）
+- 画像アップロード拡張子制限: `.png`, `.jpg`, `.jpeg`, `.gif`, `.webp` のみ
+- `path.resolve()` で正規化 → `isPathSafe()` で検証 → 操作実行
 
 ## 認証・アクセス制御
 

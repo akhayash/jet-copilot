@@ -40,7 +40,7 @@ JSON messages with `type` field:
 
 ## Logging
 
-Use `server/logger.js` for structured JSON logs:
+Use the logger module (`./logger`) for structured JSON logs:
 
 ```js
 const log = require('./logger');

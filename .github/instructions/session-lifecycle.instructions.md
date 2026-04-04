@@ -71,6 +71,17 @@ hookOnly  = !hasSessionEvent && !hasWorkspace
 - `resumable: false, hookOnly: false` → Adopt button
 - `hookOnly: true` → "Hook only" label
 
+### Hook-Only Sessions
+
+Git hook 経由で Copilot CLI が実行された場合、`session.start` が発行されず `hook.start` のみ記録される。
+workspace.yaml も生成されない。
+
+特徴:
+- events.jsonl の先頭が `hook.start` または `user.message`（`session.start` なし）
+- cwd は `hook.start` の `input.cwd` から取得（フォールバック）
+- resume 不可（Copilot CLI が `"First event must be session.start"` で拒否）
+- 会話内容がある場合は Adopt で resumable に変換可能
+
 ## Lock Management: cleanStaleLocks()
 
 Removes orphaned `inuse.{pid}.lock` files.
