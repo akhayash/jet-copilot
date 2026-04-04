@@ -10,6 +10,7 @@ description: Add a new server-side manager class to jet-copilot. Use when asked 
 ```js
 const fs = require('fs');
 const path = require('path');
+const log = require('./logger');
 
 class NewFeature {
   constructor({

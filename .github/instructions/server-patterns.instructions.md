@@ -15,7 +15,7 @@ All classes accept a **single options object** with named dependencies defaultin
 1. Validate input → `return res.status(400).json({ error })` (early return)
 2. Check resource → `return res.status(404).json({ error })` (early return)
 3. Try-catch → `res.json(result)` / `res.status(500).json({ error })`
-4. Log errors → `console.error('[tag]', err.message)`
+4. Log errors → `log.error('tag', 'message', { error: err.message })`
 
 See `add-api-endpoint` skill for full template.
 
@@ -36,3 +36,20 @@ JSON messages with `type` field:
 | Server → Client | `output` | `{ content }` |
 | Server → Client | `replay` | `{ content }` |
 | Server → Client | `error` | `{ content }` |
+| Server → Client | `exit` | `{ exitCode, signal }` |
+
+## Logging
+
+Use `server/logger.js` for structured JSON logs:
+
+```js
+const log = require('./logger');
+
+log.info('tag', 'message', { key: 'value' });   // stdout
+log.error('tag', 'failed', { error: err.message }); // stderr
+log.debug('tag', 'detail');  // only when LOG_LEVEL=debug
+```
+
+- `LOG_LEVEL` env var: `debug` | `info` (default) | `warn` | `error`
+- User-facing output (tunnel QR, startup banner): use `console.log` with emoji
+- Debug/error paths: use `log.info()` / `log.error()`

@@ -16,7 +16,7 @@ app.post('/api/newfeature', (req, res) => {
     const result = doSomething(value);
     res.json(result);
   } catch (err) {
-    console.error('[newfeature] error:', err.message);
+    log.error('newfeature', 'failed', { error: err.message });
     res.status(500).json({ error: err.message });
   }
 });
@@ -58,6 +58,6 @@ test('newfeature API description', async () => {
 - Validate input first → 400
 - Check resource existence → 404
 - Wrap logic in try/catch → 500
-- Log errors with `console.error('[tag]', err.message)`
+- Log errors with `log.error('tag', 'message', { error: err.message })`
 - Success: return data directly (`res.json({...})`)
 - Error: always `{ error: string }`

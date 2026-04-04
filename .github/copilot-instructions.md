@@ -7,6 +7,32 @@
 - **プッシュは OK** — feature branch へのプッシュは自由に行ってよい
 - **リリース時は origin と ms 両方にプッシュ** — `git push origin main --tags && git push ms main --tags`
 
+### Branch & Commit 規約
+
+- Branch 命名: `feat/機能名`, `fix/修正名`, `docs/説明`, `chore/作業名`
+- Commit メッセージ: `feat:`, `fix:`, `docs:`, `chore:`, `refactor:` prefix
+- Co-authored-by trailer 必須: `Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>`
+- マージ: `git merge branch --no-ff -m "Merge ..."`
+
+### PR の流れ
+
+```bash
+git checkout -b feat/my-feature        # 1. branch 作成
+# ... 変更 ...
+npm test && npm run lint               # 2. テスト & lint
+git add -A && git commit -m "feat: ..." # 3. コミット
+git push origin feat/my-feature        # 4. プッシュ
+# 5. ユーザーにレビュー依頼 → 承認後マージ
+```
+
+### リリース手順
+
+`release` skill を参照。概要:
+1. `npm test && npm run lint`
+2. `npm version minor --no-git-tag-version`
+3. `git commit` + `git tag vX.Y.Z`
+4. `git push origin main --tags && git push ms main --tags`
+
 ## Build & Test
 
 ```bash
@@ -44,6 +70,7 @@ Browser ── HTTPS ── Dev Tunnels ── Node.js server (Express + WS)
 | `server/preview-manager.js` | Ephemeral devtunnel per port |
 | `server/tunnel.js` | Dev Tunnel auto-start + QR code display |
 | `server/copilot-session-scanner.js` | Scan Copilot CLI session history |
+| `server/session-context.js` | Repo root detection for session context |
 | `server/logger.js` | Structured JSON logger (LOG_LEVEL control) |
 | `server/window-capture.js` | Cross-platform window capture (node-screenshots) |
 | `server/load-env.js` | .env loading (cwd priority) |
@@ -61,12 +88,18 @@ Browser ── HTTPS ── Dev Tunnels ── Node.js server (Express + WS)
 | POST | `/api/update` | Self-update (git pull → restart) |
 | GET/POST/DELETE | `/api/sessions[/:id]` | Session CRUD |
 | GET | `/api/browse` | File browser |
+| POST | `/api/mkdir` | Create directory |
 | POST | `/api/upload` | Image upload |
 | GET/POST/DELETE | `/api/preview[/:port]` | Preview tunnel management |
 | GET | `/api/windows` | List server windows |
 | POST | `/api/capture` | Capture window screenshot |
 | GET | `/api/captures/:filename` | Serve captured PNG |
 | GET | `/api/copilot-sessions` | List Copilot CLI sessions for cwd |
+| GET | `/api/copilot-sessions/:id/history` | Session conversation history |
+| POST | `/api/copilot-sessions/:id/adopt` | Adopt non-resumable session |
+| GET | `/api/tunnel` | Current tunnel URL |
+| GET | `/api/qrcode` | QR code SVG for URL |
+| GET | `/health` | Health check |
 
 ## Core Conventions
 
