@@ -514,23 +514,33 @@ header h1 { font-size: 1.1rem; flex: 1; }
   align-items: center;
   gap: 8px;
   margin-bottom: 4px;
+  min-width: 0;
 }
 
 .session-id {
   font-weight: 600;
   font-size: 15px;
+  flex-shrink: 0;
 }
 
 .session-display-name {
   font-weight: 600;
   font-size: 15px;
   color: var(--accent);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
 }
 
 .session-folder-name {
   font-size: 13px;
   color: var(--text-muted);
   font-family: 'SF Mono', 'Fira Code', monospace;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
 }
 
 .client-badge {
@@ -539,6 +549,8 @@ header h1 { font-size: 1.1rem; flex: 1; }
   color: var(--accent);
   padding: 2px 8px;
   border-radius: 10px;
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .session-time {
@@ -551,18 +563,23 @@ header h1 { font-size: 1.1rem; flex: 1; }
   margin-left: auto;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   flex-shrink: 0;
 }
 
 .session-msg-count {
   font-size: 11px;
-  color: var(--text-muted);
+  color: var(--accent);
+  background: rgba(88, 166, 255, 0.1);
+  padding: 2px 8px;
+  border-radius: 10px;
+  white-space: nowrap;
 }
 
 .session-time-inline {
   font-size: 11px;
   color: var(--text-muted);
+  white-space: nowrap;
 }
 
 .session-not-resumable {
@@ -659,6 +676,12 @@ header h1 { font-size: 1.1rem; flex: 1; }
   padding: 2px 8px;
   border-radius: 10px;
   font-family: 'SF Mono', 'Fira Code', monospace;
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex-shrink: 1;
+  min-width: 0;
 }
 
 .session-group-header {
