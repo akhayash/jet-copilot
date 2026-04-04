@@ -44,6 +44,7 @@ Browser ── HTTPS ── Dev Tunnels ── Node.js server (Express + WS)
 | `server/preview-manager.js` | Ephemeral devtunnel per port |
 | `server/tunnel.js` | Dev Tunnel auto-start + QR code display |
 | `server/copilot-session-scanner.js` | Scan Copilot CLI session history |
+| `server/logger.js` | Structured JSON logger (LOG_LEVEL control) |
 | `server/window-capture.js` | Cross-platform window capture (node-screenshots) |
 | `server/load-env.js` | .env loading (cwd priority) |
 | `bin/jet-copilot.js` | Restart wrapper (exit code 100 → re-fork) |
@@ -75,7 +76,7 @@ Browser ── HTTPS ── Dev Tunnels ── Node.js server (Express + WS)
 - **Early return** for validation/error in route handlers
 - **Error responses** always use `{ error: string }`
 - **Naming**: files `kebab-case.js`, classes `PascalCase`, vars `camelCase`, private `_camelCase`, constants `SCREAMING_SNAKE`
-- **Logging**: `console.log` with emoji, `console.error` with `[tag]` prefix
+- **Logging**: `server/logger.js` for structured JSON logs (`log.info(tag, msg, meta)`). `LOG_LEVEL` env var controls output (debug/info/warn/error, default: info). User-facing console output (tunnel QR, startup banner) uses `console.log` with emoji
 - **Comments**: minimal, only explain "why"
 - **Frontend**: vanilla JS, no framework, `innerHTML` with `escapeHtml()` for user data
 

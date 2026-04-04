@@ -1,4 +1,5 @@
 const pty = require('node-pty');
+const log = require('./logger');
 
 class CopilotRunner {
   constructor(onData, ptyModule = pty) {
@@ -12,12 +13,15 @@ class CopilotRunner {
     const isWindows = process.platform === 'win32';
     const file = isWindows ? 'cmd.exe' : 'copilot';
     const baseArgs = isWindows ? ['/c', 'copilot', ...args] : [...args];
+    const resolvedCwd = cwd || process.cwd();
+
+    log.info('pty', 'spawn', { file, args: baseArgs, cwd: resolvedCwd });
 
     this._pty = this._ptyModule.spawn(file, baseArgs, {
       name: 'xterm-256color',
       cols: 80,
       rows: 24,
-      cwd: cwd || process.cwd(),
+      cwd: resolvedCwd,
       env: { ...process.env },
     });
 
@@ -28,6 +32,7 @@ class CopilotRunner {
     });
 
     this._pty.onExit(({ exitCode, signal }) => {
+      log.info('pty', 'exit', { exitCode, signal });
       if (this._onData) {
         this._onData(`\r\n[Copilot exited with code ${exitCode}]\r\n`);
       }
@@ -55,6 +60,7 @@ class CopilotRunner {
   }
 
   restart(cwd, { args = [] } = {}) {
+    log.info('pty', 'restart');
     if (this._pty) {
       this._pty.kill();
       this._pty = null;
@@ -64,6 +70,7 @@ class CopilotRunner {
 
   cleanup() {
     if (this._pty) {
+      log.info('pty', 'cleanup');
       this._pty.kill();
       this._pty = null;
     }
