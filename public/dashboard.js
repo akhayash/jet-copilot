@@ -374,7 +374,7 @@ function renderCopilotSessions(sessions) {
         ? `<div class="session-summary">${AppUtils.escapeHtml(s.summary)}</div>`
         : '';
       const branch = s.branch
-        ? `<span class="branch-badge">${AppUtils.escapeHtml(s.branch)}</span>`
+        ? `<span class="branch-badge" title="${AppUtils.escapeHtml(s.branch)}">${AppUtils.escapeHtml(s.branch)}</span>`
         : '';
       const cwdLabel = renderSessionCwd(s);
       const filterText = [s.copilotSessionId.substring(0, 8), groupName, s.folderName, s.branch, s.summary, s.cwd].filter(Boolean).join(' ').toLowerCase();
