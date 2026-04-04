@@ -1,5 +1,5 @@
 const _openGroups = new Set();
-let _sortOrder = 'time';
+let _sortOrder = 'messages';
 let _cachedSessions = [];
 
 function setSortOrder(order) {
@@ -133,8 +133,7 @@ function renderSessions(sectionId, containerId, sessions, showConnect) {
           <span class="session-id">${statusIcon} #${s.id}</span>
           ${nameLabels}
           ${clients}
-          ${msgCount}
-          <span class="session-time-inline">${time}${endTime}</span>
+          <span class="session-meta">${msgCount}<span class="session-time-inline">${time}${endTime}</span></span>
         </div>
         ${cwdLabel}
         ${connectBtn}
@@ -385,8 +384,7 @@ function renderCopilotSessions(sessions) {
           <div class="session-info">
             <span class="session-id"><i data-lucide="message-square" class="icon-inline"></i> ${AppUtils.escapeHtml(s.copilotSessionId.substring(0, 8))}</span>
             ${branch}
-            <span class="session-msg-count">${s.messageCount || 0} turns</span>
-            <span class="session-time-inline">${time}</span>
+            <span class="session-meta"><span class="session-msg-count">${s.messageCount || 0} turns</span><span class="session-time-inline">${time}</span></span>
           </div>
           ${cwdLabel}
           ${summary}
