@@ -3,6 +3,7 @@ const path = require('path');
 const os = require('os');
 const { execSync } = require('child_process');
 const { getSessionContext, resolveFolderName } = require('./session-context');
+const log = require('./logger');
 
 const DEFAULT_SESSION_DIR = path.join(os.homedir(), '.copilot', 'session-state');
 
@@ -17,8 +18,8 @@ function detectCopilotVersion({ execSyncFn = execSync } = {}) {
       _cachedCopilotVersion = match[1];
       return _cachedCopilotVersion;
     }
-  } catch {
-    // Fall through
+  } catch (err) {
+    log.debug('scanner', 'copilot version detection failed', { error: err.message });
   }
   return 'unknown';
 }
@@ -256,7 +257,6 @@ function cleanStaleLocks(copilotSessionId, {
     if (alive && force) {
       try {
         process.kill(lockPid);
-        // Wait for process to exit (max 3 seconds)
         for (let i = 0; i < 30; i++) {
           try {
             process.kill(lockPid, 0);
@@ -265,8 +265,8 @@ function cleanStaleLocks(copilotSessionId, {
           }
           Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 100);
         }
-      } catch {
-        // Ignore kill errors
+      } catch (err) {
+        log.warn('locks', 'failed to kill process', { pid: lockPid, error: err.message });
       }
     }
 
@@ -274,8 +274,8 @@ function cleanStaleLocks(copilotSessionId, {
       try {
         fsModule.unlinkSync(pathModule.join(sessionPath, file));
         removed++;
-      } catch {
-        // Ignore cleanup errors
+      } catch (err) {
+        log.warn('locks', 'failed to remove lock file', { file, error: err.message });
       }
     }
   }

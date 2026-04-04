@@ -13,6 +13,7 @@ const { WindowCapture } = require('./window-capture');
 const { startTunnel, getTunnelUrl } = require('./tunnel');
 const { scanCopilotSessions, getSessionHistory, getSessionMessageCount, cleanStaleLocks, adoptSession } = require('./copilot-session-scanner');
 const QRCode = require('qrcode');
+const log = require('./logger');
 
 loadEnv();
 
@@ -82,12 +83,13 @@ function createApp({
     }
     if (copilotSessionId) {
       const removed = cleanStaleLocks(copilotSessionId, { force: true });
-      if (removed) console.log(`🔄 Took over session ${copilotSessionId} (killed ${removed} existing process${removed > 1 ? 'es' : ''})`);
+      if (removed) log.info('session', 'took over', { copilotSessionId, killed: removed });
     }
     const session = sessions.create(cwd, { copilotSessionId });
     if (copilotSessionId) {
       session.messageCount = getSessionMessageCount(copilotSessionId);
     }
+    log.info('session', 'created', { id: session.id, copilotSessionId: session.copilotSessionId, cwd: session.cwd });
     res.json({ id: session.id, copilotSessionId: session.copilotSessionId });
   });
 
@@ -137,6 +139,7 @@ function createApp({
     const session = sessions.get(req.params.id);
     if (!session) return res.status(404).json({ error: 'Session not found' });
     sessions.end(req.params.id);
+    log.info('session', 'ended', { id: req.params.id });
     res.json({ ok: true });
   });
 
@@ -171,10 +174,10 @@ function createApp({
       if (result.alreadyAdopted) {
         return res.json({ status: 'already_resumable' });
       }
-      console.log(`🔄 Adopted session ${id}`);
+      log.info('adopt', 'session adopted', { id });
       res.json({ status: 'adopted' });
     } catch (err) {
-      console.error('[adopt]', err.message);
+      log.error('adopt', 'failed', { id, error: err.message });
       res.status(500).json({ error: err.message });
     }
   });
@@ -351,6 +354,7 @@ function attachWebSocketServer(wss, {
     }
 
     sessions.addClient(sessionId, ws);
+    log.info('ws', 'client connected', { sessionId, clients: session.clients.size });
 
     // Replay buffered output to newly connected client
     const buffer = sessions.getOutputBuffer(sessionId);
@@ -404,6 +408,7 @@ function attachWebSocketServer(wss, {
 
     ws.on('close', () => {
       sessions.removeClient(sessionId, ws);
+      log.info('ws', 'client disconnected', { sessionId, clients: session.clients.size });
     });
   });
 }

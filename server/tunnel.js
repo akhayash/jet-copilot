@@ -1,5 +1,6 @@
 const { spawn, execFileSync } = require('child_process');
 const qrcode = require('qrcode-terminal');
+const log = require('./logger');
 
 const TUNNEL_ID_PATTERN = /^[a-zA-Z0-9-]+$/;
 
@@ -28,10 +29,14 @@ function addPort(id, port, { execFileSyncFn = execFileSync } = {}) {
       stdio: 'pipe',
     });
   } catch {
-    execFileSyncFn('devtunnel', ['port', 'create', id, '-p', String(port)], {
-      stdio: 'ignore',
-    });
-    console.log(`  ✅ Port ${port} added to tunnel "${id}"`);
+    try {
+      execFileSyncFn('devtunnel', ['port', 'create', id, '-p', String(port)], {
+        stdio: 'ignore',
+      });
+      console.log(`  ✅ Port ${port} added to tunnel "${id}"`);
+    } catch (createErr) {
+      log.error('tunnel', 'failed to add port', { id, port, error: createErr.message });
+    }
   }
 }
 
@@ -41,8 +46,8 @@ function removePort(id, port, { execFileSyncFn = execFileSync } = {}) {
     execFileSyncFn('devtunnel', ['port', 'delete', id, '-p', String(port)], {
       stdio: 'ignore',
     });
-  } catch {
-    // Port may already be removed
+  } catch (err) {
+    log.debug('tunnel', 'port delete skipped', { id, port, error: err.message });
   }
 }
 

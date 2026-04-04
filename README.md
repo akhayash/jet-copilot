@@ -206,6 +206,7 @@ jet-copilot/
 │   ├── session-manager.js    # Session management (with output replay buffer)
 │   ├── session-context.js    # Repo root detection for session context
 │   ├── copilot-session-scanner.js # Scan Copilot CLI session history
+│   ├── logger.js              # Structured JSON logger (LOG_LEVEL control)
 │   ├── preview-manager.js    # Preview tunnel management
 │   ├── window-capture.js     # Cross-platform window screenshot
 │   ├── tunnel.js             # Dev Tunnel auto-start + QR code display
